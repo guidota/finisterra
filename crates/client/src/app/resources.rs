@@ -3,7 +3,18 @@ use std::{
     collections::{BTreeMap, HashMap},
 };
 
-use ao::ao_20::graphics::{Animation, Image};
+use ao::ao_20::{
+    graphics::{Animation, Image},
+    init::{
+        parse::{
+            body::parse_bodies,
+            head::parse_heads,
+            template::{parse_templates, Template},
+            weapon::parse_weapons,
+        },
+        Body, Head, Weapon,
+    },
+};
 use macroquad::prelude::*;
 
 use crate::error::RuntimeError;
@@ -12,6 +23,11 @@ pub struct Resources {
     pub fonts: Fonts,
     pub images: BTreeMap<String, Image>,
     pub animations: BTreeMap<String, Animation>,
+    pub bodies: BTreeMap<usize, Body>,
+    pub heads: BTreeMap<usize, Head>,
+    pub weapons: BTreeMap<usize, Weapon>,
+    pub body_templates: BTreeMap<usize, Template>,
+    // pub shields: BTreeMap<String, Shield>,
     pub textures: RefCell<HashMap<usize, Texture2D>>,
     pub interface: UI,
 }
@@ -35,16 +51,27 @@ impl Resources {
                 .await
                 .expect("Can load font"),
         };
+
         let interface = UI {
             main: load_texture("./assets/interface/main_inv.png")
                 .await
                 .expect("can load UI"),
         };
+
+        let bodies = parse_bodies("./assets/init/cuerpos.dat").expect("can parse bodies");
+        let heads = parse_heads("./assets/init/cabezas.ini");
+        let weapons = parse_weapons("./assets/init/armas.dat").expect("can parse weapons");
+        let body_templates = parse_templates("./assets/init/moldes.ini");
+
         Resources {
             fonts,
             interface,
             images,
             animations,
+            bodies,
+            heads,
+            weapons,
+            body_templates,
             textures: RefCell::new(HashMap::new()),
         }
     }

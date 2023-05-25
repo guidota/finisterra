@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 macroquad = "0.3.25"
 ao = { path = "../../../ao-rs" }
+rand = { version = "0.8", features = ["std", "std_rng"] }
