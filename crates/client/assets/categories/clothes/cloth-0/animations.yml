@@ -1,9 +1,0 @@
-- id: cloth-0-walk-south
-  frames:
-    - cloth-0-walk-south-0
-    - cloth-0-walk-south-1
-    - cloth-0-walk-south-2
-    - cloth-0-walk-south-3
-    - cloth-0-walk-south-4
-    - cloth-0-walk-south-5
-  velocity: 250
