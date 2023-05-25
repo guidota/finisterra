@@ -43,6 +43,7 @@ impl Game {
     }
 
     pub async fn update(&mut self) {
+        self.update_camera_viewport();
         self.update_position();
         self.world_camera.target = vec2(self.position.x * 32., self.position.y * 32.);
     }
@@ -67,6 +68,19 @@ impl Game {
         self.draw_fps();
         self.draw_position();
     }
+
+    fn update_camera_viewport(&mut self) {
+        let world_size_px = 15. * 32.;
+        let aspect_ratio_x = screen_width() / 800.;
+        let aspect_ratio_y = screen_height() / 600.;
+
+        self.world_camera.viewport = Some((
+            (10. * aspect_ratio_x).round() as i32,
+            (10. * aspect_ratio_y).round() as i32,
+            (world_size_px * aspect_ratio_x) as i32,
+            (world_size_px * aspect_ratio_y) as i32,
+        ));
+    }
 }
 
 fn create_ui_camera() -> Camera2D {
@@ -74,11 +88,7 @@ fn create_ui_camera() -> Camera2D {
 }
 
 fn create_world_camera() -> Camera2D {
-    let world_size_px = 480.;
-    let mut world_camera =
-        Camera2D::from_display_rect(Rect::new(0.0, 0.0, world_size_px, world_size_px));
-    world_camera.viewport = Some((10, 10, world_size_px as i32, world_size_px as i32));
-    world_camera
+    Camera2D::from_display_rect(Rect::new(0.0, 0.0, 480., 480.))
 }
 
 fn create_map_static_camera() -> Camera2D {
