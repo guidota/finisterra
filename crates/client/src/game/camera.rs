@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-pub const ENTITY_SIZE: &(u32, u32) = &(256, 256);
+pub const ENTITY_SIZE: &(u32, u32) = &(100, 100);
 pub fn create_entity_camera() -> Camera2D {
     let mut camera = Camera2D::from_display_rect(Rect::new(
         0.0,

@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use crate::game::Game;
+use crate::{game::Game, settings::Settings};
 
 use self::resources::Resources;
 
+pub mod atlas;
 pub mod resources;
 pub mod window;
 
@@ -19,10 +20,10 @@ pub struct App {
 }
 
 impl App {
-    pub async fn new() -> Self {
-        let resources = Resources::load().await;
+    pub async fn new(settings: Settings) -> Self {
+        let resources = Resources::load(&settings).await;
         let resources = Arc::new(resources);
-        let game = Game::new(resources.clone());
+        let game = Game::new(settings, resources.clone());
 
         Self {
             state: State::Welcome,

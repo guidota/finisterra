@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use ao::Map;
 use macroquad::prelude::*;
 
-use crate::app::resources::Resources;
+use crate::{app::resources::Resources, settings::Settings};
 
 use self::{
     camera::{create_map_static_camera, create_ui_camera, create_world_camera},
@@ -26,18 +26,21 @@ pub struct Game {
     entities: HashMap<usize, Entity>,
     screen_size: Vec2,
     screen_size_dirty: bool,
+    settings: Settings,
+    test: bool,
 }
 
 impl Game {
-    pub fn new(resources: Arc<Resources>) -> Self {
-        let mut map = ao::ao_20::maps::parse::parse_map("./assets/maps", 1).expect("can parse map");
+    pub fn new(settings: Settings, resources: Arc<Resources>) -> Self {
+        let mut map =
+            ao::ao_20::maps::parse::parse_map("./assets/maps", 48).expect("can parse map");
         let map_static_camera = create_map_static_camera();
         let world_camera = create_world_camera();
         let ui_camera = create_ui_camera();
         let position = vec2(50., 50.);
 
         let mut entities = HashMap::new();
-        for id in 1..=1000 {
+        for id in 1..=1 {
             let random = Entity::random(&resources);
             let Vec2 { x, y } = random.position;
             map.tiles[x as usize][y as usize].char_index = id;
@@ -60,6 +63,8 @@ impl Game {
             entities,
             screen_size: vec2(screen_width(), screen_height()),
             screen_size_dirty: false,
+            settings,
+            test: false,
         }
     }
 
@@ -70,8 +75,15 @@ impl Game {
     }
 
     pub async fn render(&mut self) {
-        self.render_ui();
+        if self.settings.draw_ui {
+            self.render_ui();
+        }
+
         self.render_world().await;
+        if !self.test && self.settings.preload_textures {
+            // build_textures_atlas();
+            self.test = true;
+        }
     }
 
     async fn render_world(&mut self) {

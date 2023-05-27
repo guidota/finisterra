@@ -1,0 +1,395 @@
+[[regions]]
+name = '5041'
+atlas_width = 8192
+atlas_height = 4096
+x = 0
+y = 0
+w = 2048
+h = 2030
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '7016'
+atlas_width = 8192
+atlas_height = 4096
+x = 2048
+y = 0
+w = 1023
+h = 1022
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5065'
+atlas_width = 8192
+atlas_height = 4096
+x = 3071
+y = 0
+w = 1024
+h = 1022
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '5086'
+atlas_width = 8192
+atlas_height = 4096
+x = 4095
+y = 0
+w = 1024
+h = 1021
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5066'
+atlas_width = 8192
+atlas_height = 4096
+x = 5119
+y = 0
+w = 1024
+h = 1006
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5087'
+atlas_width = 8192
+atlas_height = 4096
+x = 6143
+y = 0
+w = 1024
+h = 907
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5074'
+atlas_width = 8192
+atlas_height = 4096
+x = 7167
+y = 0
+w = 1008
+h = 832
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '6215'
+atlas_width = 8192
+atlas_height = 4096
+x = 0
+y = 2030
+w = 896
+h = 801
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '200'
+atlas_width = 8192
+atlas_height = 4096
+x = 896
+y = 2030
+w = 1014
+h = 756
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '10150'
+atlas_width = 8192
+atlas_height = 4096
+x = 1910
+y = 2030
+w = 512
+h = 512
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5034'
+atlas_width = 8192
+atlas_height = 4096
+x = 2422
+y = 2030
+w = 703
+h = 512
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5048'
+atlas_width = 8192
+atlas_height = 4096
+x = 3125
+y = 2030
+w = 736
+h = 510
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '5068'
+atlas_width = 8192
+atlas_height = 4096
+x = 3861
+y = 2030
+w = 512
+h = 506
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '482'
+atlas_width = 8192
+atlas_height = 4096
+x = 4373
+y = 2030
+w = 503
+h = 443
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5023'
+atlas_width = 8192
+atlas_height = 4096
+x = 4876
+y = 2030
+w = 511
+h = 432
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '100'
+atlas_width = 8192
+atlas_height = 4096
+x = 5387
+y = 2030
+w = 512
+h = 384
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5067'
+atlas_width = 8192
+atlas_height = 4096
+x = 5899
+y = 2030
+w = 495
+h = 384
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5072'
+atlas_width = 8192
+atlas_height = 4096
+x = 6394
+y = 2030
+w = 490
+h = 325
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '5018'
+atlas_width = 8192
+atlas_height = 4096
+x = 6884
+y = 2030
+w = 512
+h = 288
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '6028'
+atlas_width = 8192
+atlas_height = 4096
+x = 7396
+y = 2030
+w = 512
+h = 256
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '7522'
+atlas_width = 8192
+atlas_height = 4096
+x = 0
+y = 2831
+w = 288
+h = 192
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '6201'
+atlas_width = 8192
+atlas_height = 4096
+x = 288
+y = 2831
+w = 182
+h = 182
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '2649'
+atlas_width = 8192
+atlas_height = 4096
+x = 470
+y = 2831
+w = 430
+h = 156
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '6000'
+atlas_width = 8192
+atlas_height = 4096
+x = 900
+y = 2831
+w = 512
+h = 128
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '6001'
+atlas_width = 8192
+atlas_height = 4096
+x = 1412
+y = 2831
+w = 512
+h = 128
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '20'
+atlas_width = 8192
+atlas_height = 4096
+x = 1924
+y = 2831
+w = 384
+h = 128
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '6003'
+atlas_width = 8192
+atlas_height = 4096
+x = 2308
+y = 2831
+w = 512
+h = 128
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '6800'
+atlas_width = 8192
+atlas_height = 4096
+x = 2820
+y = 2831
+w = 512
+h = 128
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '9503'
+atlas_width = 8192
+atlas_height = 4096
+x = 3332
+y = 2831
+w = 160
+h = 125
+is_rotated = false
+is_opaque = false
+
+[[regions]]
+name = '5519'
+atlas_width = 8192
+atlas_height = 4096
+x = 3492
+y = 2831
+w = 173
+h = 115
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '7523'
+atlas_width = 8192
+atlas_height = 4096
+x = 3665
+y = 2831
+w = 256
+h = 64
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '7524'
+atlas_width = 8192
+atlas_height = 4096
+x = 3921
+y = 2831
+w = 256
+h = 64
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '7526'
+atlas_width = 8192
+atlas_height = 4096
+x = 4177
+y = 2831
+w = 64
+h = 64
+is_rotated = false
+is_opaque = true
+
+[[regions]]
+name = '5517'
+atlas_width = 8192
+atlas_height = 4096
+x = 4241
+y = 2831
+w = 351
+h = 51
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '9504'
+atlas_width = 8192
+atlas_height = 4096
+x = 4592
+y = 2831
+w = 60
+h = 47
+is_rotated = true
+is_opaque = false
+
+[[regions]]
+name = '7516'
+atlas_width = 8192
+atlas_height = 4096
+x = 4652
+y = 2831
+w = 32
+h = 32
+is_rotated = false
+is_opaque = true
