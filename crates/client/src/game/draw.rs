@@ -112,7 +112,7 @@ impl Game {
             },
         );
         draw_text_ex(
-            format!("Settings: {:#?}", self.settings).as_str(),
+            format!("Settings: {:?}", self.settings).as_str(),
             5.,
             35.,
             TextParams {

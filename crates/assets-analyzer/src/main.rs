@@ -1,8 +1,18 @@
+use ao::ao_20::maps::parse::parse_map_full_path;
 use assets_analyzer::{images_used_by_map, images_used_by_maps};
 
 fn main() {
     // maps_to_layer_atlases();
-    map_to_atlas(1);
+    // map_to_atlas(1);
+    map_layer_0_batches_required(1);
+}
+
+fn map_layer_0_batches_required(map_number: usize) {
+    let graphics = ao::ao_20::graphics::parse::parse_graphics("./assets/init/graficos.ind")
+        .expect("can parse graphics");
+    let path = format!("./assets/maps/mapa{map_number}.csm");
+    let map_file_path = path.as_str();
+    let map = parse_map_full_path(map_file_path).expect("can] parse map");
 }
 
 fn map_to_atlas(map_number: usize) {
