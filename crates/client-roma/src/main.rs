@@ -1,13 +1,9 @@
-use client_roma::App;
-use roma_wgpu::block_on;
-use roma_wgpu::run;
+use client_roma::Finisterra;
+use roma::block_on;
+use roma::run;
 
 mod settings;
 
 fn main() {
-    let app = App::default();
-    block_on(run(move |roma| {
-        app.update_camera(roma);
-        app.draw_map(roma);
-    }));
+    block_on(run(Finisterra::default()));
 }

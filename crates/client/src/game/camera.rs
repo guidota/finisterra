@@ -20,7 +20,7 @@ pub fn create_ui_camera() -> Camera2D {
 }
 
 pub fn create_world_camera() -> Camera2D {
-    Camera2D::from_display_rect(Rect::new(0.0, 0.0, 480., 480.))
+    Camera2D::from_display_rect(Rect::new(0.0, 0.0, 800., 600.))
 }
 
 pub fn create_map_static_camera() -> Camera2D {

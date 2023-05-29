@@ -32,8 +32,7 @@ pub struct Game {
 
 impl Game {
     pub fn new(settings: Settings, resources: Arc<Resources>) -> Self {
-        let mut map =
-            ao::ao_20::maps::parse::parse_map("./assets/maps", 48).expect("can parse map");
+        let mut map = ao::ao_20::maps::parse::parse_map("./assets/maps", 1).expect("can parse map");
         let map_static_camera = create_map_static_camera();
         let world_camera = create_world_camera();
         let ui_camera = create_ui_camera();
@@ -102,16 +101,16 @@ impl Game {
         if screen_width() != self.screen_size.x || screen_height() != self.screen_size.y {
             self.screen_size_dirty = true;
             self.screen_size = vec2(screen_width(), screen_height());
-            let world_size_px = 15. * 32.;
-            let aspect_ratio_x = screen_width() / 800.;
-            let aspect_ratio_y = screen_height() / 600.;
+            // let world_size_px = 15. * 32.;
+            // let aspect_ratio_x = screen_width() / 800.;
+            // let aspect_ratio_y = screen_height() / 600.;
 
-            self.world_camera.viewport = Some((
-                (10. * aspect_ratio_x).round() as i32,
-                (10. * aspect_ratio_y).round() as i32,
-                (world_size_px * aspect_ratio_x) as i32,
-                (world_size_px * aspect_ratio_y) as i32,
-            ));
+            // self.world_camera.viewport = Some((
+            //     (10. * aspect_ratio_x).round() as i32,
+            //     (10. * aspect_ratio_y).round() as i32,
+            //     (world_size_px * aspect_ratio_x) as i32,
+            //     (world_size_px * aspect_ratio_y) as i32,
+            // ));
         } else {
             self.screen_size_dirty = false;
         }
