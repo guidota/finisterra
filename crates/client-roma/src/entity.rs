@@ -5,6 +5,7 @@ use roma::graphics::vec2::{vec2, Vec2};
 use crate::resources::Resources;
 
 pub struct Entity {
+    pub id: usize,
     pub body: usize,
     pub head: usize,
     pub name: String,
@@ -12,7 +13,7 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn random(resources: &Resources) -> Self {
+    pub fn random(id: usize, resources: &Resources) -> Self {
         let mut rng = rand::thread_rng();
         let random_body = loop {
             let (id, body) = resources.bodies.iter().choose(&mut rng).unwrap();
@@ -56,6 +57,7 @@ impl Entity {
         let x = rng.gen_range(0..100);
         let y = rng.gen_range(0..100);
         Self {
+            id,
             body: random_body,
             head: random_head,
             position: vec2(x as f32, y as f32),

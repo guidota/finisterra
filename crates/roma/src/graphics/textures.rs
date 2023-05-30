@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use wgpu::{BindGroup, BindGroupLayout, Color, Device};
+use wgpu::{BindGroup, BindGroupLayout, Device};
 
 use crate::{render::sprite_batch::Vertex, resources::texture::Texture};
 
@@ -93,11 +93,11 @@ impl Graphics {
 
     pub fn draw_texture<ID: Into<String>>(
         &mut self,
+        entity_id: usize,
         texture_id: ID,
         x: f32,
         y: f32,
         z: usize,
-        _color: Color,
         params: Option<DrawTextureParams>,
     ) {
         let id = texture_id.into();
@@ -150,9 +150,11 @@ impl Graphics {
 
         let sprite_data = SpriteData {
             z,
+            entity_id,
             texture_id: id,
             vertices,
         };
-        self.frame_draws.push(sprite_data);
+
+        self.push_draw(sprite_data);
     }
 }

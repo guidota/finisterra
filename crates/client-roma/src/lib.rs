@@ -16,7 +16,7 @@ use roma::{
         textures::DrawTextureParams,
         vec2::{vec2, Vec2},
     },
-    Color, Game, Roma,
+    Game, Roma,
 };
 use settings::Settings;
 
@@ -38,8 +38,8 @@ impl Default for Finisterra {
         let current_map = parse_map("./assets/maps", 1).expect("can parse map");
         let resources = Resources::load();
         let mut entities = vec![];
-        for _ in 1..=10000 {
-            entities.push(Entity::random(&resources));
+        for i in 1..=10000 {
+            entities.push(Entity::random(1000000 + i * 10, &resources));
         }
         Self {
             settings: Settings::default(),
@@ -84,7 +84,8 @@ impl Finisterra {
                         let x = (x * TILE_SIZE) as f32;
                         let y = (y * TILE_SIZE) as f32;
                         let image_id = tile.graphics[layer] as usize;
-                        self.draw_grh(roma, image_id, x, y, z);
+                        let tile_id = y as usize * 10000 + x as usize * 4 + layer;
+                        self.draw_grh(roma, tile_id, image_id, x, y, z);
                     }
                 }
             }
@@ -106,7 +107,7 @@ impl Finisterra {
                 let head_offset = match self.resources.bodies.get(&entity.body) {
                     Some(Body::Animated { walks, head_offset }) => {
                         let body_grh = walks.0;
-                        self.draw_animation(roma, body_grh, x, y, z);
+                        self.draw_animation(roma, entity.id + 1, body_grh, x, y, z);
                         head_offset
                     }
                     Some(Body::AnimatedWithTemplate {
@@ -115,7 +116,7 @@ impl Finisterra {
                         head_offset,
                     }) => {
                         if let Some(template) = self.resources.body_templates.get(template_id) {
-                            self.draw_template(roma, file_num, template, x, y, z);
+                            self.draw_template(roma, entity.id + 2, file_num, template, x, y, z);
                         }
                         head_offset
                     }
@@ -125,7 +126,7 @@ impl Finisterra {
                     if let Some(head) = self.resources.heads.get(&entity.head) {
                         let x = x - head_offset.0 as f32;
                         let y = y - head_offset.1 as f32;
-                        self.draw_grh(roma, head.2, x, y, z);
+                        self.draw_grh(roma, entity.id + 3, head.2, x, y, z);
                     }
                 }
             }
@@ -135,6 +136,7 @@ impl Finisterra {
     fn draw_template(
         &self,
         roma: &mut Roma,
+        entity_id: usize,
         file_num: &usize,
         template: &Template,
         x: f32,
@@ -150,22 +152,53 @@ impl Finisterra {
             height: template.height as u16,
             id,
         };
-        self.draw_image(roma, &image, x, y, z);
+        self.draw_image(roma, entity_id, &image, x, y, z);
     }
 
-    fn draw_animation(&self, roma: &mut Roma, id: usize, x: f32, y: f32, z: usize) {
+    fn draw_animation(
+        &self,
+        roma: &mut Roma,
+        entity_id: usize,
+        id: usize,
+        x: f32,
+        y: f32,
+        z: usize,
+    ) {
         if let Some(animation) = self.resources.animations.get(id.to_string().as_str()) {
-            self.draw_grh(roma, animation.frames[0].parse().unwrap(), x, y, z);
+            self.draw_grh(
+                roma,
+                entity_id,
+                animation.frames[0].parse().unwrap(),
+                x,
+                y,
+                z,
+            );
         }
     }
 
-    fn draw_grh(&self, roma: &mut Roma, image_id: usize, x: f32, y: f32, z: usize) {
+    fn draw_grh(
+        &self,
+        roma: &mut Roma,
+        entity_id: usize,
+        image_id: usize,
+        x: f32,
+        y: f32,
+        z: usize,
+    ) {
         if let Some(image) = self.resources.images.get(&image_id.to_string()) {
-            self.draw_image(roma, image, x, y, z);
+            self.draw_image(roma, entity_id, image, x, y, z);
         }
     }
 
-    fn draw_image(&self, roma: &mut Roma, image: &Image, x: f32, y: f32, z: usize) {
+    fn draw_image(
+        &self,
+        roma: &mut Roma,
+        entity_id: usize,
+        image: &Image,
+        x: f32,
+        y: f32,
+        z: usize,
+    ) {
         let texture_id = image.file_num.to_string();
         let image_path = format!("./assets/graphics/{texture_id}.png");
         roma.graphics.load_texture(texture_id.clone(), &image_path);
@@ -173,11 +206,11 @@ impl Finisterra {
         let x = x - (image.width / 2) as f32;
 
         roma.graphics.draw_texture(
+            entity_id,
             texture_id,
             x,
             y,
             z,
-            Color::WHITE,
             Some(DrawTextureParams {
                 source: Some(Rect::new(
                     image.x as f32,

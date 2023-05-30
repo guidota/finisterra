@@ -1,8 +1,10 @@
-use std::num::{NonZeroU32, NonZeroU64};
+use std::{
+    fmt::Display,
+    num::{NonZeroU32, NonZeroU64},
+};
 
 use wgpu::{
-    util::DeviceExt, BindGroupLayout, BlendComponent, BlendFactor, BlendOperation, Buffer, Device,
-    RenderPipeline, SurfaceConfiguration,
+    util::DeviceExt, BindGroupLayout, Buffer, Device, RenderPipeline, SurfaceConfiguration,
 };
 
 use super::sprite_batch::Vertex;
@@ -11,13 +13,9 @@ pub(crate) struct TextureArrayRenderPass {
     pub pipeline: RenderPipeline,
     pub bind_group_layout: BindGroupLayout,
     pub index_buffer: Buffer,
-    pub vertex_buffer: Buffer,
 }
 
 impl TextureArrayRenderPass {
-    const MAX_SPRITES: usize = 8192;
-    const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
-    const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
     pub const MAX_TEXTURES: u32 = 1024;
 
     pub fn new(
@@ -34,15 +32,7 @@ impl TextureArrayRenderPass {
             &[&bind_group_layout, camera_bind_group_layout],
         );
 
-        let mut indices: [u16; Self::MAX_INDICES] = [0u16; Self::MAX_INDICES];
-        for i in 0..Self::MAX_SPRITES {
-            indices[i * 6] = (i * 4) as u16;
-            indices[i * 6 + 1] = (i * 4 + 1) as u16;
-            indices[i * 6 + 2] = (i * 4 + 2) as u16;
-            indices[i * 6 + 3] = (i * 4) as u16;
-            indices[i * 6 + 4] = (i * 4 + 2) as u16;
-            indices[i * 6 + 5] = (i * 4 + 3) as u16;
-        }
+        let indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -50,18 +40,10 @@ impl TextureArrayRenderPass {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let vertices = [IndexedVertex::default(); Self::MAX_VERTICES];
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Sprite Batch Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-
         Self {
             pipeline,
             bind_group_layout,
             index_buffer,
-            vertex_buffer,
         }
     }
 }
@@ -178,18 +160,7 @@ trait DeviceTextureArraysExt {
                 entry_point: fragment_entry_point,
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
-                    blend: Some(wgpu::BlendState {
-                        color: BlendComponent {
-                            src_factor: BlendFactor::SrcAlpha,
-                            dst_factor: BlendFactor::OneMinusSrcAlpha,
-                            operation: BlendOperation::Add,
-                        },
-                        alpha: BlendComponent {
-                            src_factor: BlendFactor::One,
-                            dst_factor: BlendFactor::One,
-                            operation: BlendOperation::Add,
-                        },
-                    }),
+                    blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -216,11 +187,22 @@ trait DeviceTextureArraysExt {
 impl DeviceTextureArraysExt for Device {}
 
 #[repr(C)]
-#[derive(Default, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(PartialEq, PartialOrd, Debug, Default, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct IndexedVertex {
     pub pos: [f32; 2],
     pub tex_coord: [f32; 2],
     pub index: u32,
+}
+
+impl Display for IndexedVertex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        _ = f.write_str("\n");
+        _ = f.write_str(&format!(
+            "pos: {:?} tex_coord: {:?}, index {}",
+            self.pos, self.tex_coord, self.index
+        ));
+        f.write_str("\n")
+    }
 }
 
 impl IndexedVertex {

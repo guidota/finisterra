@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, fmt::Display};
 
 use wgpu::{
     util::DeviceExt, BindGroupLayout, BlendComponent, BlendFactor, BlendOperation, Buffer, Device,
@@ -59,15 +59,27 @@ impl SpriteBatchRenderPass {
 #[derive(Debug)]
 pub struct SpriteData {
     pub z: usize,
+    pub entity_id: usize,
     pub texture_id: String,
     pub vertices: Vec<Vertex>,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
+#[derive(PartialEq, PartialOrd, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
 pub struct Vertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
+}
+
+impl Display for Vertex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        _ = f.write_str("\n");
+        _ = f.write_str(&format!(
+            "pos: {:?} tex_coord: {:?}",
+            self.position, self.tex_coords
+        ));
+        f.write_str("\n")
+    }
 }
 
 impl Vertex {
