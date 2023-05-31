@@ -1,6 +1,5 @@
+use crate::networking::{bincode::CONFIG, ClientPacket};
 use bincode::{Decode, Encode};
-
-use crate::{bincode::CONFIG, client::ClientPacket};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum ServerPacket {

@@ -19,3 +19,4 @@ pub struct ClientResources {
 }
 
 pub use crate::ao_99z::client::load_client_resources;
+pub use crate::ao_99z::client::ClientResourcesPaths;

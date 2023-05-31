@@ -1,12 +1,3 @@
-mod admin;
-mod bincode;
-mod client;
-mod server;
-mod transport;
+mod networking;
 
-pub mod prelude {
-    pub use crate::admin::*;
-    pub use crate::client::*;
-    pub use crate::server::*;
-    pub use crate::transport::*;
-}
+pub use networking::*;

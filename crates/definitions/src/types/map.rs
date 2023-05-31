@@ -1,6 +1,6 @@
 use crate::parse::{Byte, Integer, Long};
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct MapHeader {
     pub blocks: Long,
     pub layers: [Long; 4],
@@ -18,7 +18,7 @@ pub type GrhIndex = Long;
 
 pub type Trigger = Integer;
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct RGBA {
     pub b: Byte,
     pub g: Byte,
@@ -26,7 +26,7 @@ pub struct RGBA {
     pub a: Byte,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Light {
     pub color: RGBA,
     pub range: Byte,
@@ -36,32 +36,32 @@ pub type Particle = Long;
 
 pub type NpcIndex = Integer;
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Obj {
     pub index: Integer,
     pub amount: Integer,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct WorldPosition {
     pub map: Integer,
     pub x: Integer,
     pub y: Integer,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Point {
     pub min: Integer,
     pub max: Integer,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct MapSize {
     pub x: Point,
     pub y: Point,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct MapInfo {
     pub map_name: String,
     pub backup_mode: bool,
@@ -83,7 +83,7 @@ pub struct MapInfo {
     pub extra3: String,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Tile {
     pub graphics: [GrhIndex; 4],
     pub light: Option<Light>,
@@ -97,7 +97,7 @@ pub struct Tile {
     pub npc: Option<NpcIndex>,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Map {
     pub tiles: Vec<Vec<Tile>>,
 }

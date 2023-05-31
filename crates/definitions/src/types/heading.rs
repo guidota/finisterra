@@ -1,4 +1,4 @@
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Heading {
     #[default]
     South,

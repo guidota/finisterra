@@ -14,13 +14,13 @@ pub mod shield;
 pub mod spell;
 pub mod weapon;
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Range {
     pub min: usize,
     pub max: usize,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Offset {
     pub x: usize,
     pub y: usize,

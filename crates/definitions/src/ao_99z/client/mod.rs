@@ -109,10 +109,12 @@ pub fn load_weapons(path: &str) -> Result<BTreeMap<usize, Weapon>, Error> {
     let mut weapons = BTreeMap::new();
     let reader = get_ini_reader(path)?;
 
-    for number in 1..=reader.get_count("NumArmas") {
-        let section = reader
-            .section(Some(&format!("Arma{number}")))
-            .ok_or(Error::Parse)?;
+    let count = reader.get_count("NumArmas");
+    for number in 1..=count {
+        let Some(section) = reader.section(Some(&format!("Arma{number}"))) else {
+            continue;
+        };
+
         weapons.insert(
             number,
             Weapon {
@@ -131,23 +133,27 @@ pub fn load_weapons(path: &str) -> Result<BTreeMap<usize, Weapon>, Error> {
 
 pub fn load_shields(path: &str) -> Result<BTreeMap<usize, Shield>, Error> {
     let mut shields = BTreeMap::new();
-    let mut reader = get_binary_reader(path)?;
+    let reader = get_ini_reader(path)?;
 
-    reader.skip_header();
-
-    for id in 0..reader.read_integer() {
+    let count = reader.get_count("NumEscudos");
+    for number in 1..=count {
+        let Some(section) = reader
+            .section(Some(&format!("ESC{number}"))) else {
+            continue;
+        };
         shields.insert(
-            id.into(),
+            number,
             Shield {
                 animations: [
-                    reader.read_integer().into(),
-                    reader.read_integer().into(),
-                    reader.read_integer().into(),
-                    reader.read_integer().into(),
+                    section.get_number("Dir1"),
+                    section.get_number("Dir2"),
+                    section.get_number("Dir3"),
+                    section.get_number("Dir4"),
                 ],
             },
         );
     }
+
     Ok(shields)
 }
 
@@ -181,10 +187,13 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
         let path = file.path();
         let path = path.to_str().ok_or(Error::Parse)?;
 
-        let map_file_num = path.to_string().replace(".map", "").replace("Mapa", "");
+        let path_str = path.to_string();
+        let file_name = path_str.split('/').last().unwrap();
+        let map_file_num = file_name.replace("Mapa", "").replace(".map", "");
         let Ok(id) = map_file_num.parse::<usize>() else {
             continue;
         };
+        println!("Loading map: {}", id);
         let mut reader = get_binary_reader(path)?;
 
         // Header, version and other trash
@@ -196,10 +205,10 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
         reader.read_integer();
 
         let mut map = Map::default();
-        for y in 1..=100 {
-            map.tiles.push(Vec::with_capacity(100));
-            for x in 1..=100 {
-                map.tiles[x - 1][y - 1] = Tile {
+        for _ in 1..=100 {
+            let mut row = Vec::new();
+            for _ in 1..=100 {
+                row.push(Tile {
                     blocked: reader.read_byte(),
                     graphics: [
                         reader.read_integer().into(),
@@ -209,9 +218,10 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
                     ],
                     trigger: reader.read_integer(),
                     ..Default::default()
-                };
+                });
                 reader.read_integer();
             }
+            map.tiles.push(row);
         }
         maps.insert(id, map);
     }
@@ -279,13 +289,21 @@ pub fn load_graphics(path: &str) -> Result<Graphics, Error> {
 }
 
 pub fn load_client_resources(paths: ClientResourcesPaths) -> Result<ClientResources, Error> {
+    println!("> Loading client resources");
     let bodies = load_bodies(paths.bodies)?;
+    println!("> Bodies loaded");
     let heads = load_head(paths.heads)?;
+    println!("> Heads loaded");
     let weapons = load_weapons(paths.weapons)?;
+    println!("> Weapons loaded");
     let shields = load_shields(paths.shields)?;
+    println!("> Shields loaded");
     let headgears = load_headgears(paths.headgears)?;
+    println!("> Headgears loaded");
     let fxs = load_fxs(paths.fxs)?;
+    println!("> FXs loaded");
     let maps = load_maps(paths.maps)?;
+    println!("> Maps loaded");
     let Graphics { images, animations } = load_graphics(paths.graphics)?;
 
     Ok(ClientResources {

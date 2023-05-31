@@ -1,6 +1,6 @@
 use crate::{heading::Heading, Range};
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum NpcKind {
     #[default]
     Common,
@@ -12,18 +12,18 @@ pub enum NpcKind {
     Dragon,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct CommerceItem {
     pub id: usize,
     pub amount: usize,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Commerce {
     pub items: Vec<CommerceItem>,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Movement {
     #[default]
     Normal,
@@ -32,7 +32,7 @@ pub enum Movement {
     GroundAndWater,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct NPC {
     pub id: usize,
     pub name: String,

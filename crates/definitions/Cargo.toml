@@ -1,5 +1,5 @@
 [package]
-name = "ao"
+name = "definitions"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 byteorder = "1.4.3"
 rust-ini = "0.19"
+serde.workspace = true
+toml.workspace = true

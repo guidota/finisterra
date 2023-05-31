@@ -1,4 +1,4 @@
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Target {
     #[default]
     User = 1,
@@ -7,7 +7,7 @@ pub enum Target {
     Terrain = 4,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum SpellKind {
     #[default]
     None,
@@ -23,7 +23,7 @@ pub enum SpellKind {
     Metamorphosis,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Stat {
     #[default]
     HP,
@@ -33,7 +33,7 @@ pub enum Stat {
     Thirst,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum StatEffect {
     #[default]
     Damage,
@@ -44,7 +44,7 @@ pub enum StatEffect {
     },
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum StateEffect {
     #[default]
     None,
@@ -56,7 +56,7 @@ pub enum StateEffect {
     Blessing,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Spell {
     pub id: usize,
     pub name: String,

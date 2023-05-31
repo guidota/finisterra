@@ -1,6 +1,6 @@
 use crate::map::WorldPosition;
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct City {
     pub name: String,
     pub description: String,

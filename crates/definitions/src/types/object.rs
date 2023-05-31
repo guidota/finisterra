@@ -1,6 +1,6 @@
 use crate::{race::Race, Range};
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Object {
     pub id: usize,
     pub name: String,
@@ -13,7 +13,7 @@ pub struct Object {
     pub not_allowed: Vec<Race>,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Smithy {
     pub gold_ingots: usize,
     pub silver_ingots: usize,
@@ -21,13 +21,13 @@ pub struct Smithy {
     pub skills: usize,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Carpentry {
     pub wood: usize,
     pub skills: usize,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum DoorState {
     #[default]
     Open,
@@ -37,7 +37,7 @@ pub enum DoorState {
     },
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum PotionKind {
     #[default]
     Mana,
@@ -48,7 +48,7 @@ pub enum PotionKind {
     Death,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum ObjectData {
     #[default]
     Empty,
@@ -138,13 +138,13 @@ pub enum ObjectData {
     Stain,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct CarpentryItem {
     id: usize,
     item_index: usize,
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct SmithyItem {
     id: usize,
     item_index: usize,
