@@ -1,0 +1,12 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.3.25"
+macroquad-profiler = "0.1.1"
+ao = { path = "../../../ao-rs" }
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.7"
+rand = { version = "0.8", features = ["std", "std_rng"] }
