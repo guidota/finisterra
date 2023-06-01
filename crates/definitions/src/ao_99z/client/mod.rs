@@ -4,6 +4,7 @@ use byteorder::ReadBytesExt;
 
 use crate::{
     animation::Animation,
+    atlas::Atlas,
     body::Body,
     client::ClientResources,
     error::Error,
@@ -31,6 +32,7 @@ pub struct ClientResourcesPaths<'a> {
     pub fxs: &'a str,
     pub maps: &'a str,
     pub graphics: &'a str,
+    pub atlas: Option<&'a str>,
 }
 
 pub fn load_bodies(path: &str) -> Result<BTreeMap<usize, Body>, Error> {
@@ -193,7 +195,6 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
         let Ok(id) = map_file_num.parse::<usize>() else {
             continue;
         };
-        println!("Loading map: {}", id);
         let mut reader = get_binary_reader(path)?;
 
         // Header, version and other trash
@@ -204,11 +205,12 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
         reader.read_integer();
         reader.read_integer();
 
-        let mut map = Map::default();
+        let mut map = Map {
+            tiles: vec![vec![]; 100],
+        };
         for _ in 1..=100 {
-            let mut row = Vec::new();
-            for _ in 1..=100 {
-                row.push(Tile {
+            for x in 1..=100 {
+                map.tiles[x - 1].push(Tile {
                     blocked: reader.read_byte(),
                     graphics: [
                         reader.read_integer().into(),
@@ -221,7 +223,6 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
                 });
                 reader.read_integer();
             }
-            map.tiles.push(row);
         }
         maps.insert(id, map);
     }
@@ -234,9 +235,11 @@ pub struct Graphics {
     pub animations: BTreeMap<usize, Animation>,
 }
 
-pub fn load_graphics(path: &str) -> Result<Graphics, Error> {
+pub fn load_graphics(path: &str, atlas: Option<&str>) -> Result<Graphics, Error> {
     let mut images = BTreeMap::new();
     let mut animations = BTreeMap::new();
+
+    let mut images_by_file_num = BTreeMap::new();
 
     let mut reader = get_binary_reader(path)?;
 
@@ -254,17 +257,19 @@ pub fn load_graphics(path: &str) -> Result<Graphics, Error> {
         match frames_len {
             0 => return Err(Error::Parse),
             1 => {
-                images.insert(
-                    grh.into(),
-                    Image {
-                        id: grh.into(),
-                        file_num: reader.read_integer().into(),
-                        x: reader.read_integer(),
-                        y: reader.read_integer(),
-                        width: reader.read_integer(),
-                        height: reader.read_integer(),
-                    },
-                );
+                let image = Image {
+                    id: grh.into(),
+                    file_num: reader.read_integer().into(),
+                    x: reader.read_integer(),
+                    y: reader.read_integer(),
+                    width: reader.read_integer(),
+                    height: reader.read_integer(),
+                };
+                images_by_file_num
+                    .entry(image.file_num)
+                    .or_insert_with(Vec::new)
+                    .push(image.id);
+                images.insert(grh.into(), image);
             }
             _ => {
                 animations.insert(
@@ -285,26 +290,51 @@ pub fn load_graphics(path: &str) -> Result<Graphics, Error> {
         };
     }
 
+    if let Some(atlas) = atlas {
+        let bytes = std::fs::read_to_string(atlas).map_err(|_| Error::FileNotFound)?;
+        println!("Will parse atlas");
+        let atlas: Atlas = toml::from_str(&bytes).map_err(|_| Error::Parse)?;
+        println!("Atlas parsed");
+        // for each atlas region, find image and calculate coordinates in the texture
+        for region in atlas.regions {
+            let Ok(image_id) = region.name.parse() else {
+                println!("> atlas convertion > atlas region doesn't correspond to image {}", region.name);
+                continue;
+            };
+
+            let Some(image_ids) = images_by_file_num.get_mut(&image_id) else {
+                println!("> atlas convertion > {image_id} wasn't loaded");
+                continue;
+            };
+
+            for image_id in image_ids {
+                let Some(image) = images.get_mut(image_id) else {
+                    println!("> atlas convertion > image not found {image_id}");
+                    continue;
+                };
+                println!("> atlas convertion > image before convert {image:?}");
+
+                image.x += region.x as u16;
+                image.y += region.y as u16;
+                image.file_num = 0;
+
+                println!("> atlas convertion > image after convert {image:?}");
+            }
+        }
+    }
+
     Ok(Graphics { images, animations })
 }
 
 pub fn load_client_resources(paths: ClientResourcesPaths) -> Result<ClientResources, Error> {
-    println!("> Loading client resources");
     let bodies = load_bodies(paths.bodies)?;
-    println!("> Bodies loaded");
     let heads = load_head(paths.heads)?;
-    println!("> Heads loaded");
     let weapons = load_weapons(paths.weapons)?;
-    println!("> Weapons loaded");
     let shields = load_shields(paths.shields)?;
-    println!("> Shields loaded");
     let headgears = load_headgears(paths.headgears)?;
-    println!("> Headgears loaded");
     let fxs = load_fxs(paths.fxs)?;
-    println!("> FXs loaded");
     let maps = load_maps(paths.maps)?;
-    println!("> Maps loaded");
-    let Graphics { images, animations } = load_graphics(paths.graphics)?;
+    let Graphics { images, animations } = load_graphics(paths.graphics, paths.atlas)?;
 
     Ok(ClientResources {
         bodies,

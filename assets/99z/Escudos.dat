@@ -1,0 +1,9 @@
+[INIT]
+NumEscudos=2
+
+[ESC1]
+Dir1=4727 'norte
+Dir2=4729
+Dir3=4726
+Dir4=4728 'sur
+

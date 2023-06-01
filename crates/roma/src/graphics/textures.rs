@@ -67,6 +67,7 @@ impl Graphics {
             return;
         }
         let Ok(texture) = Texture::from_path(&self.device, &self.queue, path) else {
+            println!("> texture not loaded > {id}");
             return;
         };
 
@@ -84,11 +85,12 @@ impl Graphics {
             ],
             label: Some("diffuse_bind_group"),
         });
-        self.textures.add_texture(id, (texture, bind_group));
         println!(
-            "> load_textures > loaded textures {}",
+            "> load_textures > loaded texture {} -- sum {}",
+            id,
             self.textures.collection.len()
         );
+        self.textures.add_texture(id, (texture, bind_group));
     }
 
     pub fn draw_texture<ID: Into<String>>(
@@ -102,6 +104,7 @@ impl Graphics {
     ) {
         let id = texture_id.into();
         let Some((texture, _)) = self.textures.get_texture(&id) else {
+            println!("> draw_texture > texture not found > {id}");
             return;
         };
 

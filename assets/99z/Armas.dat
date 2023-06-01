@@ -1,0 +1,49 @@
+[INIT]
+NumArmas=7
+
+[Arma1]
+Dir1=4719 'norte
+Dir2=4721
+Dir3=4718
+Dir4=4720 'sur
+
+[Arma3]
+Dir1=4723 'norte
+Dir2=4725
+Dir3=4722
+Dir4=4724 'sur
+
+'Garrote
+[ARMA4]
+Dir1=10269
+Dir2=10271
+Dir3=10268
+Dir4=10270
+
+'Cimitarra
+[ARMA5]
+Dir1=10295
+Dir2=10297
+Dir3=10294
+Dir4=10296
+
+'Vara de mago
+[ARMA6]
+Dir1=10321
+Dir2=10323
+Dir3=10320
+Dir4=10322
+
+'Arco
+[ARMA7]
+Dir1=10467
+Dir2=10469
+Dir3=10466
+Dir4=10468
+
+
+
+
+
+
+

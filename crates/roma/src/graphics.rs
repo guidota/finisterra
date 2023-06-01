@@ -194,7 +194,7 @@ impl Graphics {
                 depth_stencil_attachment: None,
             });
 
-            render_pass.set_scissor_rect(20, 60, 480, 480);
+            // render_pass.set_scissor_rect(20, 60, 480, 480);
             render_pass.set_pipeline(&self.sprite_batch_pass.pipeline);
             render_pass.set_bind_group(1, &self.camera.bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.sprite_batch_pass.vertex_buffer.slice(..));

@@ -186,6 +186,10 @@ pub struct SpriteBatch {
 }
 
 pub fn prepare_sprite_data(sprites: &mut Vec<SpriteData>) -> (Vec<Vertex>, Vec<SpriteBatch>) {
+    if sprites.is_empty() {
+        return (vec![], vec![]);
+    }
+
     sprites.sort_unstable_by(|a, b| match a.z.partial_cmp(&b.z) {
         Some(Ordering::Equal) | None => a.texture_id.cmp(&b.texture_id),
         Some(other) => other,
@@ -194,9 +198,7 @@ pub fn prepare_sprite_data(sprites: &mut Vec<SpriteData>) -> (Vec<Vertex>, Vec<S
 
     let mut batches = Vec::with_capacity(sprites.len());
     let mut vertices = Vec::with_capacity(sprites.len() * 4);
-    if sprites.is_empty() {
-        return (vertices, batches);
-    }
+
     let mut current_batch = SpriteBatch {
         size: 0,
         texture_id: sprites[0].texture_id.clone(),
@@ -213,6 +215,9 @@ pub fn prepare_sprite_data(sprites: &mut Vec<SpriteData>) -> (Vec<Vertex>, Vec<S
                 texture_id: sprite.texture_id,
             };
         }
+    }
+    if current_batch.size > 0 {
+        batches.push(current_batch);
     }
 
     (vertices, batches)

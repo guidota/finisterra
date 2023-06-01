@@ -28,14 +28,15 @@ pub struct Finisterra {
 impl Default for Finisterra {
     fn default() -> Self {
         let paths = ClientResourcesPaths {
-            bodies: "",
-            heads: "",
-            weapons: "",
-            shields: "",
-            headgears: "",
-            fxs: "",
-            maps: "",
-            graphics: "",
+            bodies: "./assets/99z/Personajes.ind",
+            heads: "./assets/99z/Cabezas.ind",
+            weapons: "./assets/99z/Armas.dat",
+            shields: "./assets/99z/Escudos.dat",
+            headgears: "./assets/99z/Cascos.ind",
+            fxs: "./assets/99z/Fxs.ind",
+            maps: "./assets/99z/maps/",
+            graphics: "./assets/99z/Graficos.ind",
+            atlas: Some("./assets/99z/graphics/atlas/graphics.toml"),
         };
         let resources = load_client_resources(paths).expect("can load client resources");
         let current_map = resources.maps.get(&1).expect("can get map").clone();
@@ -151,6 +152,8 @@ impl Finisterra {
     ) {
         if let Some(image) = self.resources.images.get(&image_id) {
             self.draw_image(roma, entity_id, image, x, y, z);
+        } else {
+            println!("> draw_grh > image not found: {}", image_id);
         }
     }
 
@@ -163,15 +166,15 @@ impl Finisterra {
         y: f32,
         z: usize,
     ) {
-        let texture_id = image.file_num.to_string();
-        let image_path = format!("./assets/graphics/{texture_id}.png");
-        roma.graphics.load_texture(texture_id.clone(), &image_path);
+        let image_num = image.file_num.to_string();
+        let image_path = format!("./assets/99z/graphics/{image_num}.png");
+        roma.graphics.load_texture(image_num.clone(), &image_path);
 
         let x = x - (image.width / 2) as f32;
 
         roma.graphics.draw_texture(
             entity_id,
-            texture_id,
+            image_num,
             x,
             y,
             z,

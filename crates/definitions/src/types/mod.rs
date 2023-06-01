@@ -1,4 +1,5 @@
 pub mod animation;
+pub mod atlas;
 pub mod body;
 pub mod city;
 pub mod fx;
