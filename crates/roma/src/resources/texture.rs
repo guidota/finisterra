@@ -1,13 +1,10 @@
-use std::rc::Rc;
-
 use image::GenericImageView;
 
 use crate::resources::read_file;
 
 pub struct Texture {
-    pub texture: wgpu::Texture,
-    pub view: Rc<wgpu::TextureView>,
-    pub sampler: Rc<wgpu::Sampler>,
+    pub view: wgpu::TextureView,
+    pub sampler: wgpu::Sampler,
     pub height: u32,
     pub width: u32,
 }
@@ -90,9 +87,8 @@ impl Texture {
         });
 
         Self {
-            texture,
-            view: Rc::new(view),
-            sampler: Rc::new(sampler),
+            view,
+            sampler,
             width: dimensions.0,
             height: dimensions.1,
         }

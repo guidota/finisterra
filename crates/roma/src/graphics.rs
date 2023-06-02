@@ -1,22 +1,17 @@
-use std::{cmp::Ordering, collections::HashSet};
+use std::{collections::VecDeque, iter::once};
 
-use wgpu::{util::StagingBelt, *};
+use wgpu::*;
 use winit::{window::*, *};
 
-use crate::render::{
-    sprite_batch::{prepare_sprite_data, SpriteBatchRenderPass, SpriteData},
-    texture_array::{IndexedVertex, TextureArrayRenderPass},
-};
+use crate::render::sprite_batch::{prepare_sprite_data, SpriteBatchRenderPass, SpriteData, Vertex};
 
 use self::{
     camera::{Camera, DeviceCameraExt},
-    texture_array::TextureArray,
     textures::Textures,
 };
 
 pub mod camera;
 pub mod rect;
-pub mod texture_array;
 pub mod textures;
 pub mod vec2;
 
@@ -29,16 +24,15 @@ pub struct Graphics {
     window: Window,
     camera: Camera,
 
-    staging_belt: StagingBelt,
-    frame_draws: Vec<SpriteData>,
+    frame_draws: VecDeque<SpriteData>,
+    frame_vertices: Vec<Vertex>,
+
     pub(crate) textures: Textures,
-    pub(crate) texture_array: TextureArray,
     pub(crate) sprite_batch_pass: SpriteBatchRenderPass,
-    pub(crate) texture_array_pass: TextureArrayRenderPass,
 }
 
 impl Graphics {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: Window, base_path: String) -> Self {
         let size = window.inner_size();
 
         let instance = Instance::new(InstanceDescriptor {
@@ -57,21 +51,11 @@ impl Graphics {
             .await
             .unwrap();
 
-        let limits = Limits {
-            max_samplers_per_shader_stage: TextureArrayRenderPass::MAX_TEXTURES,
-            max_sampled_textures_per_shader_stage: TextureArrayRenderPass::MAX_TEXTURES,
-            ..Default::default()
-        };
-        let optional_features =
-            Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING;
-        let required_features = Features::TEXTURE_BINDING_ARRAY;
-        let adapter_features = adapter.features();
-        let features = (optional_features & adapter_features) | required_features;
         let (device, queue) = adapter
             .request_device(
                 &DeviceDescriptor {
-                    features,
-                    limits,
+                    features: adapter.features(),
+                    limits: Limits::default(),
                     label: None,
                 },
                 None,
@@ -101,21 +85,16 @@ impl Graphics {
 
         let camera = device.create_camera();
 
-        let textures = Textures::new(&device);
-        let frame_draws = vec![];
+        let textures = Textures::new(&device, base_path);
+
+        let frame_draws = VecDeque::new();
+        let frame_vertices = vec![];
 
         let sprite_batch_pass = SpriteBatchRenderPass::new(
             &device,
             &config,
             &[&textures.bind_group_layout, &camera.bind_group_layout],
         );
-
-        let texture_array = TextureArray::new(&device, &queue);
-        let texture_array_pass =
-            TextureArrayRenderPass::new(&device, &config, &camera.bind_group_layout);
-
-        let staging_belt = StagingBelt::new(1024 * 4);
-
         Self {
             window,
             surface,
@@ -123,13 +102,11 @@ impl Graphics {
             queue,
             config,
             size,
-            staging_belt,
             textures,
-            texture_array,
             frame_draws,
             sprite_batch_pass,
-            texture_array_pass,
             camera,
+            frame_vertices,
         }
     }
 
@@ -159,14 +136,14 @@ impl Graphics {
         );
     }
 
-    pub fn push_draw(&mut self, sprite_data: SpriteData) {
-        self.frame_draws.push(sprite_data);
+    pub fn push_draw(&mut self, sprite_data: SpriteData, vertices: Vec<Vertex>) {
+        self.frame_draws.push_front(sprite_data);
+        self.frame_vertices.extend(vertices);
     }
 
-    // pub fn render_batched(&mut self) -> Result<(), wgpu::SurfaceError> {
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.surface.get_current_texture()?;
-        let view = output
+        let frame = self.surface.get_current_texture()?;
+        let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
@@ -175,8 +152,20 @@ impl Graphics {
                 label: Some("Render Encoder"),
             });
 
-        let (vertices, batches) = prepare_sprite_data(&mut self.frame_draws);
-        let vertices = bytemuck::cast_slice(&vertices);
+        self.draw_sprites(&mut encoder, &view);
+
+        self.queue.submit(once(encoder.finish()));
+        frame.present();
+
+        self.frame_vertices.clear();
+
+        Ok(())
+    }
+
+    fn draw_sprites(&mut self, encoder: &mut CommandEncoder, view: &TextureView) {
+        let batches = prepare_sprite_data(&mut self.frame_draws);
+
+        let vertices = bytemuck::cast_slice(&self.frame_vertices);
         self.queue
             .write_buffer(&self.sprite_batch_pass.vertex_buffer, 0, vertices);
 
@@ -184,7 +173,7 @@ impl Graphics {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
+                    view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
@@ -194,7 +183,6 @@ impl Graphics {
                 depth_stencil_attachment: None,
             });
 
-            // render_pass.set_scissor_rect(20, 60, 480, 480);
             render_pass.set_pipeline(&self.sprite_batch_pass.pipeline);
             render_pass.set_bind_group(1, &self.camera.bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.sprite_batch_pass.vertex_buffer.slice(..));
@@ -211,179 +199,5 @@ impl Graphics {
                 offset += batch.size * 6;
             }
         }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-
-        Ok(())
-    }
-
-    // pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-    pub fn render_indexed(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.surface.get_current_texture()?;
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
-        // order sprites by z then by texture id
-        self.frame_draws
-            .sort_unstable_by(|a, b| match a.z.partial_cmp(&b.z) {
-                Some(Ordering::Equal) | None => Ordering::Less,
-                Some(other) => other,
-            });
-
-        let texture_ids = self
-            .frame_draws
-            .iter()
-            .fold(HashSet::new(), |mut set, sprite_data| {
-                set.insert(sprite_data.texture_id.clone());
-                set
-            });
-        self.texture_array.update_bind_group(
-            texture_ids,
-            &self.textures,
-            &self.device,
-            &self.texture_array_pass.bind_group_layout,
-        );
-
-        for draw in &self.frame_draws {
-            let index = self.texture_array.get_index(&draw.texture_id);
-            let indexed_vertices = draw
-                .vertices
-                .iter()
-                .map(|vertex| IndexedVertex::from(*vertex, index))
-                .collect();
-
-            self.texture_array.update_vertex_buffer(
-                &self.device,
-                &mut self.staging_belt,
-                &mut encoder,
-                draw.entity_id,
-                indexed_vertices,
-            );
-        }
-        self.staging_belt.finish();
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-            });
-
-            // render_pass.set_viewport(20., 60., 480., 480., 0., 1.);
-            if let Some(bind_group) = &self.texture_array.bind_group {
-                render_pass.set_pipeline(&self.texture_array_pass.pipeline);
-                render_pass.set_bind_group(0, bind_group, &[0]);
-                render_pass.set_bind_group(1, &self.camera.bind_group, &[]);
-                render_pass.set_index_buffer(
-                    self.texture_array_pass.index_buffer.slice(..),
-                    wgpu::IndexFormat::Uint16,
-                );
-                for draw in self.frame_draws.drain(..) {
-                    let vertex_buffer = self
-                        .texture_array
-                        .get_vertex_buffer(draw.entity_id)
-                        .unwrap();
-                    render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                    render_pass.draw_indexed(0..6, 0, 0..1);
-                }
-            }
-        }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-
-        Ok(())
-    }
-
-    pub fn render_batch2(&mut self) -> Result<(), wgpu::SurfaceError> {
-        // pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.surface.get_current_texture()?;
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
-        // order sprites by z then by texture id
-        self.frame_draws
-            .sort_unstable_by(|a, b| match a.z.partial_cmp(&b.z) {
-                Some(Ordering::Equal) | None => Ordering::Less,
-                Some(other) => other,
-            });
-
-        for draw in &self.frame_draws {
-            let index = self.texture_array.get_index(&draw.texture_id);
-            let indexed_vertices = draw
-                .vertices
-                .iter()
-                .map(|vertex| IndexedVertex::from(*vertex, index))
-                .collect();
-
-            self.texture_array.update_vertex_buffer_2(
-                &self.device,
-                &mut self.staging_belt,
-                &mut encoder,
-                draw.entity_id,
-                indexed_vertices,
-            );
-        }
-        self.staging_belt.finish();
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-            });
-
-            // render_pass.set_viewport(20., 60., 480., 480., 0., 1.);
-            render_pass.set_pipeline(&self.sprite_batch_pass.pipeline);
-            render_pass.set_bind_group(1, &self.camera.bind_group, &[]);
-            render_pass.set_index_buffer(
-                self.texture_array_pass.index_buffer.slice(..),
-                wgpu::IndexFormat::Uint16,
-            );
-            let mut last_texture_id = "".to_string();
-            for draw in self.frame_draws.drain(..) {
-                if draw.texture_id != last_texture_id {
-                    let (_, bind_group) = self.textures.get_texture(&draw.texture_id).unwrap();
-                    render_pass.set_bind_group(0, bind_group, &[]);
-                    last_texture_id = draw.texture_id;
-                }
-                let vertex_buffer = self
-                    .texture_array
-                    .get_vertex_buffer(draw.entity_id)
-                    .unwrap();
-                render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                render_pass.draw_indexed(0..6, 0, 0..1);
-            }
-        }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-
-        Ok(())
     }
 }

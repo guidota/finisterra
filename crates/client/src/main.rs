@@ -5,5 +5,6 @@ use roma::run;
 mod settings;
 
 fn main() {
-    block_on(run(Finisterra::default()));
+    let base_path = "./assets/99z/graphics/".to_string();
+    block_on(run(base_path, Finisterra::default()));
 }

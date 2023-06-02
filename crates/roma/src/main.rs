@@ -1,52 +1,39 @@
 use std::time::Duration;
 
 use pollster::block_on;
-use roma::{graphics::textures::DrawTextureParams, run, Game, Roma};
+use roma::{graphics::textures::DrawParams, run, Game, Roma};
 
 struct MyGame {}
 
 impl Game for MyGame {
     fn update(&mut self, roma: &mut Roma, _delta: Duration) {
-        roma.graphics
-            .load_texture(1.to_string(), "./assets/99z/graphics/1.BMP");
-        roma.graphics.load_texture(2.to_string(), "./assets/2.png");
+        roma.graphics.load_texture(&1);
+        roma.graphics.load_texture(&2);
         roma.graphics.draw_texture(
             0,
-            1.to_string(),
-            0.,
-            0.,
-            0,
-            Some(DrawTextureParams {
-                flip_y: true,
-                // source: Some(Rect::new(0., 0., 32., 32.)),
+            DrawParams {
+                texture_id: 1,
                 ..Default::default()
-            }),
+            },
         );
 
         roma.graphics.draw_texture(
             1,
-            2.to_string(),
-            200.,
-            200.,
-            0,
-            Some(DrawTextureParams {
-                flip_y: true,
-                // source: Some(Rect::new(0., 0., 32., 32.)),
+            DrawParams {
+                texture_id: 2,
+                x: 200,
+                y: 200,
                 ..Default::default()
-            }),
+            },
         );
-        //
         roma.graphics.draw_texture(
             2,
-            2.to_string(),
-            400.,
-            400.,
-            0,
-            Some(DrawTextureParams {
-                flip_y: true,
-                // source: Some(Rect::new(0., 0., 32., 32.)),
+            DrawParams {
+                texture_id: 2,
+                x: 400,
+                y: 400,
                 ..Default::default()
-            }),
+            },
         );
         //
         // roma.graphics.draw_texture(
@@ -66,5 +53,6 @@ impl Game for MyGame {
 
 fn main() {
     let game = MyGame {};
-    block_on(run(game));
+    let base_path = "./assets/99z/graphics/".to_string();
+    block_on(run(base_path, game));
 }

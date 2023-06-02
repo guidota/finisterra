@@ -8,10 +8,13 @@ winit = "0.28"
 wgpu = "0.16"
 pollster = "0.3"
 cgmath = "0.18"
-bytemuck = { version = "1.12", features = [ "derive" ] }
+bytemuck = { version = "1.12", features = ["derive"] }
 anyhow = "1.0"
 winit_input_helper = "0.14"
 lru = "0.10"
+object-pool = "0.5"
+sorted-vec = "0.8"
+wgpu-profiler = "0.12"
 
 [dependencies.image]
 version = "0.24"

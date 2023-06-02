@@ -11,6 +11,7 @@ pub type Long = u32;
 pub type Integer = u16;
 pub type Byte = u8;
 
+impl<R: std::io::Read + ?Sized> ArgentumReadExt for R {}
 pub trait ArgentumReadExt: std::io::Read {
     fn read_long(&mut self) -> u32 {
         self.read_u32::<Endian>().unwrap()

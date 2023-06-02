@@ -1,0 +1,8392 @@
+width = 4096
+height = 4096
+
+[[items]]
+name = "215"
+path = "99z_graphics/215.png"
+
+[items.rect]
+x = 0
+y = 0
+width = 640
+height = 640
+
+[[items]]
+name = "1536"
+path = "99z_graphics/1536.png"
+
+[items.rect]
+x = 640
+y = 0
+width = 800
+height = 510
+
+[[items]]
+name = "5518"
+path = "99z_graphics/5518.png"
+
+[items.rect]
+x = 1440
+y = 0
+width = 33
+height = 491
+
+[[items]]
+name = "20"
+path = "99z_graphics/20.png"
+
+[items.rect]
+x = 1473
+y = 0
+width = 384
+height = 384
+
+[[items]]
+name = "8007"
+path = "99z_graphics/8007.png"
+
+[items.rect]
+x = 1857
+y = 0
+width = 256
+height = 384
+
+[[items]]
+name = "380"
+path = "99z_graphics/380.png"
+
+[items.rect]
+x = 2113
+y = 0
+width = 329
+height = 380
+
+[[items]]
+name = "120"
+path = "99z_graphics/120.png"
+
+[items.rect]
+x = 2442
+y = 0
+width = 400
+height = 340
+
+[[items]]
+name = "7529"
+path = "99z_graphics/7529.png"
+
+[items.rect]
+x = 2842
+y = 0
+width = 204
+height = 335
+
+[[items]]
+name = "392"
+path = "99z_graphics/392.png"
+
+[items.rect]
+x = 3046
+y = 0
+width = 384
+height = 325
+
+[[items]]
+name = "7510"
+path = "99z_graphics/7510.png"
+
+[items.rect]
+x = 3430
+y = 0
+width = 56
+height = 324
+
+[[items]]
+name = "391"
+path = "99z_graphics/391.png"
+
+[items.rect]
+x = 3486
+y = 0
+width = 376
+height = 324
+
+[[items]]
+name = "394"
+path = "99z_graphics/394.png"
+
+[items.rect]
+x = 0
+y = 640
+width = 384
+height = 323
+
+[[items]]
+name = "393"
+path = "99z_graphics/393.png"
+
+[items.rect]
+x = 384
+y = 640
+width = 380
+height = 323
+
+[[items]]
+name = "7008"
+path = "99z_graphics/7008.png"
+
+[items.rect]
+x = 764
+y = 640
+width = 256
+height = 320
+
+[[items]]
+name = "7007"
+path = "99z_graphics/7007.png"
+
+[items.rect]
+x = 3862
+y = 0
+width = 179
+height = 317
+
+[[items]]
+name = "7005"
+path = "99z_graphics/7005.png"
+
+[items.rect]
+x = 1020
+y = 640
+width = 216
+height = 314
+
+[[items]]
+name = "7006"
+path = "99z_graphics/7006.png"
+
+[items.rect]
+x = 1236
+y = 640
+width = 190
+height = 311
+
+[[items]]
+name = "390"
+path = "99z_graphics/390.png"
+
+[items.rect]
+x = 1426
+y = 640
+width = 529
+height = 297
+
+[[items]]
+name = "8207"
+path = "99z_graphics/8207.png"
+
+[items.rect]
+x = 1955
+y = 640
+width = 523
+height = 296
+
+[[items]]
+name = "7004"
+path = "99z_graphics/7004.png"
+
+[items.rect]
+x = 2478
+y = 640
+width = 212
+height = 283
+
+[[items]]
+name = "5510"
+path = "99z_graphics/5510.png"
+
+[items.rect]
+x = 2690
+y = 640
+width = 320
+height = 283
+
+[[items]]
+name = "8022"
+path = "99z_graphics/8022.png"
+
+[items.rect]
+x = 3010
+y = 640
+width = 314
+height = 278
+
+[[items]]
+name = "8019"
+path = "99z_graphics/8019.png"
+
+[items.rect]
+x = 3324
+y = 640
+width = 314
+height = 278
+
+[[items]]
+name = "5517"
+path = "99z_graphics/5517.png"
+
+[items.rect]
+x = 4041
+y = 0
+width = 52
+height = 275
+
+[[items]]
+name = "692"
+path = "99z_graphics/692.png"
+
+[items.rect]
+x = 3638
+y = 640
+width = 178
+height = 272
+
+[[items]]
+name = "5511"
+path = "99z_graphics/5511.png"
+
+[items.rect]
+x = 3816
+y = 640
+width = 256
+height = 268
+
+[[items]]
+name = "5505"
+path = "99z_graphics/5505.png"
+
+[items.rect]
+x = 0
+y = 963
+width = 256
+height = 261
+
+[[items]]
+name = "7001"
+path = "99z_graphics/7001.png"
+
+[items.rect]
+x = 256
+y = 963
+width = 199
+height = 256
+
+[[items]]
+name = "7003"
+path = "99z_graphics/7003.png"
+
+[items.rect]
+x = 455
+y = 963
+width = 171
+height = 256
+
+[[items]]
+name = "7002"
+path = "99z_graphics/7002.png"
+
+[items.rect]
+x = 626
+y = 963
+width = 187
+height = 256
+
+[[items]]
+name = "5556"
+path = "99z_graphics/5556.png"
+
+[items.rect]
+x = 813
+y = 963
+width = 512
+height = 256
+
+[[items]]
+name = "737"
+path = "99z_graphics/737.png"
+
+[items.rect]
+x = 1325
+y = 963
+width = 180
+height = 255
+
+[[items]]
+name = "8209"
+path = "99z_graphics/8209.png"
+
+[items.rect]
+x = 1505
+y = 963
+width = 372
+height = 254
+
+[[items]]
+name = "8210"
+path = "99z_graphics/8210.png"
+
+[items.rect]
+x = 1877
+y = 963
+width = 364
+height = 252
+
+[[items]]
+name = "9502"
+path = "99z_graphics/9502.png"
+
+[items.rect]
+x = 2241
+y = 963
+width = 206
+height = 252
+
+[[items]]
+name = "8208"
+path = "99z_graphics/8208.png"
+
+[items.rect]
+x = 2447
+y = 963
+width = 367
+height = 250
+
+[[items]]
+name = "9501"
+path = "99z_graphics/9501.png"
+
+[items.rect]
+x = 2814
+y = 963
+width = 196
+height = 247
+
+[[items]]
+name = "645"
+path = "99z_graphics/645.png"
+
+[items.rect]
+x = 3010
+y = 963
+width = 256
+height = 240
+
+[[items]]
+name = "501"
+path = "99z_graphics/501.png"
+
+[items.rect]
+x = 3266
+y = 963
+width = 311
+height = 235
+
+[[items]]
+name = "513"
+path = "99z_graphics/513.png"
+
+[items.rect]
+x = 3577
+y = 963
+width = 314
+height = 234
+
+[[items]]
+name = "7102"
+path = "99z_graphics/7102.png"
+
+[items.rect]
+x = 0
+y = 1224
+width = 256
+height = 231
+
+[[items]]
+name = "646"
+path = "99z_graphics/646.png"
+
+[items.rect]
+x = 3891
+y = 963
+width = 168
+height = 229
+
+[[items]]
+name = "136"
+path = "99z_graphics/136.png"
+
+[items.rect]
+x = 256
+y = 1224
+width = 451
+height = 228
+
+[[items]]
+name = "5508"
+path = "99z_graphics/5508.png"
+
+[items.rect]
+x = 707
+y = 1224
+width = 320
+height = 224
+
+[[items]]
+name = "647"
+path = "99z_graphics/647.png"
+
+[items.rect]
+x = 1027
+y = 1224
+width = 168
+height = 224
+
+[[items]]
+name = "9508"
+path = "99z_graphics/9508.png"
+
+[items.rect]
+x = 1195
+y = 1224
+width = 256
+height = 224
+
+[[items]]
+name = "703"
+path = "99z_graphics/703.png"
+
+[items.rect]
+x = 1451
+y = 1224
+width = 637
+height = 211
+
+[[items]]
+name = "7000"
+path = "99z_graphics/7000.png"
+
+[items.rect]
+x = 2088
+y = 1224
+width = 256
+height = 208
+
+[[items]]
+name = "8205"
+path = "99z_graphics/8205.png"
+
+[items.rect]
+x = 2344
+y = 1224
+width = 213
+height = 199
+
+[[items]]
+name = "310"
+path = "99z_graphics/310.png"
+
+[items.rect]
+x = 2557
+y = 1224
+width = 211
+height = 198
+
+[[items]]
+name = "15001"
+path = "99z_graphics/15001.png"
+
+[items.rect]
+x = 2768
+y = 1224
+width = 49
+height = 197
+
+[[items]]
+name = "338"
+path = "99z_graphics/338.png"
+
+[items.rect]
+x = 2817
+y = 1224
+width = 451
+height = 194
+
+[[items]]
+name = "7527"
+path = "99z_graphics/7527.png"
+
+[items.rect]
+x = 3268
+y = 1224
+width = 288
+height = 192
+
+[[items]]
+name = "7528"
+path = "99z_graphics/7528.png"
+
+[items.rect]
+x = 3556
+y = 1224
+width = 288
+height = 192
+
+[[items]]
+name = "7522"
+path = "99z_graphics/7522.png"
+
+[items.rect]
+x = 0
+y = 1455
+width = 288
+height = 192
+
+[[items]]
+name = "335"
+path = "99z_graphics/335.png"
+
+[items.rect]
+x = 288
+y = 1455
+width = 545
+height = 190
+
+[[items]]
+name = "357"
+path = "99z_graphics/357.png"
+
+[items.rect]
+x = 3844
+y = 1224
+width = 181
+height = 188
+
+[[items]]
+name = "305"
+path = "99z_graphics/305.png"
+
+[items.rect]
+x = 833
+y = 1455
+width = 279
+height = 186
+
+[[items]]
+name = "8203"
+path = "99z_graphics/8203.png"
+
+[items.rect]
+x = 1112
+y = 1455
+width = 271
+height = 186
+
+[[items]]
+name = "306"
+path = "99z_graphics/306.png"
+
+[items.rect]
+x = 1383
+y = 1455
+width = 186
+height = 185
+
+[[items]]
+name = "315"
+path = "99z_graphics/315.png"
+
+[items.rect]
+x = 1569
+y = 1455
+width = 185
+height = 185
+
+[[items]]
+name = "137"
+path = "99z_graphics/137.png"
+
+[items.rect]
+x = 1754
+y = 1455
+width = 458
+height = 184
+
+[[items]]
+name = "311"
+path = "99z_graphics/311.png"
+
+[items.rect]
+x = 2212
+y = 1455
+width = 184
+height = 184
+
+[[items]]
+name = "313"
+path = "99z_graphics/313.png"
+
+[items.rect]
+x = 4025
+y = 1224
+width = 70
+height = 183
+
+[[items]]
+name = "8204"
+path = "99z_graphics/8204.png"
+
+[items.rect]
+x = 2396
+y = 1455
+width = 255
+height = 182
+
+[[items]]
+name = "314"
+path = "99z_graphics/314.png"
+
+[items.rect]
+x = 2651
+y = 1455
+width = 64
+height = 182
+
+[[items]]
+name = "1501"
+path = "99z_graphics/1501.png"
+
+[items.rect]
+x = 2715
+y = 1455
+width = 149
+height = 181
+
+[[items]]
+name = "10008"
+path = "99z_graphics/10008.png"
+
+[items.rect]
+x = 2864
+y = 1455
+width = 149
+height = 181
+
+[[items]]
+name = "10006"
+path = "99z_graphics/10006.png"
+
+[items.rect]
+x = 3013
+y = 1455
+width = 149
+height = 181
+
+[[items]]
+name = "1500"
+path = "99z_graphics/1500.png"
+
+[items.rect]
+x = 3162
+y = 1455
+width = 148
+height = 181
+
+[[items]]
+name = "10004"
+path = "99z_graphics/10004.png"
+
+[items.rect]
+x = 3310
+y = 1455
+width = 149
+height = 181
+
+[[items]]
+name = "345"
+path = "99z_graphics/345.png"
+
+[items.rect]
+x = 3459
+y = 1455
+width = 148
+height = 180
+
+[[items]]
+name = "376"
+path = "99z_graphics/376.png"
+
+[items.rect]
+x = 3607
+y = 1455
+width = 144
+height = 179
+
+[[items]]
+name = "331"
+path = "99z_graphics/331.png"
+
+[items.rect]
+x = 3751
+y = 1455
+width = 166
+height = 179
+
+[[items]]
+name = "329"
+path = "99z_graphics/329.png"
+
+[items.rect]
+x = 3917
+y = 1455
+width = 66
+height = 179
+
+[[items]]
+name = "328"
+path = "99z_graphics/328.png"
+
+[items.rect]
+x = 0
+y = 1647
+width = 145
+height = 178
+
+[[items]]
+name = "644"
+path = "99z_graphics/644.png"
+
+[items.rect]
+x = 145
+y = 1647
+width = 182
+height = 178
+
+[[items]]
+name = "381"
+path = "99z_graphics/381.png"
+
+[items.rect]
+x = 327
+y = 1647
+width = 147
+height = 178
+
+[[items]]
+name = "8049"
+path = "99z_graphics/8049.png"
+
+[items.rect]
+x = 474
+y = 1647
+width = 141
+height = 178
+
+[[items]]
+name = "8048"
+path = "99z_graphics/8048.png"
+
+[items.rect]
+x = 615
+y = 1647
+width = 141
+height = 178
+
+[[items]]
+name = "8032"
+path = "99z_graphics/8032.png"
+
+[items.rect]
+x = 756
+y = 1647
+width = 147
+height = 178
+
+[[items]]
+name = "8016"
+path = "99z_graphics/8016.png"
+
+[items.rect]
+x = 903
+y = 1647
+width = 147
+height = 177
+
+[[items]]
+name = "8052"
+path = "99z_graphics/8052.png"
+
+[items.rect]
+x = 1050
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "8012"
+path = "99z_graphics/8012.png"
+
+[items.rect]
+x = 1196
+y = 1647
+width = 148
+height = 176
+
+[[items]]
+name = "718"
+path = "99z_graphics/718.png"
+
+[items.rect]
+x = 1344
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "10027"
+path = "99z_graphics/10027.png"
+
+[items.rect]
+x = 1490
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "340"
+path = "99z_graphics/340.png"
+
+[items.rect]
+x = 1636
+y = 1647
+width = 147
+height = 176
+
+[[items]]
+name = "354"
+path = "99z_graphics/354.png"
+
+[items.rect]
+x = 1783
+y = 1647
+width = 147
+height = 176
+
+[[items]]
+name = "8053"
+path = "99z_graphics/8053.png"
+
+[items.rect]
+x = 1930
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "344"
+path = "99z_graphics/344.png"
+
+[items.rect]
+x = 2076
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "327"
+path = "99z_graphics/327.png"
+
+[items.rect]
+x = 2222
+y = 1647
+width = 146
+height = 176
+
+[[items]]
+name = "321"
+path = "99z_graphics/321.png"
+
+[items.rect]
+x = 2368
+y = 1647
+width = 146
+height = 175
+
+[[items]]
+name = "342"
+path = "99z_graphics/342.png"
+
+[items.rect]
+x = 2514
+y = 1647
+width = 146
+height = 175
+
+[[items]]
+name = "322"
+path = "99z_graphics/322.png"
+
+[items.rect]
+x = 2660
+y = 1647
+width = 146
+height = 175
+
+[[items]]
+name = "8009"
+path = "99z_graphics/8009.png"
+
+[items.rect]
+x = 2806
+y = 1647
+width = 147
+height = 175
+
+[[items]]
+name = "323"
+path = "99z_graphics/323.png"
+
+[items.rect]
+x = 2953
+y = 1647
+width = 145
+height = 175
+
+[[items]]
+name = "339"
+path = "99z_graphics/339.png"
+
+[items.rect]
+x = 3098
+y = 1647
+width = 145
+height = 175
+
+[[items]]
+name = "334"
+path = "99z_graphics/334.png"
+
+[items.rect]
+x = 3243
+y = 1647
+width = 145
+height = 175
+
+[[items]]
+name = "8056"
+path = "99z_graphics/8056.png"
+
+[items.rect]
+x = 3388
+y = 1647
+width = 146
+height = 175
+
+[[items]]
+name = "8028"
+path = "99z_graphics/8028.png"
+
+[items.rect]
+x = 3534
+y = 1647
+width = 144
+height = 175
+
+[[items]]
+name = "8040"
+path = "99z_graphics/8040.png"
+
+[items.rect]
+x = 3678
+y = 1647
+width = 145
+height = 175
+
+[[items]]
+name = "333"
+path = "99z_graphics/333.png"
+
+[items.rect]
+x = 3823
+y = 1647
+width = 145
+height = 175
+
+[[items]]
+name = "375"
+path = "99z_graphics/375.png"
+
+[items.rect]
+x = 0
+y = 1825
+width = 149
+height = 175
+
+[[items]]
+name = "377"
+path = "99z_graphics/377.png"
+
+[items.rect]
+x = 149
+y = 1825
+width = 146
+height = 175
+
+[[items]]
+name = "8064"
+path = "99z_graphics/8064.png"
+
+[items.rect]
+x = 295
+y = 1825
+width = 149
+height = 175
+
+[[items]]
+name = "8010"
+path = "99z_graphics/8010.png"
+
+[items.rect]
+x = 444
+y = 1825
+width = 147
+height = 175
+
+[[items]]
+name = "330"
+path = "99z_graphics/330.png"
+
+[items.rect]
+x = 591
+y = 1825
+width = 145
+height = 174
+
+[[items]]
+name = "8014"
+path = "99z_graphics/8014.png"
+
+[items.rect]
+x = 736
+y = 1825
+width = 148
+height = 174
+
+[[items]]
+name = "641"
+path = "99z_graphics/641.png"
+
+[items.rect]
+x = 884
+y = 1825
+width = 223
+height = 174
+
+[[items]]
+name = "8031"
+path = "99z_graphics/8031.png"
+
+[items.rect]
+x = 1107
+y = 1825
+width = 145
+height = 174
+
+[[items]]
+name = "8030"
+path = "99z_graphics/8030.png"
+
+[items.rect]
+x = 1252
+y = 1825
+width = 147
+height = 174
+
+[[items]]
+name = "8017"
+path = "99z_graphics/8017.png"
+
+[items.rect]
+x = 1399
+y = 1825
+width = 145
+height = 173
+
+[[items]]
+name = "320"
+path = "99z_graphics/320.png"
+
+[items.rect]
+x = 1544
+y = 1825
+width = 145
+height = 173
+
+[[items]]
+name = "8029"
+path = "99z_graphics/8029.png"
+
+[items.rect]
+x = 1689
+y = 1825
+width = 144
+height = 173
+
+[[items]]
+name = "5519"
+path = "99z_graphics/5519.png"
+
+[items.rect]
+x = 3968
+y = 1647
+width = 115
+height = 173
+
+[[items]]
+name = "343"
+path = "99z_graphics/343.png"
+
+[items.rect]
+x = 1833
+y = 1825
+width = 147
+height = 173
+
+[[items]]
+name = "10000"
+path = "99z_graphics/10000.png"
+
+[items.rect]
+x = 1980
+y = 1825
+width = 148
+height = 173
+
+[[items]]
+name = "8058"
+path = "99z_graphics/8058.png"
+
+[items.rect]
+x = 2128
+y = 1825
+width = 141
+height = 173
+
+[[items]]
+name = "8044"
+path = "99z_graphics/8044.png"
+
+[items.rect]
+x = 2269
+y = 1825
+width = 144
+height = 173
+
+[[items]]
+name = "8033"
+path = "99z_graphics/8033.png"
+
+[items.rect]
+x = 2413
+y = 1825
+width = 140
+height = 173
+
+[[items]]
+name = "353"
+path = "99z_graphics/353.png"
+
+[items.rect]
+x = 2553
+y = 1825
+width = 143
+height = 172
+
+[[items]]
+name = "8043"
+path = "99z_graphics/8043.png"
+
+[items.rect]
+x = 2696
+y = 1825
+width = 142
+height = 172
+
+[[items]]
+name = "8018"
+path = "99z_graphics/8018.png"
+
+[items.rect]
+x = 2838
+y = 1825
+width = 143
+height = 172
+
+[[items]]
+name = "8013"
+path = "99z_graphics/8013.png"
+
+[items.rect]
+x = 2981
+y = 1825
+width = 144
+height = 172
+
+[[items]]
+name = "1502"
+path = "99z_graphics/1502.png"
+
+[items.rect]
+x = 3125
+y = 1825
+width = 147
+height = 172
+
+[[items]]
+name = "8035"
+path = "99z_graphics/8035.png"
+
+[items.rect]
+x = 3272
+y = 1825
+width = 142
+height = 172
+
+[[items]]
+name = "8023"
+path = "99z_graphics/8023.png"
+
+[items.rect]
+x = 3414
+y = 1825
+width = 142
+height = 172
+
+[[items]]
+name = "8038"
+path = "99z_graphics/8038.png"
+
+[items.rect]
+x = 3556
+y = 1825
+width = 140
+height = 172
+
+[[items]]
+name = "10001"
+path = "99z_graphics/10001.png"
+
+[items.rect]
+x = 3696
+y = 1825
+width = 147
+height = 172
+
+[[items]]
+name = "8042"
+path = "99z_graphics/8042.png"
+
+[items.rect]
+x = 3843
+y = 1825
+width = 140
+height = 172
+
+[[items]]
+name = "8055"
+path = "99z_graphics/8055.png"
+
+[items.rect]
+x = 0
+y = 2000
+width = 145
+height = 172
+
+[[items]]
+name = "8045"
+path = "99z_graphics/8045.png"
+
+[items.rect]
+x = 145
+y = 2000
+width = 142
+height = 172
+
+[[items]]
+name = "8027"
+path = "99z_graphics/8027.png"
+
+[items.rect]
+x = 287
+y = 2000
+width = 142
+height = 172
+
+[[items]]
+name = "8039"
+path = "99z_graphics/8039.png"
+
+[items.rect]
+x = 429
+y = 2000
+width = 140
+height = 172
+
+[[items]]
+name = "8026"
+path = "99z_graphics/8026.png"
+
+[items.rect]
+x = 569
+y = 2000
+width = 141
+height = 172
+
+[[items]]
+name = "8046"
+path = "99z_graphics/8046.png"
+
+[items.rect]
+x = 710
+y = 2000
+width = 141
+height = 172
+
+[[items]]
+name = "384"
+path = "99z_graphics/384.png"
+
+[items.rect]
+x = 851
+y = 2000
+width = 144
+height = 172
+
+[[items]]
+name = "8051"
+path = "99z_graphics/8051.png"
+
+[items.rect]
+x = 995
+y = 2000
+width = 142
+height = 172
+
+[[items]]
+name = "378"
+path = "99z_graphics/378.png"
+
+[items.rect]
+x = 1137
+y = 2000
+width = 147
+height = 172
+
+[[items]]
+name = "351"
+path = "99z_graphics/351.png"
+
+[items.rect]
+x = 1284
+y = 2000
+width = 144
+height = 172
+
+[[items]]
+name = "8037"
+path = "99z_graphics/8037.png"
+
+[items.rect]
+x = 1428
+y = 2000
+width = 140
+height = 172
+
+[[items]]
+name = "382"
+path = "99z_graphics/382.png"
+
+[items.rect]
+x = 1568
+y = 2000
+width = 142
+height = 172
+
+[[items]]
+name = "332"
+path = "99z_graphics/332.png"
+
+[items.rect]
+x = 1710
+y = 2000
+width = 142
+height = 171
+
+[[items]]
+name = "324"
+path = "99z_graphics/324.png"
+
+[items.rect]
+x = 1852
+y = 2000
+width = 142
+height = 171
+
+[[items]]
+name = "8050"
+path = "99z_graphics/8050.png"
+
+[items.rect]
+x = 1994
+y = 2000
+width = 142
+height = 171
+
+[[items]]
+name = "341"
+path = "99z_graphics/341.png"
+
+[items.rect]
+x = 2136
+y = 2000
+width = 143
+height = 171
+
+[[items]]
+name = "8024"
+path = "99z_graphics/8024.png"
+
+[items.rect]
+x = 2279
+y = 2000
+width = 146
+height = 171
+
+[[items]]
+name = "352"
+path = "99z_graphics/352.png"
+
+[items.rect]
+x = 2425
+y = 2000
+width = 143
+height = 171
+
+[[items]]
+name = "383"
+path = "99z_graphics/383.png"
+
+[items.rect]
+x = 2568
+y = 2000
+width = 143
+height = 171
+
+[[items]]
+name = "8054"
+path = "99z_graphics/8054.png"
+
+[items.rect]
+x = 2711
+y = 2000
+width = 143
+height = 171
+
+[[items]]
+name = "119"
+path = "99z_graphics/119.png"
+
+[items.rect]
+x = 2854
+y = 2000
+width = 200
+height = 170
+
+[[items]]
+name = "10034"
+path = "99z_graphics/10034.png"
+
+[items.rect]
+x = 3054
+y = 2000
+width = 148
+height = 170
+
+[[items]]
+name = "10019"
+path = "99z_graphics/10019.png"
+
+[items.rect]
+x = 3202
+y = 2000
+width = 148
+height = 168
+
+[[items]]
+name = "10031"
+path = "99z_graphics/10031.png"
+
+[items.rect]
+x = 3350
+y = 2000
+width = 146
+height = 168
+
+[[items]]
+name = "10029"
+path = "99z_graphics/10029.png"
+
+[items.rect]
+x = 3496
+y = 2000
+width = 146
+height = 168
+
+[[items]]
+name = "746"
+path = "99z_graphics/746.png"
+
+[items.rect]
+x = 3642
+y = 2000
+width = 148
+height = 168
+
+[[items]]
+name = "8059"
+path = "99z_graphics/8059.png"
+
+[items.rect]
+x = 3790
+y = 2000
+width = 145
+height = 168
+
+[[items]]
+name = "8062"
+path = "99z_graphics/8062.png"
+
+[items.rect]
+x = 3935
+y = 2000
+width = 144
+height = 166
+
+[[items]]
+name = "8061"
+path = "99z_graphics/8061.png"
+
+[items.rect]
+x = 0
+y = 2172
+width = 145
+height = 166
+
+[[items]]
+name = "8063"
+path = "99z_graphics/8063.png"
+
+[items.rect]
+x = 145
+y = 2172
+width = 144
+height = 166
+
+[[items]]
+name = "8060"
+path = "99z_graphics/8060.png"
+
+[items.rect]
+x = 289
+y = 2172
+width = 146
+height = 166
+
+[[items]]
+name = "326"
+path = "99z_graphics/326.png"
+
+[items.rect]
+x = 435
+y = 2172
+width = 145
+height = 165
+
+[[items]]
+name = "8057"
+path = "99z_graphics/8057.png"
+
+[items.rect]
+x = 580
+y = 2172
+width = 143
+height = 164
+
+[[items]]
+name = "719"
+path = "99z_graphics/719.png"
+
+[items.rect]
+x = 723
+y = 2172
+width = 146
+height = 164
+
+[[items]]
+name = "350"
+path = "99z_graphics/350.png"
+
+[items.rect]
+x = 869
+y = 2172
+width = 143
+height = 164
+
+[[items]]
+name = "720"
+path = "99z_graphics/720.png"
+
+[items.rect]
+x = 1012
+y = 2172
+width = 149
+height = 164
+
+[[items]]
+name = "8036"
+path = "99z_graphics/8036.png"
+
+[items.rect]
+x = 1161
+y = 2172
+width = 140
+height = 163
+
+[[items]]
+name = "347"
+path = "99z_graphics/347.png"
+
+[items.rect]
+x = 1301
+y = 2172
+width = 140
+height = 163
+
+[[items]]
+name = "8015"
+path = "99z_graphics/8015.png"
+
+[items.rect]
+x = 1441
+y = 2172
+width = 140
+height = 163
+
+[[items]]
+name = "8034"
+path = "99z_graphics/8034.png"
+
+[items.rect]
+x = 1581
+y = 2172
+width = 141
+height = 163
+
+[[items]]
+name = "8011"
+path = "99z_graphics/8011.png"
+
+[items.rect]
+x = 1722
+y = 2172
+width = 145
+height = 163
+
+[[items]]
+name = "10033"
+path = "99z_graphics/10033.png"
+
+[items.rect]
+x = 1867
+y = 2172
+width = 143
+height = 163
+
+[[items]]
+name = "10025"
+path = "99z_graphics/10025.png"
+
+[items.rect]
+x = 2010
+y = 2172
+width = 141
+height = 163
+
+[[items]]
+name = "8041"
+path = "99z_graphics/8041.png"
+
+[items.rect]
+x = 2151
+y = 2172
+width = 140
+height = 163
+
+[[items]]
+name = "348"
+path = "99z_graphics/348.png"
+
+[items.rect]
+x = 2291
+y = 2172
+width = 140
+height = 163
+
+[[items]]
+name = "8025"
+path = "99z_graphics/8025.png"
+
+[items.rect]
+x = 2431
+y = 2172
+width = 145
+height = 163
+
+[[items]]
+name = "385"
+path = "99z_graphics/385.png"
+
+[items.rect]
+x = 2576
+y = 2172
+width = 145
+height = 163
+
+[[items]]
+name = "10021"
+path = "99z_graphics/10021.png"
+
+[items.rect]
+x = 2721
+y = 2172
+width = 141
+height = 163
+
+[[items]]
+name = "10023"
+path = "99z_graphics/10023.png"
+
+[items.rect]
+x = 2862
+y = 2172
+width = 141
+height = 163
+
+[[items]]
+name = "374"
+path = "99z_graphics/374.png"
+
+[items.rect]
+x = 3003
+y = 2172
+width = 137
+height = 161
+
+[[items]]
+name = "8047"
+path = "99z_graphics/8047.png"
+
+[items.rect]
+x = 3140
+y = 2172
+width = 143
+height = 160
+
+[[items]]
+name = "5502"
+path = "99z_graphics/5502.png"
+
+[items.rect]
+x = 3283
+y = 2172
+width = 245
+height = 160
+
+[[items]]
+name = "8021"
+path = "99z_graphics/8021.png"
+
+[items.rect]
+x = 3528
+y = 2172
+width = 221
+height = 152
+
+[[items]]
+name = "8020"
+path = "99z_graphics/8020.png"
+
+[items.rect]
+x = 3749
+y = 2172
+width = 221
+height = 152
+
+[[items]]
+name = "194"
+path = "99z_graphics/194.png"
+
+[items.rect]
+x = 0
+y = 2338
+width = 134
+height = 140
+
+[[items]]
+name = "336"
+path = "99z_graphics/336.png"
+
+[items.rect]
+x = 134
+y = 2338
+width = 212
+height = 138
+
+[[items]]
+name = "197"
+path = "99z_graphics/197.png"
+
+[items.rect]
+x = 346
+y = 2338
+width = 143
+height = 137
+
+[[items]]
+name = "549"
+path = "99z_graphics/549.png"
+
+[items.rect]
+x = 489
+y = 2338
+width = 254
+height = 136
+
+[[items]]
+name = "198"
+path = "99z_graphics/198.png"
+
+[items.rect]
+x = 743
+y = 2338
+width = 138
+height = 135
+
+[[items]]
+name = "199"
+path = "99z_graphics/199.png"
+
+[items.rect]
+x = 3970
+y = 2172
+width = 118
+height = 133
+
+[[items]]
+name = "395"
+path = "99z_graphics/395.png"
+
+[items.rect]
+x = 881
+y = 2338
+width = 118
+height = 133
+
+[[items]]
+name = "6014"
+path = "99z_graphics/6014.png"
+
+[items.rect]
+x = 640
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "6002"
+path = "99z_graphics/6002.png"
+
+[items.rect]
+x = 768
+y = 510
+width = 512
+height = 128
+
+[[items]]
+name = "9516"
+path = "99z_graphics/9516.png"
+
+[items.rect]
+x = 1280
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "149"
+path = "99z_graphics/149.png"
+
+[items.rect]
+x = 1408
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "9523"
+path = "99z_graphics/9523.png"
+
+[items.rect]
+x = 1536
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "6021"
+path = "99z_graphics/6021.png"
+
+[items.rect]
+x = 1664
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "6000"
+path = "99z_graphics/6000.png"
+
+[items.rect]
+x = 1792
+y = 510
+width = 512
+height = 128
+
+[[items]]
+name = "9512"
+path = "99z_graphics/9512.png"
+
+[items.rect]
+x = 2304
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "7505"
+path = "99z_graphics/7505.png"
+
+[items.rect]
+x = 2432
+y = 510
+width = 512
+height = 128
+
+[[items]]
+name = "6010"
+path = "99z_graphics/6010.png"
+
+[items.rect]
+x = 2944
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "9510"
+path = "99z_graphics/9510.png"
+
+[items.rect]
+x = 3072
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "1531"
+path = "99z_graphics/1531.png"
+
+[items.rect]
+x = 3200
+y = 510
+width = 511
+height = 128
+
+[[items]]
+name = "7100"
+path = "99z_graphics/7100.png"
+
+[items.rect]
+x = 999
+y = 2338
+width = 512
+height = 128
+
+[[items]]
+name = "127"
+path = "99z_graphics/127.png"
+
+[items.rect]
+x = 3711
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "146"
+path = "99z_graphics/146.png"
+
+[items.rect]
+x = 3839
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "134"
+path = "99z_graphics/134.png"
+
+[items.rect]
+x = 3967
+y = 510
+width = 128
+height = 128
+
+[[items]]
+name = "552"
+path = "99z_graphics/552.png"
+
+[items.rect]
+x = 1511
+y = 2338
+width = 128
+height = 128
+
+[[items]]
+name = "113"
+path = "99z_graphics/113.png"
+
+[items.rect]
+x = 1639
+y = 2338
+width = 128
+height = 128
+
+[[items]]
+name = "6015"
+path = "99z_graphics/6015.png"
+
+[items.rect]
+x = 1767
+y = 2338
+width = 512
+height = 128
+
+[[items]]
+name = "6007"
+path = "99z_graphics/6007.png"
+
+[items.rect]
+x = 2279
+y = 2338
+width = 512
+height = 128
+
+[[items]]
+name = "6003"
+path = "99z_graphics/6003.png"
+
+[items.rect]
+x = 2791
+y = 2338
+width = 512
+height = 128
+
+[[items]]
+name = "7507"
+path = "99z_graphics/7507.png"
+
+[items.rect]
+x = 3303
+y = 2338
+width = 510
+height = 128
+
+[[items]]
+name = "10014"
+path = "99z_graphics/10014.png"
+
+[items.rect]
+x = 3813
+y = 2338
+width = 128
+height = 128
+
+[[items]]
+name = "550"
+path = "99z_graphics/550.png"
+
+[items.rect]
+x = 3941
+y = 2338
+width = 128
+height = 128
+
+[[items]]
+name = "9511"
+path = "99z_graphics/9511.png"
+
+[items.rect]
+x = 0
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "7504"
+path = "99z_graphics/7504.png"
+
+[items.rect]
+x = 128
+y = 2478
+width = 422
+height = 128
+
+[[items]]
+name = "9519"
+path = "99z_graphics/9519.png"
+
+[items.rect]
+x = 550
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "1533"
+path = "99z_graphics/1533.png"
+
+[items.rect]
+x = 678
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "7500"
+path = "99z_graphics/7500.png"
+
+[items.rect]
+x = 806
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "9521"
+path = "99z_graphics/9521.png"
+
+[items.rect]
+x = 934
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "6006"
+path = "99z_graphics/6006.png"
+
+[items.rect]
+x = 1062
+y = 2478
+width = 384
+height = 128
+
+[[items]]
+name = "9515"
+path = "99z_graphics/9515.png"
+
+[items.rect]
+x = 1446
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "1532"
+path = "99z_graphics/1532.png"
+
+[items.rect]
+x = 1574
+y = 2478
+width = 512
+height = 128
+
+[[items]]
+name = "112"
+path = "99z_graphics/112.png"
+
+[items.rect]
+x = 2086
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "150"
+path = "99z_graphics/150.png"
+
+[items.rect]
+x = 2214
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "111"
+path = "99z_graphics/111.png"
+
+[items.rect]
+x = 2342
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "6016"
+path = "99z_graphics/6016.png"
+
+[items.rect]
+x = 2470
+y = 2478
+width = 512
+height = 128
+
+[[items]]
+name = "6017"
+path = "99z_graphics/6017.png"
+
+[items.rect]
+x = 2982
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "10013"
+path = "99z_graphics/10013.png"
+
+[items.rect]
+x = 3110
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "133"
+path = "99z_graphics/133.png"
+
+[items.rect]
+x = 3238
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "6018"
+path = "99z_graphics/6018.png"
+
+[items.rect]
+x = 3366
+y = 2478
+width = 512
+height = 128
+
+[[items]]
+name = "8008"
+path = "99z_graphics/8008.png"
+
+[items.rect]
+x = 3878
+y = 2478
+width = 128
+height = 128
+
+[[items]]
+name = "6020"
+path = "99z_graphics/6020.png"
+
+[items.rect]
+x = 0
+y = 2606
+width = 512
+height = 128
+
+[[items]]
+name = "7502"
+path = "99z_graphics/7502.png"
+
+[items.rect]
+x = 512
+y = 2606
+width = 512
+height = 128
+
+[[items]]
+name = "6013"
+path = "99z_graphics/6013.png"
+
+[items.rect]
+x = 1024
+y = 2606
+width = 384
+height = 128
+
+[[items]]
+name = "1534"
+path = "99z_graphics/1534.png"
+
+[items.rect]
+x = 1408
+y = 2606
+width = 512
+height = 128
+
+[[items]]
+name = "9513"
+path = "99z_graphics/9513.png"
+
+[items.rect]
+x = 1920
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "9514"
+path = "99z_graphics/9514.png"
+
+[items.rect]
+x = 2048
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "6009"
+path = "99z_graphics/6009.png"
+
+[items.rect]
+x = 2176
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "6019"
+path = "99z_graphics/6019.png"
+
+[items.rect]
+x = 2304
+y = 2606
+width = 512
+height = 128
+
+[[items]]
+name = "7506"
+path = "99z_graphics/7506.png"
+
+[items.rect]
+x = 2816
+y = 2606
+width = 477
+height = 128
+
+[[items]]
+name = "132"
+path = "99z_graphics/132.png"
+
+[items.rect]
+x = 3293
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "109"
+path = "99z_graphics/109.png"
+
+[items.rect]
+x = 3421
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "9522"
+path = "99z_graphics/9522.png"
+
+[items.rect]
+x = 3549
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "114"
+path = "99z_graphics/114.png"
+
+[items.rect]
+x = 3677
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "648"
+path = "99z_graphics/648.png"
+
+[items.rect]
+x = 3805
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "9517"
+path = "99z_graphics/9517.png"
+
+[items.rect]
+x = 3933
+y = 2606
+width = 128
+height = 128
+
+[[items]]
+name = "6001"
+path = "99z_graphics/6001.png"
+
+[items.rect]
+x = 0
+y = 2734
+width = 512
+height = 128
+
+[[items]]
+name = "1530"
+path = "99z_graphics/1530.png"
+
+[items.rect]
+x = 512
+y = 2734
+width = 512
+height = 128
+
+[[items]]
+name = "10015"
+path = "99z_graphics/10015.png"
+
+[items.rect]
+x = 1024
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "135"
+path = "99z_graphics/135.png"
+
+[items.rect]
+x = 1152
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "151"
+path = "99z_graphics/151.png"
+
+[items.rect]
+x = 1280
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "110"
+path = "99z_graphics/110.png"
+
+[items.rect]
+x = 1408
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "130"
+path = "99z_graphics/130.png"
+
+[items.rect]
+x = 1536
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "9518"
+path = "99z_graphics/9518.png"
+
+[items.rect]
+x = 1664
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "6008"
+path = "99z_graphics/6008.png"
+
+[items.rect]
+x = 1792
+y = 2734
+width = 512
+height = 128
+
+[[items]]
+name = "9520"
+path = "99z_graphics/9520.png"
+
+[items.rect]
+x = 2304
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "551"
+path = "99z_graphics/551.png"
+
+[items.rect]
+x = 2432
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "129"
+path = "99z_graphics/129.png"
+
+[items.rect]
+x = 2560
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "642"
+path = "99z_graphics/642.png"
+
+[items.rect]
+x = 3983
+y = 1455
+width = 112
+height = 128
+
+[[items]]
+name = "7508"
+path = "99z_graphics/7508.png"
+
+[items.rect]
+x = 2688
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "6005"
+path = "99z_graphics/6005.png"
+
+[items.rect]
+x = 2816
+y = 2734
+width = 384
+height = 128
+
+[[items]]
+name = "7503"
+path = "99z_graphics/7503.png"
+
+[items.rect]
+x = 3200
+y = 2734
+width = 466
+height = 128
+
+[[items]]
+name = "147"
+path = "99z_graphics/147.png"
+
+[items.rect]
+x = 3666
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "637"
+path = "99z_graphics/637.png"
+
+[items.rect]
+x = 4072
+y = 640
+width = 5
+height = 128
+
+[[items]]
+name = "6004"
+path = "99z_graphics/6004.png"
+
+[items.rect]
+x = 0
+y = 2862
+width = 512
+height = 128
+
+[[items]]
+name = "148"
+path = "99z_graphics/148.png"
+
+[items.rect]
+x = 3794
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "128"
+path = "99z_graphics/128.png"
+
+[items.rect]
+x = 3922
+y = 2734
+width = 128
+height = 128
+
+[[items]]
+name = "7501"
+path = "99z_graphics/7501.png"
+
+[items.rect]
+x = 512
+y = 2862
+width = 512
+height = 128
+
+[[items]]
+name = "131"
+path = "99z_graphics/131.png"
+
+[items.rect]
+x = 1024
+y = 2862
+width = 128
+height = 128
+
+[[items]]
+name = "107"
+path = "99z_graphics/107.png"
+
+[items.rect]
+x = 1152
+y = 2862
+width = 128
+height = 128
+
+[[items]]
+name = "9503"
+path = "99z_graphics/9503.png"
+
+[items.rect]
+x = 1280
+y = 2862
+width = 160
+height = 127
+
+[[items]]
+name = "106"
+path = "99z_graphics/106.png"
+
+[items.rect]
+x = 1440
+y = 2862
+width = 128
+height = 127
+
+[[items]]
+name = "108"
+path = "99z_graphics/108.png"
+
+[items.rect]
+x = 1568
+y = 2862
+width = 128
+height = 127
+
+[[items]]
+name = "303"
+path = "99z_graphics/303.png"
+
+[items.rect]
+x = 3983
+y = 1825
+width = 85
+height = 125
+
+[[items]]
+name = "167"
+path = "99z_graphics/167.png"
+
+[items.rect]
+x = 4006
+y = 2478
+width = 60
+height = 125
+
+[[items]]
+name = "362"
+path = "99z_graphics/362.png"
+
+[items.rect]
+x = 1696
+y = 2862
+width = 168
+height = 125
+
+[[items]]
+name = "8206"
+path = "99z_graphics/8206.png"
+
+[items.rect]
+x = 1864
+y = 2862
+width = 402
+height = 125
+
+[[items]]
+name = "8201"
+path = "99z_graphics/8201.png"
+
+[items.rect]
+x = 2266
+y = 2862
+width = 85
+height = 125
+
+[[items]]
+name = "363"
+path = "99z_graphics/363.png"
+
+[items.rect]
+x = 2351
+y = 2862
+width = 168
+height = 124
+
+[[items]]
+name = "523"
+path = "99z_graphics/523.png"
+
+[items.rect]
+x = 4077
+y = 640
+width = 19
+height = 123
+
+[[items]]
+name = "702"
+path = "99z_graphics/702.png"
+
+[items.rect]
+x = 2519
+y = 2862
+width = 399
+height = 123
+
+[[items]]
+name = "145"
+path = "99z_graphics/145.png"
+
+[items.rect]
+x = 2918
+y = 2862
+width = 127
+height = 122
+
+[[items]]
+name = "163"
+path = "99z_graphics/163.png"
+
+[items.rect]
+x = 3045
+y = 2862
+width = 75
+height = 122
+
+[[items]]
+name = "307"
+path = "99z_graphics/307.png"
+
+[items.rect]
+x = 3120
+y = 2862
+width = 179
+height = 122
+
+[[items]]
+name = "366"
+path = "99z_graphics/366.png"
+
+[items.rect]
+x = 3299
+y = 2862
+width = 229
+height = 121
+
+[[items]]
+name = "730"
+path = "99z_graphics/730.png"
+
+[items.rect]
+x = 3528
+y = 2862
+width = 56
+height = 121
+
+[[items]]
+name = "370"
+path = "99z_graphics/370.png"
+
+[items.rect]
+x = 3584
+y = 2862
+width = 169
+height = 121
+
+[[items]]
+name = "396"
+path = "99z_graphics/396.png"
+
+[items.rect]
+x = 3753
+y = 2862
+width = 117
+height = 120
+
+[[items]]
+name = "9505"
+path = "99z_graphics/9505.png"
+
+[items.rect]
+x = 3870
+y = 2862
+width = 111
+height = 120
+
+[[items]]
+name = "826"
+path = "99z_graphics/826.png"
+
+[items.rect]
+x = 3981
+y = 2862
+width = 67
+height = 120
+
+[[items]]
+name = "138"
+path = "99z_graphics/138.png"
+
+[items.rect]
+x = 0
+y = 2990
+width = 307
+height = 119
+
+[[items]]
+name = "195"
+path = "99z_graphics/195.png"
+
+[items.rect]
+x = 307
+y = 2990
+width = 138
+height = 119
+
+[[items]]
+name = "379"
+path = "99z_graphics/379.png"
+
+[items.rect]
+x = 445
+y = 2990
+width = 185
+height = 119
+
+[[items]]
+name = "196"
+path = "99z_graphics/196.png"
+
+[items.rect]
+x = 630
+y = 2990
+width = 141
+height = 119
+
+[[items]]
+name = "664"
+path = "99z_graphics/664.png"
+
+[items.rect]
+x = 771
+y = 2990
+width = 128
+height = 118
+
+[[items]]
+name = "164"
+path = "99z_graphics/164.png"
+
+[items.rect]
+x = 899
+y = 2990
+width = 73
+height = 118
+
+[[items]]
+name = "526"
+path = "99z_graphics/526.png"
+
+[items.rect]
+x = 972
+y = 2990
+width = 127
+height = 118
+
+[[items]]
+name = "361"
+path = "99z_graphics/361.png"
+
+[items.rect]
+x = 1099
+y = 2990
+width = 178
+height = 118
+
+[[items]]
+name = "165"
+path = "99z_graphics/165.png"
+
+[items.rect]
+x = 1277
+y = 2990
+width = 67
+height = 118
+
+[[items]]
+name = "555"
+path = "99z_graphics/555.png"
+
+[items.rect]
+x = 1344
+y = 2990
+width = 128
+height = 118
+
+[[items]]
+name = "369"
+path = "99z_graphics/369.png"
+
+[items.rect]
+x = 1472
+y = 2990
+width = 169
+height = 117
+
+[[items]]
+name = "554"
+path = "99z_graphics/554.png"
+
+[items.rect]
+x = 4072
+y = 768
+width = 18
+height = 117
+
+[[items]]
+name = "309"
+path = "99z_graphics/309.png"
+
+[items.rect]
+x = 1641
+y = 2990
+width = 183
+height = 117
+
+[[items]]
+name = "548"
+path = "99z_graphics/548.png"
+
+[items.rect]
+x = 4059
+y = 963
+width = 18
+height = 117
+
+[[items]]
+name = "158"
+path = "99z_graphics/158.png"
+
+[items.rect]
+x = 1824
+y = 2990
+width = 109
+height = 117
+
+[[items]]
+name = "365"
+path = "99z_graphics/365.png"
+
+[items.rect]
+x = 1933
+y = 2990
+width = 229
+height = 116
+
+[[items]]
+name = "159"
+path = "99z_graphics/159.png"
+
+[items.rect]
+x = 2162
+y = 2990
+width = 97
+height = 116
+
+[[items]]
+name = "398"
+path = "99z_graphics/398.png"
+
+[items.rect]
+x = 2259
+y = 2990
+width = 122
+height = 116
+
+[[items]]
+name = "360"
+path = "99z_graphics/360.png"
+
+[items.rect]
+x = 2381
+y = 2990
+width = 178
+height = 115
+
+[[items]]
+name = "397"
+path = "99z_graphics/397.png"
+
+[items.rect]
+x = 2559
+y = 2990
+width = 118
+height = 115
+
+[[items]]
+name = "126"
+path = "99z_graphics/126.png"
+
+[items.rect]
+x = 2677
+y = 2990
+width = 106
+height = 113
+
+[[items]]
+name = "9506"
+path = "99z_graphics/9506.png"
+
+[items.rect]
+x = 2783
+y = 2990
+width = 90
+height = 113
+
+[[items]]
+name = "168"
+path = "99z_graphics/168.png"
+
+[items.rect]
+x = 4068
+y = 1825
+width = 23
+height = 113
+
+[[items]]
+name = "751"
+path = "99z_graphics/751.png"
+
+[items.rect]
+x = 2873
+y = 2990
+width = 190
+height = 113
+
+[[items]]
+name = "105"
+path = "99z_graphics/105.png"
+
+[items.rect]
+x = 3063
+y = 2990
+width = 115
+height = 113
+
+[[items]]
+name = "160"
+path = "99z_graphics/160.png"
+
+[items.rect]
+x = 3178
+y = 2990
+width = 95
+height = 111
+
+[[items]]
+name = "701"
+path = "99z_graphics/701.png"
+
+[items.rect]
+x = 3273
+y = 2990
+width = 189
+height = 110
+
+[[items]]
+name = "166"
+path = "99z_graphics/166.png"
+
+[items.rect]
+x = 3462
+y = 2990
+width = 55
+height = 110
+
+[[items]]
+name = "157"
+path = "99z_graphics/157.png"
+
+[items.rect]
+x = 3517
+y = 2990
+width = 117
+height = 108
+
+[[items]]
+name = "162"
+path = "99z_graphics/162.png"
+
+[items.rect]
+x = 1473
+y = 384
+width = 80
+height = 107
+
+[[items]]
+name = "672"
+path = "99z_graphics/672.png"
+
+[items.rect]
+x = 1553
+y = 384
+width = 203
+height = 106
+
+[[items]]
+name = "161"
+path = "99z_graphics/161.png"
+
+[items.rect]
+x = 1756
+y = 384
+width = 87
+height = 106
+
+[[items]]
+name = "102"
+path = "99z_graphics/102.png"
+
+[items.rect]
+x = 1843
+y = 384
+width = 98
+height = 105
+
+[[items]]
+name = "524"
+path = "99z_graphics/524.png"
+
+[items.rect]
+x = 1941
+y = 384
+width = 63
+height = 102
+
+[[items]]
+name = "125"
+path = "99z_graphics/125.png"
+
+[items.rect]
+x = 2004
+y = 384
+width = 98
+height = 102
+
+[[items]]
+name = "372"
+path = "99z_graphics/372.png"
+
+[items.rect]
+x = 2102
+y = 384
+width = 189
+height = 101
+
+[[items]]
+name = "371"
+path = "99z_graphics/371.png"
+
+[items.rect]
+x = 2291
+y = 384
+width = 189
+height = 101
+
+[[items]]
+name = "104"
+path = "99z_graphics/104.png"
+
+[items.rect]
+x = 2480
+y = 384
+width = 98
+height = 98
+
+[[items]]
+name = "823"
+path = "99z_graphics/823.png"
+
+[items.rect]
+x = 2578
+y = 384
+width = 34
+height = 98
+
+[[items]]
+name = "124"
+path = "99z_graphics/124.png"
+
+[items.rect]
+x = 2612
+y = 384
+width = 97
+height = 98
+
+[[items]]
+name = "123"
+path = "99z_graphics/123.png"
+
+[items.rect]
+x = 2709
+y = 384
+width = 66
+height = 97
+
+[[items]]
+name = "152"
+path = "99z_graphics/152.png"
+
+[items.rect]
+x = 2775
+y = 384
+width = 123
+height = 96
+
+[[items]]
+name = "7515"
+path = "99z_graphics/7515.png"
+
+[items.rect]
+x = 2898
+y = 384
+width = 192
+height = 96
+
+[[items]]
+name = "7514"
+path = "99z_graphics/7514.png"
+
+[items.rect]
+x = 3090
+y = 384
+width = 192
+height = 96
+
+[[items]]
+name = "7519"
+path = "99z_graphics/7519.png"
+
+[items.rect]
+x = 3282
+y = 384
+width = 96
+height = 96
+
+[[items]]
+name = "7521"
+path = "99z_graphics/7521.png"
+
+[items.rect]
+x = 3378
+y = 384
+width = 96
+height = 96
+
+[[items]]
+name = "7511"
+path = "99z_graphics/7511.png"
+
+[items.rect]
+x = 3474
+y = 384
+width = 96
+height = 96
+
+[[items]]
+name = "367"
+path = "99z_graphics/367.png"
+
+[items.rect]
+x = 3570
+y = 384
+width = 254
+height = 96
+
+[[items]]
+name = "738"
+path = "99z_graphics/738.png"
+
+[items.rect]
+x = 3824
+y = 384
+width = 59
+height = 96
+
+[[items]]
+name = "7518"
+path = "99z_graphics/7518.png"
+
+[items.rect]
+x = 3883
+y = 384
+width = 96
+height = 96
+
+[[items]]
+name = "193"
+path = "99z_graphics/193.png"
+
+[items.rect]
+x = 3634
+y = 2990
+width = 119
+height = 96
+
+[[items]]
+name = "368"
+path = "99z_graphics/368.png"
+
+[items.rect]
+x = 3753
+y = 2990
+width = 254
+height = 96
+
+[[items]]
+name = "5507"
+path = "99z_graphics/5507.png"
+
+[items.rect]
+x = 0
+y = 3109
+width = 320
+height = 96
+
+[[items]]
+name = "144"
+path = "99z_graphics/144.png"
+
+[items.rect]
+x = 3979
+y = 384
+width = 108
+height = 96
+
+[[items]]
+name = "7520"
+path = "99z_graphics/7520.png"
+
+[items.rect]
+x = 320
+y = 3109
+width = 96
+height = 96
+
+[[items]]
+name = "7517"
+path = "99z_graphics/7517.png"
+
+[items.rect]
+x = 416
+y = 3109
+width = 96
+height = 96
+
+[[items]]
+name = "741"
+path = "99z_graphics/741.png"
+
+[items.rect]
+x = 4007
+y = 2990
+width = 61
+height = 95
+
+[[items]]
+name = "654"
+path = "99z_graphics/654.png"
+
+[items.rect]
+x = 4048
+y = 2862
+width = 48
+height = 95
+
+[[items]]
+name = "7509"
+path = "99z_graphics/7509.png"
+
+[items.rect]
+x = 512
+y = 3109
+width = 255
+height = 95
+
+[[items]]
+name = "547"
+path = "99z_graphics/547.png"
+
+[items.rect]
+x = 767
+y = 3109
+width = 129
+height = 92
+
+[[items]]
+name = "355"
+path = "99z_graphics/355.png"
+
+[items.rect]
+x = 896
+y = 3109
+width = 60
+height = 91
+
+[[items]]
+name = "356"
+path = "99z_graphics/356.png"
+
+[items.rect]
+x = 956
+y = 3109
+width = 60
+height = 91
+
+[[items]]
+name = "304"
+path = "99z_graphics/304.png"
+
+[items.rect]
+x = 1016
+y = 3109
+width = 54
+height = 90
+
+[[items]]
+name = "8202"
+path = "99z_graphics/8202.png"
+
+[items.rect]
+x = 1070
+y = 3109
+width = 53
+height = 90
+
+[[items]]
+name = "103"
+path = "99z_graphics/103.png"
+
+[items.rect]
+x = 1123
+y = 3109
+width = 66
+height = 89
+
+[[items]]
+name = "143"
+path = "99z_graphics/143.png"
+
+[items.rect]
+x = 1189
+y = 3109
+width = 89
+height = 88
+
+[[items]]
+name = "359"
+path = "99z_graphics/359.png"
+
+[items.rect]
+x = 1278
+y = 3109
+width = 84
+height = 86
+
+[[items]]
+name = "308"
+path = "99z_graphics/308.png"
+
+[items.rect]
+x = 1362
+y = 3109
+width = 87
+height = 86
+
+[[items]]
+name = "358"
+path = "99z_graphics/358.png"
+
+[items.rect]
+x = 1449
+y = 3109
+width = 90
+height = 86
+
+[[items]]
+name = "827"
+path = "99z_graphics/827.png"
+
+[items.rect]
+x = 4059
+y = 1080
+width = 35
+height = 86
+
+[[items]]
+name = "5501"
+path = "99z_graphics/5501.png"
+
+[items.rect]
+x = 1539
+y = 3109
+width = 245
+height = 84
+
+[[items]]
+name = "192"
+path = "99z_graphics/192.png"
+
+[items.rect]
+x = 1784
+y = 3109
+width = 104
+height = 82
+
+[[items]]
+name = "118"
+path = "99z_graphics/118.png"
+
+[items.rect]
+x = 1888
+y = 3109
+width = 150
+height = 80
+
+[[items]]
+name = "142"
+path = "99z_graphics/142.png"
+
+[items.rect]
+x = 2038
+y = 3109
+width = 75
+height = 74
+
+[[items]]
+name = "177"
+path = "99z_graphics/177.png"
+
+[items.rect]
+x = 2113
+y = 3109
+width = 79
+height = 74
+
+[[items]]
+name = "153"
+path = "99z_graphics/153.png"
+
+[items.rect]
+x = 2192
+y = 3109
+width = 100
+height = 72
+
+[[items]]
+name = "346"
+path = "99z_graphics/346.png"
+
+[items.rect]
+x = 2292
+y = 3109
+width = 112
+height = 71
+
+[[items]]
+name = "1535"
+path = "99z_graphics/1535.png"
+
+[items.rect]
+x = 2404
+y = 3109
+width = 109
+height = 69
+
+[[items]]
+name = "122"
+path = "99z_graphics/122.png"
+
+[items.rect]
+x = 2513
+y = 3109
+width = 66
+height = 66
+
+[[items]]
+name = "101"
+path = "99z_graphics/101.png"
+
+[items.rect]
+x = 2579
+y = 3109
+width = 66
+height = 66
+
+[[items]]
+name = "141"
+path = "99z_graphics/141.png"
+
+[items.rect]
+x = 2645
+y = 3109
+width = 61
+height = 66
+
+[[items]]
+name = "9532"
+path = "99z_graphics/9532.png"
+
+[items.rect]
+x = 2706
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "649"
+path = "99z_graphics/649.png"
+
+[items.rect]
+x = 2770
+y = 3109
+width = 146
+height = 64
+
+[[items]]
+name = "9551"
+path = "99z_graphics/9551.png"
+
+[items.rect]
+x = 2916
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "753"
+path = "99z_graphics/753.png"
+
+[items.rect]
+x = 2980
+y = 3109
+width = 340
+height = 64
+
+[[items]]
+name = "632"
+path = "99z_graphics/632.png"
+
+[items.rect]
+x = 3320
+y = 3109
+width = 110
+height = 64
+
+[[items]]
+name = "5509"
+path = "99z_graphics/5509.png"
+
+[items.rect]
+x = 3430
+y = 3109
+width = 192
+height = 64
+
+[[items]]
+name = "9534"
+path = "99z_graphics/9534.png"
+
+[items.rect]
+x = 3622
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "9535"
+path = "99z_graphics/9535.png"
+
+[items.rect]
+x = 3686
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "633"
+path = "99z_graphics/633.png"
+
+[items.rect]
+x = 3750
+y = 3109
+width = 110
+height = 64
+
+[[items]]
+name = "7523"
+path = "99z_graphics/7523.png"
+
+[items.rect]
+x = 0
+y = 3205
+width = 256
+height = 64
+
+[[items]]
+name = "9549"
+path = "99z_graphics/9549.png"
+
+[items.rect]
+x = 3860
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "7526"
+path = "99z_graphics/7526.png"
+
+[items.rect]
+x = 3924
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "671"
+path = "99z_graphics/671.png"
+
+[items.rect]
+x = 4050
+y = 2734
+width = 46
+height = 64
+
+[[items]]
+name = "9543"
+path = "99z_graphics/9543.png"
+
+[items.rect]
+x = 4087
+y = 384
+width = 4
+height = 64
+
+[[items]]
+name = "9533"
+path = "99z_graphics/9533.png"
+
+[items.rect]
+x = 3988
+y = 3109
+width = 64
+height = 64
+
+[[items]]
+name = "5503"
+path = "99z_graphics/5503.png"
+
+[items.rect]
+x = 256
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9548"
+path = "99z_graphics/9548.png"
+
+[items.rect]
+x = 320
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9507"
+path = "99z_graphics/9507.png"
+
+[items.rect]
+x = 384
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "7525"
+path = "99z_graphics/7525.png"
+
+[items.rect]
+x = 448
+y = 3205
+width = 256
+height = 64
+
+[[items]]
+name = "755"
+path = "99z_graphics/755.png"
+
+[items.rect]
+x = 704
+y = 3205
+width = 340
+height = 64
+
+[[items]]
+name = "9546"
+path = "99z_graphics/9546.png"
+
+[items.rect]
+x = 4091
+y = 384
+width = 5
+height = 64
+
+[[items]]
+name = "9554"
+path = "99z_graphics/9554.png"
+
+[items.rect]
+x = 1044
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "7513"
+path = "99z_graphics/7513.png"
+
+[items.rect]
+x = 1108
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9545"
+path = "99z_graphics/9545.png"
+
+[items.rect]
+x = 4090
+y = 768
+width = 5
+height = 64
+
+[[items]]
+name = "9555"
+path = "99z_graphics/9555.png"
+
+[items.rect]
+x = 1172
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9530"
+path = "99z_graphics/9530.png"
+
+[items.rect]
+x = 1236
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "8006"
+path = "99z_graphics/8006.png"
+
+[items.rect]
+x = 1300
+y = 3205
+width = 146
+height = 64
+
+[[items]]
+name = "9550"
+path = "99z_graphics/9550.png"
+
+[items.rect]
+x = 1446
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9552"
+path = "99z_graphics/9552.png"
+
+[items.rect]
+x = 1510
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "754"
+path = "99z_graphics/754.png"
+
+[items.rect]
+x = 1574
+y = 3205
+width = 340
+height = 64
+
+[[items]]
+name = "752"
+path = "99z_graphics/752.png"
+
+[items.rect]
+x = 1914
+y = 3205
+width = 340
+height = 64
+
+[[items]]
+name = "650"
+path = "99z_graphics/650.png"
+
+[items.rect]
+x = 2254
+y = 3205
+width = 151
+height = 64
+
+[[items]]
+name = "651"
+path = "99z_graphics/651.png"
+
+[items.rect]
+x = 2405
+y = 3205
+width = 146
+height = 64
+
+[[items]]
+name = "7512"
+path = "99z_graphics/7512.png"
+
+[items.rect]
+x = 2551
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "7524"
+path = "99z_graphics/7524.png"
+
+[items.rect]
+x = 2615
+y = 3205
+width = 256
+height = 64
+
+[[items]]
+name = "5504"
+path = "99z_graphics/5504.png"
+
+[items.rect]
+x = 2871
+y = 3205
+width = 192
+height = 64
+
+[[items]]
+name = "9553"
+path = "99z_graphics/9553.png"
+
+[items.rect]
+x = 3063
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "9544"
+path = "99z_graphics/9544.png"
+
+[items.rect]
+x = 4077
+y = 963
+width = 4
+height = 64
+
+[[items]]
+name = "191"
+path = "99z_graphics/191.png"
+
+[items.rect]
+x = 3127
+y = 3205
+width = 81
+height = 64
+
+[[items]]
+name = "9531"
+path = "99z_graphics/9531.png"
+
+[items.rect]
+x = 3208
+y = 3205
+width = 64
+height = 64
+
+[[items]]
+name = "673"
+path = "99z_graphics/673.png"
+
+[items.rect]
+x = 3272
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "636"
+path = "99z_graphics/636.png"
+
+[items.rect]
+x = 3380
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "838"
+path = "99z_graphics/838.png"
+
+[items.rect]
+x = 3488
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "839"
+path = "99z_graphics/839.png"
+
+[items.rect]
+x = 3596
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "634"
+path = "99z_graphics/634.png"
+
+[items.rect]
+x = 3704
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "675"
+path = "99z_graphics/675.png"
+
+[items.rect]
+x = 3812
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "721"
+path = "99z_graphics/721.png"
+
+[items.rect]
+x = 3920
+y = 3205
+width = 108
+height = 63
+
+[[items]]
+name = "825"
+path = "99z_graphics/825.png"
+
+[items.rect]
+x = 0
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "635"
+path = "99z_graphics/635.png"
+
+[items.rect]
+x = 108
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "836"
+path = "99z_graphics/836.png"
+
+[items.rect]
+x = 216
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "824"
+path = "99z_graphics/824.png"
+
+[items.rect]
+x = 324
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "667"
+path = "99z_graphics/667.png"
+
+[items.rect]
+x = 432
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "724"
+path = "99z_graphics/724.png"
+
+[items.rect]
+x = 540
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "837"
+path = "99z_graphics/837.png"
+
+[items.rect]
+x = 648
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "674"
+path = "99z_graphics/674.png"
+
+[items.rect]
+x = 756
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "723"
+path = "99z_graphics/723.png"
+
+[items.rect]
+x = 864
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "722"
+path = "99z_graphics/722.png"
+
+[items.rect]
+x = 972
+y = 3269
+width = 108
+height = 63
+
+[[items]]
+name = "665"
+path = "99z_graphics/665.png"
+
+[items.rect]
+x = 1080
+y = 3269
+width = 337
+height = 62
+
+[[items]]
+name = "656"
+path = "99z_graphics/656.png"
+
+[items.rect]
+x = 1417
+y = 3269
+width = 95
+height = 60
+
+[[items]]
+name = "140"
+path = "99z_graphics/140.png"
+
+[items.rect]
+x = 4028
+y = 3205
+width = 51
+height = 59
+
+[[items]]
+name = "156"
+path = "99z_graphics/156.png"
+
+[items.rect]
+x = 1512
+y = 3269
+width = 111
+height = 59
+
+[[items]]
+name = "9504"
+path = "99z_graphics/9504.png"
+
+[items.rect]
+x = 1623
+y = 3269
+width = 47
+height = 59
+
+[[items]]
+name = "9542"
+path = "99z_graphics/9542.png"
+
+[items.rect]
+x = 4081
+y = 963
+width = 8
+height = 57
+
+[[items]]
+name = "9541"
+path = "99z_graphics/9541.png"
+
+[items.rect]
+x = 4083
+y = 1647
+width = 8
+height = 57
+
+[[items]]
+name = "9547"
+path = "99z_graphics/9547.png"
+
+[items.rect]
+x = 4089
+y = 963
+width = 7
+height = 56
+
+[[items]]
+name = "657"
+path = "99z_graphics/657.png"
+
+[items.rect]
+x = 4069
+y = 2338
+width = 25
+height = 56
+
+[[items]]
+name = "9540"
+path = "99z_graphics/9540.png"
+
+[items.rect]
+x = 4083
+y = 1704
+width = 8
+height = 56
+
+[[items]]
+name = "399"
+path = "99z_graphics/399.png"
+
+[items.rect]
+x = 1670
+y = 3269
+width = 56
+height = 56
+
+[[items]]
+name = "655"
+path = "99z_graphics/655.png"
+
+[items.rect]
+x = 1726
+y = 3269
+width = 95
+height = 55
+
+[[items]]
+name = "652"
+path = "99z_graphics/652.png"
+
+[items.rect]
+x = 4050
+y = 2798
+width = 45
+height = 55
+
+[[items]]
+name = "739"
+path = "99z_graphics/739.png"
+
+[items.rect]
+x = 1821
+y = 3269
+width = 96
+height = 54
+
+[[items]]
+name = "178"
+path = "99z_graphics/178.png"
+
+[items.rect]
+x = 1917
+y = 3269
+width = 51
+height = 53
+
+[[items]]
+name = "176"
+path = "99z_graphics/176.png"
+
+[items.rect]
+x = 1968
+y = 3269
+width = 51
+height = 53
+
+[[items]]
+name = "736"
+path = "99z_graphics/736.png"
+
+[items.rect]
+x = 4061
+y = 2606
+width = 32
+height = 53
+
+[[items]]
+name = "183"
+path = "99z_graphics/183.png"
+
+[items.rect]
+x = 4077
+y = 1027
+width = 12
+height = 52
+
+[[items]]
+name = "182"
+path = "99z_graphics/182.png"
+
+[items.rect]
+x = 4066
+y = 2478
+width = 28
+height = 52
+
+[[items]]
+name = "742"
+path = "99z_graphics/742.png"
+
+[items.rect]
+x = 2019
+y = 3269
+width = 95
+height = 52
+
+[[items]]
+name = "179"
+path = "99z_graphics/179.png"
+
+[items.rect]
+x = 3983
+y = 1583
+width = 42
+height = 51
+
+[[items]]
+name = "180"
+path = "99z_graphics/180.png"
+
+[items.rect]
+x = 4025
+y = 1583
+width = 42
+height = 51
+
+[[items]]
+name = "181"
+path = "99z_graphics/181.png"
+
+[items.rect]
+x = 4052
+y = 3109
+width = 42
+height = 51
+
+[[items]]
+name = "100"
+path = "99z_graphics/100.png"
+
+[items.rect]
+x = 2114
+y = 3269
+width = 65
+height = 50
+
+[[items]]
+name = "121"
+path = "99z_graphics/121.png"
+
+[items.rect]
+x = 2179
+y = 3269
+width = 65
+height = 50
+
+[[items]]
+name = "829"
+path = "99z_graphics/829.png"
+
+[items.rect]
+x = 2244
+y = 3269
+width = 67
+height = 48
+
+[[items]]
+name = "830"
+path = "99z_graphics/830.png"
+
+[items.rect]
+x = 2311
+y = 3269
+width = 67
+height = 48
+
+[[items]]
+name = "831"
+path = "99z_graphics/831.png"
+
+[items.rect]
+x = 2378
+y = 3269
+width = 67
+height = 48
+
+[[items]]
+name = "525"
+path = "99z_graphics/525.png"
+
+[items.rect]
+x = 2445
+y = 3269
+width = 42
+height = 48
+
+[[items]]
+name = "190"
+path = "99z_graphics/190.png"
+
+[items.rect]
+x = 3983
+y = 1950
+width = 41
+height = 43
+
+[[items]]
+name = "312"
+path = "99z_graphics/312.png"
+
+[items.rect]
+x = 2487
+y = 3269
+width = 87
+height = 42
+
+[[items]]
+name = "175"
+path = "99z_graphics/175.png"
+
+[items.rect]
+x = 4041
+y = 275
+width = 35
+height = 42
+
+[[items]]
+name = "174"
+path = "99z_graphics/174.png"
+
+[items.rect]
+x = 2442
+y = 340
+width = 32
+height = 39
+
+[[items]]
+name = "9536"
+path = "99z_graphics/9536.png"
+
+[items.rect]
+x = 2474
+y = 340
+width = 62
+height = 38
+
+[[items]]
+name = "139"
+path = "99z_graphics/139.png"
+
+[items.rect]
+x = 2536
+y = 340
+width = 40
+height = 36
+
+[[items]]
+name = "834"
+path = "99z_graphics/834.png"
+
+[items.rect]
+x = 2576
+y = 340
+width = 44
+height = 36
+
+[[items]]
+name = "638"
+path = "99z_graphics/638.png"
+
+[items.rect]
+x = 2620
+y = 340
+width = 128
+height = 34
+
+[[items]]
+name = "835"
+path = "99z_graphics/835.png"
+
+[items.rect]
+x = 2748
+y = 340
+width = 55
+height = 34
+
+[[items]]
+name = "155"
+path = "99z_graphics/155.png"
+
+[items.rect]
+x = 2803
+y = 340
+width = 111
+height = 34
+
+[[items]]
+name = "828"
+path = "99z_graphics/828.png"
+
+[items.rect]
+x = 2914
+y = 340
+width = 55
+height = 33
+
+[[items]]
+name = "173"
+path = "99z_graphics/173.png"
+
+[items.rect]
+x = 2969
+y = 340
+width = 32
+height = 33
+
+[[items]]
+name = "527"
+path = "99z_graphics/527.png"
+
+[items.rect]
+x = 3001
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "625"
+path = "99z_graphics/625.png"
+
+[items.rect]
+x = 3064
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "747"
+path = "99z_graphics/747.png"
+
+[items.rect]
+x = 3127
+y = 340
+width = 32
+height = 32
+
+[[items]]
+name = "115"
+path = "99z_graphics/115.png"
+
+[items.rect]
+x = 3159
+y = 340
+width = 90
+height = 32
+
+[[items]]
+name = "617"
+path = "99z_graphics/617.png"
+
+[items.rect]
+x = 3249
+y = 340
+width = 32
+height = 32
+
+[[items]]
+name = "511"
+path = "99z_graphics/511.png"
+
+[items.rect]
+x = 3281
+y = 340
+width = 48
+height = 32
+
+[[items]]
+name = "626"
+path = "99z_graphics/626.png"
+
+[items.rect]
+x = 3329
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "559"
+path = "99z_graphics/559.png"
+
+[items.rect]
+x = 3392
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "10018"
+path = "99z_graphics/10018.png"
+
+[items.rect]
+x = 3455
+y = 340
+width = 32
+height = 32
+
+[[items]]
+name = "575"
+path = "99z_graphics/575.png"
+
+[items.rect]
+x = 3487
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "686"
+path = "99z_graphics/686.png"
+
+[items.rect]
+x = 3550
+y = 340
+width = 23
+height = 32
+
+[[items]]
+name = "820"
+path = "99z_graphics/820.png"
+
+[items.rect]
+x = 4076
+y = 275
+width = 14
+height = 32
+
+[[items]]
+name = "624"
+path = "99z_graphics/624.png"
+
+[items.rect]
+x = 3573
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "772"
+path = "99z_graphics/772.png"
+
+[items.rect]
+x = 3636
+y = 340
+width = 21
+height = 32
+
+[[items]]
+name = "568"
+path = "99z_graphics/568.png"
+
+[items.rect]
+x = 3657
+y = 340
+width = 31
+height = 32
+
+[[items]]
+name = "557"
+path = "99z_graphics/557.png"
+
+[items.rect]
+x = 3688
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "573"
+path = "99z_graphics/573.png"
+
+[items.rect]
+x = 3751
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "666"
+path = "99z_graphics/666.png"
+
+[items.rect]
+x = 3814
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "628"
+path = "99z_graphics/628.png"
+
+[items.rect]
+x = 3877
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "661"
+path = "99z_graphics/661.png"
+
+[items.rect]
+x = 3940
+y = 340
+width = 21
+height = 32
+
+[[items]]
+name = "629"
+path = "99z_graphics/629.png"
+
+[items.rect]
+x = 3961
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "558"
+path = "99z_graphics/558.png"
+
+[items.rect]
+x = 4024
+y = 340
+width = 63
+height = 32
+
+[[items]]
+name = "580"
+path = "99z_graphics/580.png"
+
+[items.rect]
+x = 4024
+y = 1950
+width = 31
+height = 32
+
+[[items]]
+name = "567"
+path = "99z_graphics/567.png"
+
+[items.rect]
+x = 4067
+y = 1583
+width = 26
+height = 32
+
+[[items]]
+name = "1"
+path = "99z_graphics/1.png"
+
+[items.rect]
+x = 2574
+y = 3269
+width = 117
+height = 32
+
+[[items]]
+name = "669"
+path = "99z_graphics/669.png"
+
+[items.rect]
+x = 2691
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "569"
+path = "99z_graphics/569.png"
+
+[items.rect]
+x = 4055
+y = 1950
+width = 31
+height = 32
+
+[[items]]
+name = "778"
+path = "99z_graphics/778.png"
+
+[items.rect]
+x = 4069
+y = 2394
+width = 18
+height = 32
+
+[[items]]
+name = "556"
+path = "99z_graphics/556.png"
+
+[items.rect]
+x = 4066
+y = 2530
+width = 30
+height = 32
+
+[[items]]
+name = "24"
+path = "99z_graphics/24.png"
+
+[items.rect]
+x = 2754
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "5516"
+path = "99z_graphics/5516.png"
+
+[items.rect]
+x = 2817
+y = 3269
+width = 93
+height = 32
+
+[[items]]
+name = "743"
+path = "99z_graphics/743.png"
+
+[items.rect]
+x = 4069
+y = 2426
+width = 25
+height = 32
+
+[[items]]
+name = "662"
+path = "99z_graphics/662.png"
+
+[items.rect]
+x = 4066
+y = 2562
+width = 18
+height = 32
+
+[[items]]
+name = "615"
+path = "99z_graphics/615.png"
+
+[items.rect]
+x = 4061
+y = 2659
+width = 32
+height = 32
+
+[[items]]
+name = "714"
+path = "99z_graphics/714.png"
+
+[items.rect]
+x = 4061
+y = 2691
+width = 32
+height = 32
+
+[[items]]
+name = "623"
+path = "99z_graphics/623.png"
+
+[items.rect]
+x = 2910
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "10022"
+path = "99z_graphics/10022.png"
+
+[items.rect]
+x = 4068
+y = 2990
+width = 19
+height = 32
+
+[[items]]
+name = "600"
+path = "99z_graphics/600.png"
+
+[items.rect]
+x = 2973
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "601"
+path = "99z_graphics/601.png"
+
+[items.rect]
+x = 4068
+y = 3022
+width = 24
+height = 32
+
+[[items]]
+name = "574"
+path = "99z_graphics/574.png"
+
+[items.rect]
+x = 3005
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "512"
+path = "99z_graphics/512.png"
+
+[items.rect]
+x = 3068
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "630"
+path = "99z_graphics/630.png"
+
+[items.rect]
+x = 3100
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "788"
+path = "99z_graphics/788.png"
+
+[items.rect]
+x = 3163
+y = 3269
+width = 29
+height = 32
+
+[[items]]
+name = "709"
+path = "99z_graphics/709.png"
+
+[items.rect]
+x = 3192
+y = 3269
+width = 31
+height = 32
+
+[[items]]
+name = "582"
+path = "99z_graphics/582.png"
+
+[items.rect]
+x = 3223
+y = 3269
+width = 18
+height = 32
+
+[[items]]
+name = "786"
+path = "99z_graphics/786.png"
+
+[items.rect]
+x = 3241
+y = 3269
+width = 19
+height = 32
+
+[[items]]
+name = "528"
+path = "99z_graphics/528.png"
+
+[items.rect]
+x = 3260
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "710"
+path = "99z_graphics/710.png"
+
+[items.rect]
+x = 3323
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "787856"
+path = "99z_graphics/787856.png"
+
+[items.rect]
+x = 3355
+y = 3269
+width = 90
+height = 32
+
+[[items]]
+name = "562"
+path = "99z_graphics/562.png"
+
+[items.rect]
+x = 3445
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "22"
+path = "99z_graphics/22.png"
+
+[items.rect]
+x = 3508
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "694"
+path = "99z_graphics/694.png"
+
+[items.rect]
+x = 3571
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "616"
+path = "99z_graphics/616.png"
+
+[items.rect]
+x = 3603
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "659"
+path = "99z_graphics/659.png"
+
+[items.rect]
+x = 3635
+y = 3269
+width = 22
+height = 32
+
+[[items]]
+name = "7516"
+path = "99z_graphics/7516.png"
+
+[items.rect]
+x = 3657
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "589"
+path = "99z_graphics/589.png"
+
+[items.rect]
+x = 3689
+y = 3269
+width = 18
+height = 32
+
+[[items]]
+name = "806"
+path = "99z_graphics/806.png"
+
+[items.rect]
+x = 3707
+y = 3269
+width = 24
+height = 32
+
+[[items]]
+name = "715"
+path = "99z_graphics/715.png"
+
+[items.rect]
+x = 3731
+y = 3269
+width = 28
+height = 32
+
+[[items]]
+name = "668"
+path = "99z_graphics/668.png"
+
+[items.rect]
+x = 3759
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "683"
+path = "99z_graphics/683.png"
+
+[items.rect]
+x = 3822
+y = 3269
+width = 24
+height = 32
+
+[[items]]
+name = "2"
+path = "99z_graphics/2.png"
+
+[items.rect]
+x = 3846
+y = 3269
+width = 96
+height = 32
+
+[[items]]
+name = "712"
+path = "99z_graphics/712.png"
+
+[items.rect]
+x = 3942
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "619"
+path = "99z_graphics/619.png"
+
+[items.rect]
+x = 3974
+y = 3269
+width = 63
+height = 32
+
+[[items]]
+name = "693"
+path = "99z_graphics/693.png"
+
+[items.rect]
+x = 4037
+y = 3269
+width = 32
+height = 32
+
+[[items]]
+name = "711"
+path = "99z_graphics/711.png"
+
+[items.rect]
+x = 0
+y = 3332
+width = 30
+height = 32
+
+[[items]]
+name = "713"
+path = "99z_graphics/713.png"
+
+[items.rect]
+x = 30
+y = 3332
+width = 32
+height = 32
+
+[[items]]
+name = "622"
+path = "99z_graphics/622.png"
+
+[items.rect]
+x = 62
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "5500"
+path = "99z_graphics/5500.png"
+
+[items.rect]
+x = 125
+y = 3332
+width = 224
+height = 32
+
+[[items]]
+name = "561"
+path = "99z_graphics/561.png"
+
+[items.rect]
+x = 349
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "750"
+path = "99z_graphics/750.png"
+
+[items.rect]
+x = 412
+y = 3332
+width = 32
+height = 32
+
+[[items]]
+name = "21"
+path = "99z_graphics/21.png"
+
+[items.rect]
+x = 444
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "23"
+path = "99z_graphics/23.png"
+
+[items.rect]
+x = 507
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "618"
+path = "99z_graphics/618.png"
+
+[items.rect]
+x = 570
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "500"
+path = "99z_graphics/500.png"
+
+[items.rect]
+x = 633
+y = 3332
+width = 44
+height = 32
+
+[[items]]
+name = "794"
+path = "99z_graphics/794.png"
+
+[items.rect]
+x = 4069
+y = 3269
+width = 19
+height = 32
+
+[[items]]
+name = "660"
+path = "99z_graphics/660.png"
+
+[items.rect]
+x = 677
+y = 3332
+width = 19
+height = 32
+
+[[items]]
+name = "627"
+path = "99z_graphics/627.png"
+
+[items.rect]
+x = 696
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "631"
+path = "99z_graphics/631.png"
+
+[items.rect]
+x = 759
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "767"
+path = "99z_graphics/767.png"
+
+[items.rect]
+x = 822
+y = 3332
+width = 21
+height = 32
+
+[[items]]
+name = "787"
+path = "99z_graphics/787.png"
+
+[items.rect]
+x = 843
+y = 3332
+width = 29
+height = 32
+
+[[items]]
+name = "776"
+path = "99z_graphics/776.png"
+
+[items.rect]
+x = 872
+y = 3332
+width = 20
+height = 32
+
+[[items]]
+name = "791"
+path = "99z_graphics/791.png"
+
+[items.rect]
+x = 892
+y = 3332
+width = 31
+height = 32
+
+[[items]]
+name = "572"
+path = "99z_graphics/572.png"
+
+[items.rect]
+x = 923
+y = 3332
+width = 28
+height = 32
+
+[[items]]
+name = "716"
+path = "99z_graphics/716.png"
+
+[items.rect]
+x = 951
+y = 3332
+width = 32
+height = 32
+
+[[items]]
+name = "695"
+path = "99z_graphics/695.png"
+
+[items.rect]
+x = 983
+y = 3332
+width = 32
+height = 32
+
+[[items]]
+name = "790"
+path = "99z_graphics/790.png"
+
+[items.rect]
+x = 1015
+y = 3332
+width = 31
+height = 32
+
+[[items]]
+name = "610"
+path = "99z_graphics/610.png"
+
+[items.rect]
+x = 1046
+y = 3332
+width = 25
+height = 32
+
+[[items]]
+name = "621"
+path = "99z_graphics/621.png"
+
+[items.rect]
+x = 1071
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "596"
+path = "99z_graphics/596.png"
+
+[items.rect]
+x = 4083
+y = 1760
+width = 12
+height = 32
+
+[[items]]
+name = "570"
+path = "99z_graphics/570.png"
+
+[items.rect]
+x = 1134
+y = 3332
+width = 32
+height = 32
+
+[[items]]
+name = "620"
+path = "99z_graphics/620.png"
+
+[items.rect]
+x = 1166
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "577"
+path = "99z_graphics/577.png"
+
+[items.rect]
+x = 1229
+y = 3332
+width = 63
+height = 32
+
+[[items]]
+name = "708"
+path = "99z_graphics/708.png"
+
+[items.rect]
+x = 1292
+y = 3332
+width = 32
+height = 31
+
+[[items]]
+name = "735"
+path = "99z_graphics/735.png"
+
+[items.rect]
+x = 1324
+y = 3332
+width = 32
+height = 31
+
+[[items]]
+name = "676"
+path = "99z_graphics/676.png"
+
+[items.rect]
+x = 4068
+y = 3054
+width = 23
+height = 31
+
+[[items]]
+name = "681"
+path = "99z_graphics/681.png"
+
+[items.rect]
+x = 1356
+y = 3332
+width = 29
+height = 31
+
+[[items]]
+name = "682"
+path = "99z_graphics/682.png"
+
+[items.rect]
+x = 1385
+y = 3332
+width = 30
+height = 31
+
+[[items]]
+name = "639"
+path = "99z_graphics/639.png"
+
+[items.rect]
+x = 1415
+y = 3332
+width = 31
+height = 31
+
+[[items]]
+name = "687"
+path = "99z_graphics/687.png"
+
+[items.rect]
+x = 1446
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "565"
+path = "99z_graphics/565.png"
+
+[items.rect]
+x = 1467
+y = 3332
+width = 29
+height = 31
+
+[[items]]
+name = "614"
+path = "99z_graphics/614.png"
+
+[items.rect]
+x = 1496
+y = 3332
+width = 19
+height = 31
+
+[[items]]
+name = "640"
+path = "99z_graphics/640.png"
+
+[items.rect]
+x = 1515
+y = 3332
+width = 30
+height = 31
+
+[[items]]
+name = "10030"
+path = "99z_graphics/10030.png"
+
+[items.rect]
+x = 1545
+y = 3332
+width = 20
+height = 31
+
+[[items]]
+name = "563"
+path = "99z_graphics/563.png"
+
+[items.rect]
+x = 1565
+y = 3332
+width = 20
+height = 31
+
+[[items]]
+name = "764"
+path = "99z_graphics/764.png"
+
+[items.rect]
+x = 1585
+y = 3332
+width = 22
+height = 31
+
+[[items]]
+name = "765"
+path = "99z_graphics/765.png"
+
+[items.rect]
+x = 1607
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "757"
+path = "99z_graphics/757.png"
+
+[items.rect]
+x = 1628
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "773"
+path = "99z_graphics/773.png"
+
+[items.rect]
+x = 1649
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "10032"
+path = "99z_graphics/10032.png"
+
+[items.rect]
+x = 1670
+y = 3332
+width = 20
+height = 31
+
+[[items]]
+name = "504"
+path = "99z_graphics/504.png"
+
+[items.rect]
+x = 1690
+y = 3332
+width = 31
+height = 31
+
+[[items]]
+name = "502"
+path = "99z_graphics/502.png"
+
+[items.rect]
+x = 1721
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "690"
+path = "99z_graphics/690.png"
+
+[items.rect]
+x = 1742
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "10028"
+path = "99z_graphics/10028.png"
+
+[items.rect]
+x = 1763
+y = 3332
+width = 20
+height = 31
+
+[[items]]
+name = "10026"
+path = "99z_graphics/10026.png"
+
+[items.rect]
+x = 1783
+y = 3332
+width = 19
+height = 31
+
+[[items]]
+name = "795"
+path = "99z_graphics/795.png"
+
+[items.rect]
+x = 1802
+y = 3332
+width = 19
+height = 31
+
+[[items]]
+name = "505"
+path = "99z_graphics/505.png"
+
+[items.rect]
+x = 1821
+y = 3332
+width = 28
+height = 31
+
+[[items]]
+name = "793"
+path = "99z_graphics/793.png"
+
+[items.rect]
+x = 4079
+y = 2000
+width = 17
+height = 31
+
+[[items]]
+name = "684"
+path = "99z_graphics/684.png"
+
+[items.rect]
+x = 1849
+y = 3332
+width = 21
+height = 31
+
+[[items]]
+name = "717"
+path = "99z_graphics/717.png"
+
+[items.rect]
+x = 1870
+y = 3332
+width = 25
+height = 31
+
+[[items]]
+name = "612"
+path = "99z_graphics/612.png"
+
+[items.rect]
+x = 1895
+y = 3332
+width = 31
+height = 31
+
+[[items]]
+name = "761"
+path = "99z_graphics/761.png"
+
+[items.rect]
+x = 1926
+y = 3332
+width = 23
+height = 31
+
+[[items]]
+name = "748"
+path = "99z_graphics/748.png"
+
+[items.rect]
+x = 1949
+y = 3332
+width = 32
+height = 30
+
+[[items]]
+name = "817"
+path = "99z_graphics/817.png"
+
+[items.rect]
+x = 1981
+y = 3332
+width = 29
+height = 30
+
+[[items]]
+name = "564"
+path = "99z_graphics/564.png"
+
+[items.rect]
+x = 2010
+y = 3332
+width = 24
+height = 30
+
+[[items]]
+name = "810"
+path = "99z_graphics/810.png"
+
+[items.rect]
+x = 2034
+y = 3332
+width = 30
+height = 30
+
+[[items]]
+name = "10007"
+path = "99z_graphics/10007.png"
+
+[items.rect]
+x = 2064
+y = 3332
+width = 27
+height = 30
+
+[[items]]
+name = "316"
+path = "99z_graphics/316.png"
+
+[items.rect]
+x = 2091
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "812"
+path = "99z_graphics/812.png"
+
+[items.rect]
+x = 2112
+y = 3332
+width = 31
+height = 30
+
+[[items]]
+name = "529"
+path = "99z_graphics/529.png"
+
+[items.rect]
+x = 2143
+y = 3332
+width = 18
+height = 30
+
+[[items]]
+name = "759"
+path = "99z_graphics/759.png"
+
+[items.rect]
+x = 2161
+y = 3332
+width = 22
+height = 30
+
+[[items]]
+name = "833"
+path = "99z_graphics/833.png"
+
+[items.rect]
+x = 2183
+y = 3332
+width = 39
+height = 30
+
+[[items]]
+name = "678"
+path = "99z_graphics/678.png"
+
+[items.rect]
+x = 2222
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "677"
+path = "99z_graphics/677.png"
+
+[items.rect]
+x = 2241
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "798"
+path = "99z_graphics/798.png"
+
+[items.rect]
+x = 2260
+y = 3332
+width = 30
+height = 30
+
+[[items]]
+name = "670"
+path = "99z_graphics/670.png"
+
+[items.rect]
+x = 2290
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "763"
+path = "99z_graphics/763.png"
+
+[items.rect]
+x = 2311
+y = 3332
+width = 23
+height = 30
+
+[[items]]
+name = "318"
+path = "99z_graphics/318.png"
+
+[items.rect]
+x = 2334
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "530"
+path = "99z_graphics/530.png"
+
+[items.rect]
+x = 2353
+y = 3332
+width = 18
+height = 30
+
+[[items]]
+name = "537"
+path = "99z_graphics/537.png"
+
+[items.rect]
+x = 2371
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "531"
+path = "99z_graphics/531.png"
+
+[items.rect]
+x = 2392
+y = 3332
+width = 32
+height = 30
+
+[[items]]
+name = "507"
+path = "99z_graphics/507.png"
+
+[items.rect]
+x = 2424
+y = 3332
+width = 31
+height = 30
+
+[[items]]
+name = "611"
+path = "99z_graphics/611.png"
+
+[items.rect]
+x = 2455
+y = 3332
+width = 31
+height = 30
+
+[[items]]
+name = "518"
+path = "99z_graphics/518.png"
+
+[items.rect]
+x = 2486
+y = 3332
+width = 31
+height = 30
+
+[[items]]
+name = "403"
+path = "99z_graphics/403.png"
+
+[items.rect]
+x = 2517
+y = 3332
+width = 30
+height = 30
+
+[[items]]
+name = "770"
+path = "99z_graphics/770.png"
+
+[items.rect]
+x = 2547
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "749"
+path = "99z_graphics/749.png"
+
+[items.rect]
+x = 2568
+y = 3332
+width = 32
+height = 30
+
+[[items]]
+name = "679"
+path = "99z_graphics/679.png"
+
+[items.rect]
+x = 2600
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "117"
+path = "99z_graphics/117.png"
+
+[items.rect]
+x = 2621
+y = 3332
+width = 89
+height = 30
+
+[[items]]
+name = "566"
+path = "99z_graphics/566.png"
+
+[items.rect]
+x = 2710
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "685"
+path = "99z_graphics/685.png"
+
+[items.rect]
+x = 2731
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "10005"
+path = "99z_graphics/10005.png"
+
+[items.rect]
+x = 4079
+y = 2031
+width = 14
+height = 30
+
+[[items]]
+name = "613"
+path = "99z_graphics/613.png"
+
+[items.rect]
+x = 2750
+y = 3332
+width = 21
+height = 30
+
+[[items]]
+name = "560"
+path = "99z_graphics/560.png"
+
+[items.rect]
+x = 2771
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "815"
+path = "99z_graphics/815.png"
+
+[items.rect]
+x = 2790
+y = 3332
+width = 28
+height = 30
+
+[[items]]
+name = "680"
+path = "99z_graphics/680.png"
+
+[items.rect]
+x = 2818
+y = 3332
+width = 30
+height = 30
+
+[[items]]
+name = "594"
+path = "99z_graphics/594.png"
+
+[items.rect]
+x = 2848
+y = 3332
+width = 23
+height = 30
+
+[[items]]
+name = "744"
+path = "99z_graphics/744.png"
+
+[items.rect]
+x = 2871
+y = 3332
+width = 32
+height = 30
+
+[[items]]
+name = "689"
+path = "99z_graphics/689.png"
+
+[items.rect]
+x = 2903
+y = 3332
+width = 19
+height = 30
+
+[[items]]
+name = "317"
+path = "99z_graphics/317.png"
+
+[items.rect]
+x = 2922
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "832"
+path = "99z_graphics/832.png"
+
+[items.rect]
+x = 2941
+y = 3332
+width = 44
+height = 29
+
+[[items]]
+name = "779"
+path = "99z_graphics/779.png"
+
+[items.rect]
+x = 4079
+y = 2061
+width = 17
+height = 29
+
+[[items]]
+name = "10003"
+path = "99z_graphics/10003.png"
+
+[items.rect]
+x = 4079
+y = 2090
+width = 15
+height = 29
+
+[[items]]
+name = "769"
+path = "99z_graphics/769.png"
+
+[items.rect]
+x = 2985
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "688"
+path = "99z_graphics/688.png"
+
+[items.rect]
+x = 4079
+y = 2119
+width = 17
+height = 29
+
+[[items]]
+name = "319"
+path = "99z_graphics/319.png"
+
+[items.rect]
+x = 3004
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "663"
+path = "99z_graphics/663.png"
+
+[items.rect]
+x = 3023
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "745"
+path = "99z_graphics/745.png"
+
+[items.rect]
+x = 3042
+y = 3332
+width = 31
+height = 29
+
+[[items]]
+name = "576"
+path = "99z_graphics/576.png"
+
+[items.rect]
+x = 3073
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "785"
+path = "99z_graphics/785.png"
+
+[items.rect]
+x = 4079
+y = 3205
+width = 17
+height = 29
+
+[[items]]
+name = "740"
+path = "99z_graphics/740.png"
+
+[items.rect]
+x = 3092
+y = 3332
+width = 32
+height = 29
+
+[[items]]
+name = "807"
+path = "99z_graphics/807.png"
+
+[items.rect]
+x = 3124
+y = 3332
+width = 30
+height = 29
+
+[[items]]
+name = "777"
+path = "99z_graphics/777.png"
+
+[items.rect]
+x = 3154
+y = 3332
+width = 19
+height = 29
+
+[[items]]
+name = "10024"
+path = "99z_graphics/10024.png"
+
+[items.rect]
+x = 4079
+y = 3234
+width = 17
+height = 28
+
+[[items]]
+name = "653"
+path = "99z_graphics/653.png"
+
+[items.rect]
+x = 3173
+y = 3332
+width = 59
+height = 28
+
+[[items]]
+name = "768"
+path = "99z_graphics/768.png"
+
+[items.rect]
+x = 3232
+y = 3332
+width = 21
+height = 28
+
+[[items]]
+name = "803"
+path = "99z_graphics/803.png"
+
+[items.rect]
+x = 3253
+y = 3332
+width = 17
+height = 28
+
+[[items]]
+name = "571"
+path = "99z_graphics/571.png"
+
+[items.rect]
+x = 3270
+y = 3332
+width = 31
+height = 28
+
+[[items]]
+name = "520"
+path = "99z_graphics/520.png"
+
+[items.rect]
+x = 3301
+y = 3332
+width = 30
+height = 28
+
+[[items]]
+name = "9500"
+path = "99z_graphics/9500.png"
+
+[items.rect]
+x = 3331
+y = 3332
+width = 127
+height = 28
+
+[[items]]
+name = "774"
+path = "99z_graphics/774.png"
+
+[items.rect]
+x = 3458
+y = 3332
+width = 30
+height = 28
+
+[[items]]
+name = "801"
+path = "99z_graphics/801.png"
+
+[items.rect]
+x = 3488
+y = 3332
+width = 17
+height = 28
+
+[[items]]
+name = "519"
+path = "99z_graphics/519.png"
+
+[items.rect]
+x = 3505
+y = 3332
+width = 32
+height = 28
+
+[[items]]
+name = "172"
+path = "99z_graphics/172.png"
+
+[items.rect]
+x = 3537
+y = 3332
+width = 32
+height = 28
+
+[[items]]
+name = "10020"
+path = "99z_graphics/10020.png"
+
+[items.rect]
+x = 3569
+y = 3332
+width = 17
+height = 28
+
+[[items]]
+name = "595"
+path = "99z_graphics/595.png"
+
+[items.rect]
+x = 3586
+y = 3332
+width = 31
+height = 28
+
+[[items]]
+name = "792"
+path = "99z_graphics/792.png"
+
+[items.rect]
+x = 3617
+y = 3332
+width = 19
+height = 28
+
+[[items]]
+name = "758"
+path = "99z_graphics/758.png"
+
+[items.rect]
+x = 3636
+y = 3332
+width = 21
+height = 28
+
+[[items]]
+name = "404"
+path = "99z_graphics/404.png"
+
+[items.rect]
+x = 3657
+y = 3332
+width = 32
+height = 27
+
+[[items]]
+name = "819"
+path = "99z_graphics/819.png"
+
+[items.rect]
+x = 3689
+y = 3332
+width = 30
+height = 27
+
+[[items]]
+name = "796"
+path = "99z_graphics/796.png"
+
+[items.rect]
+x = 3719
+y = 3332
+width = 19
+height = 27
+
+[[items]]
+name = "10011"
+path = "99z_graphics/10011.png"
+
+[items.rect]
+x = 3738
+y = 3332
+width = 26
+height = 27
+
+[[items]]
+name = "808"
+path = "99z_graphics/808.png"
+
+[items.rect]
+x = 3764
+y = 3332
+width = 19
+height = 27
+
+[[items]]
+name = "789"
+path = "99z_graphics/789.png"
+
+[items.rect]
+x = 3783
+y = 3332
+width = 26
+height = 27
+
+[[items]]
+name = "804"
+path = "99z_graphics/804.png"
+
+[items.rect]
+x = 4083
+y = 1792
+width = 13
+height = 27
+
+[[items]]
+name = "606"
+path = "99z_graphics/606.png"
+
+[items.rect]
+x = 4084
+y = 2562
+width = 11
+height = 27
+
+[[items]]
+name = "605"
+path = "99z_graphics/605.png"
+
+[items.rect]
+x = 3809
+y = 3332
+width = 11
+height = 27
+
+[[items]]
+name = "762"
+path = "99z_graphics/762.png"
+
+[items.rect]
+x = 3820
+y = 3332
+width = 17
+height = 27
+
+[[items]]
+name = "800"
+path = "99z_graphics/800.png"
+
+[items.rect]
+x = 3837
+y = 3332
+width = 17
+height = 27
+
+[[items]]
+name = "731"
+path = "99z_graphics/731.png"
+
+[items.rect]
+x = 3854
+y = 3332
+width = 15
+height = 27
+
+[[items]]
+name = "802"
+path = "99z_graphics/802.png"
+
+[items.rect]
+x = 3869
+y = 3332
+width = 19
+height = 27
+
+[[items]]
+name = "592"
+path = "99z_graphics/592.png"
+
+[items.rect]
+x = 3888
+y = 3332
+width = 11
+height = 27
+
+[[items]]
+name = "783"
+path = "99z_graphics/783.png"
+
+[items.rect]
+x = 3899
+y = 3332
+width = 13
+height = 27
+
+[[items]]
+name = "10016"
+path = "99z_graphics/10016.png"
+
+[items.rect]
+x = 3912
+y = 3332
+width = 31
+height = 27
+
+[[items]]
+name = "814"
+path = "99z_graphics/814.png"
+
+[items.rect]
+x = 3943
+y = 3332
+width = 17
+height = 27
+
+[[items]]
+name = "775"
+path = "99z_graphics/775.png"
+
+[items.rect]
+x = 3960
+y = 3332
+width = 11
+height = 27
+
+[[items]]
+name = "805"
+path = "99z_graphics/805.png"
+
+[items.rect]
+x = 3971
+y = 3332
+width = 13
+height = 27
+
+[[items]]
+name = "784"
+path = "99z_graphics/784.png"
+
+[items.rect]
+x = 3984
+y = 3332
+width = 15
+height = 27
+
+[[items]]
+name = "766"
+path = "99z_graphics/766.png"
+
+[items.rect]
+x = 3999
+y = 3332
+width = 19
+height = 27
+
+[[items]]
+name = "658"
+path = "99z_graphics/658.png"
+
+[items.rect]
+x = 4018
+y = 3332
+width = 17
+height = 27
+
+[[items]]
+name = "771"
+path = "99z_graphics/771.png"
+
+[items.rect]
+x = 4035
+y = 3332
+width = 20
+height = 27
+
+[[items]]
+name = "533"
+path = "99z_graphics/533.png"
+
+[items.rect]
+x = 4059
+y = 1166
+width = 22
+height = 26
+
+[[items]]
+name = "535"
+path = "99z_graphics/535.png"
+
+[items.rect]
+x = 4055
+y = 3332
+width = 22
+height = 26
+
+[[items]]
+name = "603"
+path = "99z_graphics/603.png"
+
+[items.rect]
+x = 0
+y = 3364
+width = 21
+height = 26
+
+[[items]]
+name = "609"
+path = "99z_graphics/609.png"
+
+[items.rect]
+x = 21
+y = 3364
+width = 22
+height = 26
+
+[[items]]
+name = "536"
+path = "99z_graphics/536.png"
+
+[items.rect]
+x = 43
+y = 3364
+width = 22
+height = 26
+
+[[items]]
+name = "760"
+path = "99z_graphics/760.png"
+
+[items.rect]
+x = 4077
+y = 3332
+width = 19
+height = 26
+
+[[items]]
+name = "797"
+path = "99z_graphics/797.png"
+
+[items.rect]
+x = 65
+y = 3364
+width = 21
+height = 26
+
+[[items]]
+name = "534"
+path = "99z_graphics/534.png"
+
+[items.rect]
+x = 86
+y = 3364
+width = 21
+height = 26
+
+[[items]]
+name = "809"
+path = "99z_graphics/809.png"
+
+[items.rect]
+x = 107
+y = 3364
+width = 21
+height = 26
+
+[[items]]
+name = "584"
+path = "99z_graphics/584.png"
+
+[items.rect]
+x = 128
+y = 3364
+width = 18
+height = 26
+
+[[items]]
+name = "822"
+path = "99z_graphics/822.png"
+
+[items.rect]
+x = 4087
+y = 340
+width = 7
+height = 25
+
+[[items]]
+name = "780"
+path = "99z_graphics/780.png"
+
+[items.rect]
+x = 4081
+y = 1166
+width = 14
+height = 25
+
+[[items]]
+name = "782"
+path = "99z_graphics/782.png"
+
+[items.rect]
+x = 4048
+y = 2957
+width = 17
+height = 25
+
+[[items]]
+name = "586"
+path = "99z_graphics/586.png"
+
+[items.rect]
+x = 4065
+y = 2957
+width = 22
+height = 25
+
+[[items]]
+name = "756"
+path = "99z_graphics/756.png"
+
+[items.rect]
+x = 146
+y = 3364
+width = 21
+height = 25
+
+[[items]]
+name = "781"
+path = "99z_graphics/781.png"
+
+[items.rect]
+x = 167
+y = 3364
+width = 14
+height = 25
+
+[[items]]
+name = "821"
+path = "99z_graphics/821.png"
+
+[items.rect]
+x = 4087
+y = 448
+width = 7
+height = 25
+
+[[items]]
+name = "729"
+path = "99z_graphics/729.png"
+
+[items.rect]
+x = 181
+y = 3364
+width = 18
+height = 25
+
+[[items]]
+name = "813"
+path = "99z_graphics/813.png"
+
+[items.rect]
+x = 199
+y = 3364
+width = 21
+height = 25
+
+[[items]]
+name = "599"
+path = "99z_graphics/599.png"
+
+[items.rect]
+x = 220
+y = 3364
+width = 22
+height = 25
+
+[[items]]
+name = "581"
+path = "99z_graphics/581.png"
+
+[items.rect]
+x = 242
+y = 3364
+width = 32
+height = 25
+
+[[items]]
+name = "691"
+path = "99z_graphics/691.png"
+
+[items.rect]
+x = 274
+y = 3364
+width = 21
+height = 24
+
+[[items]]
+name = "154"
+path = "99z_graphics/154.png"
+
+[items.rect]
+x = 295
+y = 3364
+width = 101
+height = 24
+
+[[items]]
+name = "10009"
+path = "99z_graphics/10009.png"
+
+[items.rect]
+x = 396
+y = 3364
+width = 17
+height = 24
+
+[[items]]
+name = "171"
+path = "99z_graphics/171.png"
+
+[items.rect]
+x = 413
+y = 3364
+width = 31
+height = 24
+
+[[items]]
+name = "733"
+path = "99z_graphics/733.png"
+
+[items.rect]
+x = 444
+y = 3364
+width = 32
+height = 24
+
+[[items]]
+name = "734"
+path = "99z_graphics/734.png"
+
+[items.rect]
+x = 476
+y = 3364
+width = 32
+height = 24
+
+[[items]]
+name = "799"
+path = "99z_graphics/799.png"
+
+[items.rect]
+x = 4072
+y = 885
+width = 17
+height = 23
+
+[[items]]
+name = "510"
+path = "99z_graphics/510.png"
+
+[items.rect]
+x = 508
+y = 3364
+width = 29
+height = 23
+
+[[items]]
+name = "3"
+path = "99z_graphics/3.png"
+
+[items.rect]
+x = 537
+y = 3364
+width = 29
+height = 23
+
+[[items]]
+name = "811"
+path = "99z_graphics/811.png"
+
+[items.rect]
+x = 566
+y = 3364
+width = 17
+height = 23
+
+[[items]]
+name = "517"
+path = "99z_graphics/517.png"
+
+[items.rect]
+x = 583
+y = 3364
+width = 23
+height = 22
+
+[[items]]
+name = "521"
+path = "99z_graphics/521.png"
+
+[items.rect]
+x = 606
+y = 3364
+width = 21
+height = 22
+
+[[items]]
+name = "402"
+path = "99z_graphics/402.png"
+
+[items.rect]
+x = 627
+y = 3364
+width = 19
+height = 22
+
+[[items]]
+name = "532"
+path = "99z_graphics/532.png"
+
+[items.rect]
+x = 646
+y = 3364
+width = 32
+height = 22
+
+[[items]]
+name = "727"
+path = "99z_graphics/727.png"
+
+[items.rect]
+x = 678
+y = 3364
+width = 26
+height = 22
+
+[[items]]
+name = "726"
+path = "99z_graphics/726.png"
+
+[items.rect]
+x = 704
+y = 3364
+width = 26
+height = 22
+
+[[items]]
+name = "503"
+path = "99z_graphics/503.png"
+
+[items.rect]
+x = 730
+y = 3364
+width = 21
+height = 22
+
+[[items]]
+name = "590"
+path = "99z_graphics/590.png"
+
+[items.rect]
+x = 751
+y = 3364
+width = 12
+height = 22
+
+[[items]]
+name = "10017"
+path = "99z_graphics/10017.png"
+
+[items.rect]
+x = 763
+y = 3364
+width = 20
+height = 22
+
+[[items]]
+name = "728"
+path = "99z_graphics/728.png"
+
+[items.rect]
+x = 783
+y = 3364
+width = 26
+height = 22
+
+[[items]]
+name = "543"
+path = "99z_graphics/543.png"
+
+[items.rect]
+x = 809
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "522"
+path = "99z_graphics/522.png"
+
+[items.rect]
+x = 824
+y = 3364
+width = 20
+height = 21
+
+[[items]]
+name = "539"
+path = "99z_graphics/539.png"
+
+[items.rect]
+x = 844
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "591"
+path = "99z_graphics/591.png"
+
+[items.rect]
+x = 859
+y = 3364
+width = 17
+height = 21
+
+[[items]]
+name = "540"
+path = "99z_graphics/540.png"
+
+[items.rect]
+x = 876
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "587"
+path = "99z_graphics/587.png"
+
+[items.rect]
+x = 891
+y = 3364
+width = 22
+height = 21
+
+[[items]]
+name = "588"
+path = "99z_graphics/588.png"
+
+[items.rect]
+x = 913
+y = 3364
+width = 23
+height = 21
+
+[[items]]
+name = "545"
+path = "99z_graphics/545.png"
+
+[items.rect]
+x = 936
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "546"
+path = "99z_graphics/546.png"
+
+[items.rect]
+x = 951
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "602"
+path = "99z_graphics/602.png"
+
+[items.rect]
+x = 966
+y = 3364
+width = 15
+height = 21
+
+[[items]]
+name = "579"
+path = "99z_graphics/579.png"
+
+[items.rect]
+x = 981
+y = 3364
+width = 32
+height = 21
+
+[[items]]
+name = "189"
+path = "99z_graphics/189.png"
+
+[items.rect]
+x = 1013
+y = 3364
+width = 36
+height = 21
+
+[[items]]
+name = "542"
+path = "99z_graphics/542.png"
+
+[items.rect]
+x = 1049
+y = 3364
+width = 15
+height = 20
+
+[[items]]
+name = "732"
+path = "99z_graphics/732.png"
+
+[items.rect]
+x = 1064
+y = 3364
+width = 21
+height = 20
+
+[[items]]
+name = "538"
+path = "99z_graphics/538.png"
+
+[items.rect]
+x = 1085
+y = 3364
+width = 15
+height = 20
+
+[[items]]
+name = "585"
+path = "99z_graphics/585.png"
+
+[items.rect]
+x = 1100
+y = 3364
+width = 12
+height = 20
+
+[[items]]
+name = "541"
+path = "99z_graphics/541.png"
+
+[items.rect]
+x = 1112
+y = 3364
+width = 15
+height = 20
+
+[[items]]
+name = "10012"
+path = "99z_graphics/10012.png"
+
+[items.rect]
+x = 1127
+y = 3364
+width = 66
+height = 20
+
+[[items]]
+name = "544"
+path = "99z_graphics/544.png"
+
+[items.rect]
+x = 1193
+y = 3364
+width = 15
+height = 20
+
+[[items]]
+name = "506"
+path = "99z_graphics/506.png"
+
+[items.rect]
+x = 1440
+y = 491
+width = 17
+height = 19
+
+[[items]]
+name = "515"
+path = "99z_graphics/515.png"
+
+[items.rect]
+x = 1457
+y = 491
+width = 30
+height = 19
+
+[[items]]
+name = "725"
+path = "99z_graphics/725.png"
+
+[items.rect]
+x = 1487
+y = 491
+width = 31
+height = 19
+
+[[items]]
+name = "583"
+path = "99z_graphics/583.png"
+
+[items.rect]
+x = 1518
+y = 491
+width = 32
+height = 18
+
+[[items]]
+name = "593"
+path = "99z_graphics/593.png"
+
+[items.rect]
+x = 1550
+y = 491
+width = 20
+height = 18
+
+[[items]]
+name = "186"
+path = "99z_graphics/186.png"
+
+[items.rect]
+x = 1570
+y = 491
+width = 96
+height = 18
+
+[[items]]
+name = "401"
+path = "99z_graphics/401.png"
+
+[items.rect]
+x = 1666
+y = 491
+width = 17
+height = 17
+
+[[items]]
+name = "170"
+path = "99z_graphics/170.png"
+
+[items.rect]
+x = 1683
+y = 491
+width = 31
+height = 17
+
+[[items]]
+name = "202"
+path = "99z_graphics/202.png"
+
+[items.rect]
+x = 1714
+y = 491
+width = 60
+height = 16
+
+[[items]]
+name = "9537"
+path = "99z_graphics/9537.png"
+
+[items.rect]
+x = 1774
+y = 491
+width = 64
+height = 16
+
+[[items]]
+name = "516"
+path = "99z_graphics/516.png"
+
+[items.rect]
+x = 1838
+y = 491
+width = 22
+height = 16
+
+[[items]]
+name = "206"
+path = "99z_graphics/206.png"
+
+[items.rect]
+x = 1860
+y = 491
+width = 59
+height = 16
+
+[[items]]
+name = "3803"
+path = "99z_graphics/3803.png"
+
+[items.rect]
+x = 1919
+y = 491
+width = 62
+height = 16
+
+[[items]]
+name = "697"
+path = "99z_graphics/697.png"
+
+[items.rect]
+x = 1981
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "696"
+path = "99z_graphics/696.png"
+
+[items.rect]
+x = 2000
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "514"
+path = "99z_graphics/514.png"
+
+[items.rect]
+x = 2019
+y = 491
+width = 22
+height = 16
+
+[[items]]
+name = "205"
+path = "99z_graphics/205.png"
+
+[items.rect]
+x = 2041
+y = 491
+width = 60
+height = 16
+
+[[items]]
+name = "699"
+path = "99z_graphics/699.png"
+
+[items.rect]
+x = 2101
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "698"
+path = "99z_graphics/698.png"
+
+[items.rect]
+x = 2120
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "188"
+path = "99z_graphics/188.png"
+
+[items.rect]
+x = 2139
+y = 491
+width = 36
+height = 16
+
+[[items]]
+name = "700"
+path = "99z_graphics/700.png"
+
+[items.rect]
+x = 2175
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "213"
+path = "99z_graphics/213.png"
+
+[items.rect]
+x = 2194
+y = 491
+width = 62
+height = 16
+
+[[items]]
+name = "706"
+path = "99z_graphics/706.png"
+
+[items.rect]
+x = 2256
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "2154"
+path = "99z_graphics/2154.png"
+
+[items.rect]
+x = 2275
+y = 491
+width = 61
+height = 16
+
+[[items]]
+name = "216"
+path = "99z_graphics/216.png"
+
+[items.rect]
+x = 2336
+y = 491
+width = 60
+height = 16
+
+[[items]]
+name = "228"
+path = "99z_graphics/228.png"
+
+[items.rect]
+x = 2396
+y = 491
+width = 60
+height = 16
+
+[[items]]
+name = "704"
+path = "99z_graphics/704.png"
+
+[items.rect]
+x = 2456
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "214"
+path = "99z_graphics/214.png"
+
+[items.rect]
+x = 2475
+y = 491
+width = 62
+height = 16
+
+[[items]]
+name = "9538"
+path = "99z_graphics/9538.png"
+
+[items.rect]
+x = 2537
+y = 491
+width = 64
+height = 16
+
+[[items]]
+name = "705"
+path = "99z_graphics/705.png"
+
+[items.rect]
+x = 2601
+y = 491
+width = 19
+height = 16
+
+[[items]]
+name = "10010"
+path = "99z_graphics/10010.png"
+
+[items.rect]
+x = 2620
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "8200"
+path = "99z_graphics/8200.png"
+
+[items.rect]
+x = 2680
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "1504"
+path = "99z_graphics/1504.png"
+
+[items.rect]
+x = 2740
+y = 491
+width = 64
+height = 15
+
+[[items]]
+name = "169"
+path = "99z_graphics/169.png"
+
+[items.rect]
+x = 2804
+y = 491
+width = 32
+height = 15
+
+[[items]]
+name = "208"
+path = "99z_graphics/208.png"
+
+[items.rect]
+x = 2836
+y = 491
+width = 63
+height = 15
+
+[[items]]
+name = "2140"
+path = "99z_graphics/2140.png"
+
+[items.rect]
+x = 2899
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "2091"
+path = "99z_graphics/2091.png"
+
+[items.rect]
+x = 2959
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "209"
+path = "99z_graphics/209.png"
+
+[items.rect]
+x = 3019
+y = 491
+width = 62
+height = 15
+
+[[items]]
+name = "2130"
+path = "99z_graphics/2130.png"
+
+[items.rect]
+x = 3081
+y = 491
+width = 63
+height = 15
+
+[[items]]
+name = "211"
+path = "99z_graphics/211.png"
+
+[items.rect]
+x = 3144
+y = 491
+width = 62
+height = 15
+
+[[items]]
+name = "2110"
+path = "99z_graphics/2110.png"
+
+[items.rect]
+x = 3206
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "9539"
+path = "99z_graphics/9539.png"
+
+[items.rect]
+x = 3266
+y = 491
+width = 64
+height = 15
+
+[[items]]
+name = "207"
+path = "99z_graphics/207.png"
+
+[items.rect]
+x = 3330
+y = 491
+width = 63
+height = 15
+
+[[items]]
+name = "210"
+path = "99z_graphics/210.png"
+
+[items.rect]
+x = 3393
+y = 491
+width = 60
+height = 15
+
+[[items]]
+name = "233"
+path = "99z_graphics/233.png"
+
+[items.rect]
+x = 3453
+y = 491
+width = 59
+height = 15
+
+[[items]]
+name = "405"
+path = "99z_graphics/405.png"
+
+[items.rect]
+x = 3512
+y = 491
+width = 110
+height = 15
+
+[[items]]
+name = "3802"
+path = "99z_graphics/3802.png"
+
+[items.rect]
+x = 3622
+y = 491
+width = 62
+height = 14
+
+[[items]]
+name = "204"
+path = "99z_graphics/204.png"
+
+[items.rect]
+x = 3684
+y = 491
+width = 63
+height = 14
+
+[[items]]
+name = "2080"
+path = "99z_graphics/2080.png"
+
+[items.rect]
+x = 3747
+y = 491
+width = 61
+height = 14
+
+[[items]]
+name = "2155"
+path = "99z_graphics/2155.png"
+
+[items.rect]
+x = 3808
+y = 491
+width = 60
+height = 14
+
+[[items]]
+name = "2040"
+path = "99z_graphics/2040.png"
+
+[items.rect]
+x = 3868
+y = 491
+width = 62
+height = 14
+
+[[items]]
+name = "2070"
+path = "99z_graphics/2070.png"
+
+[items.rect]
+x = 3930
+y = 491
+width = 63
+height = 14
+
+[[items]]
+name = "2050"
+path = "99z_graphics/2050.png"
+
+[items.rect]
+x = 3993
+y = 491
+width = 58
+height = 14
+
+[[items]]
+name = "2301"
+path = "99z_graphics/2301.png"
+
+[items.rect]
+x = 1426
+y = 937
+width = 62
+height = 14
+
+[[items]]
+name = "203"
+path = "99z_graphics/203.png"
+
+[items.rect]
+x = 1488
+y = 937
+width = 62
+height = 14
+
+[[items]]
+name = "201"
+path = "99z_graphics/201.png"
+
+[items.rect]
+x = 1550
+y = 937
+width = 60
+height = 14
+
+[[items]]
+name = "187"
+path = "99z_graphics/187.png"
+
+[items.rect]
+x = 1610
+y = 937
+width = 70
+height = 14
+
+[[items]]
+name = "2156"
+path = "99z_graphics/2156.png"
+
+[items.rect]
+x = 1680
+y = 937
+width = 61
+height = 14
+
+[[items]]
+name = "223"
+path = "99z_graphics/223.png"
+
+[items.rect]
+x = 1741
+y = 937
+width = 63
+height = 14
+
+[[items]]
+name = "200"
+path = "99z_graphics/200.png"
+
+[items.rect]
+x = 1804
+y = 937
+width = 63
+height = 14
+
+[[items]]
+name = "509"
+path = "99z_graphics/509.png"
+
+[items.rect]
+x = 4051
+y = 491
+width = 15
+height = 14
+
+[[items]]
+name = "2157"
+path = "99z_graphics/2157.png"
+
+[items.rect]
+x = 1867
+y = 937
+width = 62
+height = 14
+
+[[items]]
+name = "1503"
+path = "99z_graphics/1503.png"
+
+[items.rect]
+x = 1929
+y = 937
+width = 64
+height = 14
+
+[[items]]
+name = "212"
+path = "99z_graphics/212.png"
+
+[items.rect]
+x = 1993
+y = 937
+width = 57
+height = 14
+
+[[items]]
+name = "2280"
+path = "99z_graphics/2280.png"
+
+[items.rect]
+x = 2050
+y = 937
+width = 58
+height = 14
+
+[[items]]
+name = "2230"
+path = "99z_graphics/2230.png"
+
+[items.rect]
+x = 2478
+y = 923
+width = 62
+height = 13
+
+[[items]]
+name = "221"
+path = "99z_graphics/221.png"
+
+[items.rect]
+x = 2540
+y = 923
+width = 63
+height = 13
+
+[[items]]
+name = "226"
+path = "99z_graphics/226.png"
+
+[items.rect]
+x = 2603
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "222"
+path = "99z_graphics/222.png"
+
+[items.rect]
+x = 2664
+y = 923
+width = 63
+height = 13
+
+[[items]]
+name = "217"
+path = "99z_graphics/217.png"
+
+[items.rect]
+x = 2727
+y = 923
+width = 63
+height = 13
+
+[[items]]
+name = "2160"
+path = "99z_graphics/2160.png"
+
+[items.rect]
+x = 2790
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "219"
+path = "99z_graphics/219.png"
+
+[items.rect]
+x = 2851
+y = 923
+width = 62
+height = 13
+
+[[items]]
+name = "2330"
+path = "99z_graphics/2330.png"
+
+[items.rect]
+x = 2913
+y = 923
+width = 59
+height = 13
+
+[[items]]
+name = "508"
+path = "99z_graphics/508.png"
+
+[items.rect]
+x = 4066
+y = 491
+width = 14
+height = 13
+
+[[items]]
+name = "2020"
+path = "99z_graphics/2020.png"
+
+[items.rect]
+x = 2972
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "229"
+path = "99z_graphics/229.png"
+
+[items.rect]
+x = 3033
+y = 923
+width = 59
+height = 13
+
+[[items]]
+name = "227"
+path = "99z_graphics/227.png"
+
+[items.rect]
+x = 3092
+y = 923
+width = 60
+height = 13
+
+[[items]]
+name = "2090"
+path = "99z_graphics/2090.png"
+
+[items.rect]
+x = 3152
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "218"
+path = "99z_graphics/218.png"
+
+[items.rect]
+x = 3213
+y = 923
+width = 63
+height = 13
+
+[[items]]
+name = "230"
+path = "99z_graphics/230.png"
+
+[items.rect]
+x = 3276
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "2010"
+path = "99z_graphics/2010.png"
+
+[items.rect]
+x = 3337
+y = 923
+width = 62
+height = 13
+
+[[items]]
+name = "224"
+path = "99z_graphics/224.png"
+
+[items.rect]
+x = 3399
+y = 923
+width = 62
+height = 13
+
+[[items]]
+name = "2093"
+path = "99z_graphics/2093.png"
+
+[items.rect]
+x = 3461
+y = 923
+width = 61
+height = 13
+
+[[items]]
+name = "225"
+path = "99z_graphics/225.png"
+
+[items.rect]
+x = 3522
+y = 923
+width = 61
+height = 12
+
+[[items]]
+name = "231"
+path = "99z_graphics/231.png"
+
+[items.rect]
+x = 3583
+y = 923
+width = 61
+height = 12
+
+[[items]]
+name = "220"
+path = "99z_graphics/220.png"
+
+[items.rect]
+x = 3644
+y = 923
+width = 63
+height = 12
+
+[[items]]
+name = "597"
+path = "99z_graphics/597.png"
+
+[items.rect]
+x = 4080
+y = 491
+width = 8
+height = 12
+
+[[items]]
+name = "2250"
+path = "99z_graphics/2250.png"
+
+[items.rect]
+x = 3707
+y = 923
+width = 58
+height = 12
+
+[[items]]
+name = "232"
+path = "99z_graphics/232.png"
+
+[items.rect]
+x = 3765
+y = 923
+width = 59
+height = 12
+
+[[items]]
+name = "816"
+path = "99z_graphics/816.png"
+
+[items.rect]
+x = 3824
+y = 923
+width = 28
+height = 12
+
+[[items]]
+name = "184"
+path = "99z_graphics/184.png"
+
+[items.rect]
+x = 3852
+y = 923
+width = 120
+height = 11
+
+[[items]]
+name = "604"
+path = "99z_graphics/604.png"
+
+[items.rect]
+x = 3972
+y = 923
+width = 16
+height = 11
+
+[[items]]
+name = "608"
+path = "99z_graphics/608.png"
+
+[items.rect]
+x = 3988
+y = 923
+width = 21
+height = 11
+
+[[items]]
+name = "2092"
+path = "99z_graphics/2092.png"
+
+[items.rect]
+x = 4009
+y = 923
+width = 62
+height = 11
+
+[[items]]
+name = "400"
+path = "99z_graphics/400.png"
+
+[items.rect]
+x = 4071
+y = 923
+width = 12
+height = 11
+
+[[items]]
+name = "185"
+path = "99z_graphics/185.png"
+
+[items.rect]
+x = 3046
+y = 325
+width = 107
+height = 10
+
+[[items]]
+name = "578"
+path = "99z_graphics/578.png"
+
+[items.rect]
+x = 4076
+y = 307
+width = 15
+height = 9
+
+[[items]]
+name = "349"
+path = "99z_graphics/349.png"
+
+[items.rect]
+x = 4093
+y = 0
+width = 1
+height = 1

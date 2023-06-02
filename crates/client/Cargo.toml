@@ -11,3 +11,10 @@ roma.workspace = true
 serde.workspace = true
 toml.workspace = true
 rand.workspace = true
+rustc-hash.workspace = true
+array2d.workspace = true
+rayon = "1.7"
+itertools = "0.10"
+
+[profile.release]
+debug = true

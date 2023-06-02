@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display};
+use std::{collections::VecDeque, fmt::Display};
 
 use wgpu::{
     util::DeviceExt, BindGroupLayout, BlendComponent, BlendFactor, BlendOperation, Buffer, Device,
@@ -14,7 +14,7 @@ pub(crate) struct SpriteBatchRenderPass {
 }
 
 impl SpriteBatchRenderPass {
-    const MAX_SPRITES: usize = 8192;
+    pub const MAX_SPRITES: usize = 2560;
     const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
 
@@ -40,7 +40,6 @@ impl SpriteBatchRenderPass {
             contents: bytemuck::cast_slice(&indices),
             usage: wgpu::BufferUsages::INDEX,
         });
-
         let vertices = [Vertex::default(); Self::MAX_VERTICES];
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Sprite Batch Vertex Buffer"),
@@ -56,12 +55,11 @@ impl SpriteBatchRenderPass {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct SpriteData {
     pub z: usize,
+    pub texture_id: usize,
     pub entity_id: usize,
-    pub texture_id: String,
-    pub vertices: Vec<Vertex>,
 }
 
 #[repr(C)]
@@ -181,31 +179,22 @@ impl DeviceSpriteBatchPipelineExt for Device {
 }
 
 pub struct SpriteBatch {
-    pub texture_id: String,
+    pub texture_id: usize,
     pub size: u32,
 }
 
-pub fn prepare_sprite_data(sprites: &mut Vec<SpriteData>) -> (Vec<Vertex>, Vec<SpriteBatch>) {
+pub fn prepare_sprite_data(sprites: &mut VecDeque<SpriteData>) -> Vec<SpriteBatch> {
     if sprites.is_empty() {
-        return (vec![], vec![]);
+        return vec![];
     }
 
-    sprites.sort_unstable_by(|a, b| match a.z.partial_cmp(&b.z) {
-        Some(Ordering::Equal) | None => a.texture_id.cmp(&b.texture_id),
-        Some(other) => other,
-    });
-    sprites.reverse();
-
-    let mut batches = Vec::with_capacity(sprites.len());
-    let mut vertices = Vec::with_capacity(sprites.len() * 4);
-
+    let mut batches = vec![];
     let mut current_batch = SpriteBatch {
         size: 0,
-        texture_id: sprites[0].texture_id.clone(),
+        texture_id: sprites[0].texture_id,
     };
 
-    while let Some(mut sprite) = sprites.pop() {
-        vertices.append(&mut sprite.vertices);
+    while let Some(sprite) = sprites.pop_back() {
         if sprite.texture_id == current_batch.texture_id {
             current_batch.size += 1;
         } else {
@@ -216,9 +205,10 @@ pub fn prepare_sprite_data(sprites: &mut Vec<SpriteData>) -> (Vec<Vertex>, Vec<S
             };
         }
     }
+
     if current_batch.size > 0 {
         batches.push(current_batch);
     }
 
-    (vertices, batches)
+    batches
 }

@@ -1,4 +1,11 @@
-use definitions::{client::ClientResources, client::ClientResourcesPaths, image::Image, Offset};
+use definitions::{
+    atlas::{AtlasResource, AtlasType},
+    client::ClientResources,
+    client::ClientResourcesPaths,
+    image::Image,
+    Offset,
+};
+use itertools::iproduct;
 use std::{cmp::min, time::Duration};
 
 use definitions::{client::load_client_resources, map::Map};
@@ -6,7 +13,7 @@ use entity::Entity;
 use roma::{
     graphics::{
         rect::Rect,
-        textures::DrawTextureParams,
+        textures::DrawParams,
         vec2::{vec2, Vec2},
     },
     Game, Roma,
@@ -27,6 +34,11 @@ pub struct Finisterra {
 
 impl Default for Finisterra {
     fn default() -> Self {
+        let atlas = AtlasResource {
+            metadata_path: "./assets/finisterra/atlas.toml",
+            image_id: 0,
+            atlas_type: AtlasType::Yatp,
+        };
         let paths = ClientResourcesPaths {
             bodies: "./assets/99z/Personajes.ind",
             heads: "./assets/99z/Cabezas.ind",
@@ -36,13 +48,16 @@ impl Default for Finisterra {
             fxs: "./assets/99z/Fxs.ind",
             maps: "./assets/99z/maps/",
             graphics: "./assets/99z/Graficos.ind",
-            atlas: Some("./assets/99z/graphics/atlas/graphics.toml"),
+            atlas: Some(atlas),
         };
         let resources = load_client_resources(paths).expect("can load client resources");
-        let current_map = resources.maps.get(&1).expect("can get map").clone();
+        let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
-        for i in 1..=10000 {
-            entities.push(Entity::random(1000000 + i * 10, &resources));
+        for i in 0..100000 {
+            let entity = Entity::random(1000000 + i * 10, &resources);
+            current_map.tiles[entity.position[0]][99 - entity.position[1]].user = Some(i);
+            println!("entity: {:?}", entity);
+            entities.push(entity);
         }
         Self {
             settings: Settings::default(),
@@ -59,7 +74,6 @@ impl Game for Finisterra {
         self.process_input(roma, delta);
         self.update_camera(roma);
         self.draw_map(roma);
-        self.draw_entities(roma);
     }
 }
 
@@ -67,61 +81,126 @@ const TILE_SIZE: usize = 32;
 
 impl Finisterra {
     pub fn update_camera(&self, roma: &mut Roma) {
-        let camera_position = self.position * 32.;
+        let camera_position = self.position * 32. - 16.;
         roma.set_camera_position(camera_position);
     }
 
     pub fn draw_map(&self, roma: &mut Roma) {
         let (x, y) = (self.position.x as usize, self.position.y as usize);
 
-        for layer in 0..4 {
-            let range = range_by_layer(layer);
-            let (y_start, y_end) = (y.saturating_sub(range), min(y + range, 100));
-            let (x_start, x_end) = (x.saturating_sub(range), min(x + range, 100));
+        self.draw_layer_0(roma, y, x);
+        self.draw_layer_1(roma, y, x);
+        self.draw_layer_2(roma, y, x);
+        self.draw_layer_3(roma, y, x);
+    }
 
-            for y in y_start..y_end {
-                for x in x_start..x_end {
-                    let tile = &self.current_map.tiles[x][99 - y];
-                    if tile.graphics[layer] != 0 {
-                        let z = calculate_z(layer, y, x);
-                        let x = (x * TILE_SIZE) as f32;
-                        let y = (y * TILE_SIZE) as f32;
-                        let image_id = tile.graphics[layer] as usize;
-                        let tile_id = y as usize * 10000 + x as usize * 4 + layer;
-                        self.draw_grh(roma, tile_id, image_id, x, y, z);
-                    }
-                }
+    fn draw_layer_0(&self, roma: &mut Roma, y: usize, x: usize) {
+        let layer = 0;
+        let range = range_by_layer(layer);
+        let (y_start, y_end) = (y.saturating_sub(range), min(y + range, 99));
+        let (x_start, x_end) = (x.saturating_sub(range), min(x + range, 99));
+
+        for (y, x) in iproduct!(y_start..=y_end, x_start..=x_end) {
+            let tile = &self.current_map.tiles[x][99 - y];
+            if tile.graphics[layer] != 0 {
+                let z = calculate_z(layer, y, x);
+                let x = x * TILE_SIZE;
+                let y = y * TILE_SIZE;
+                let image_id = tile.graphics[layer] as usize;
+                let tile_id = y * 10000 + x * 4 + layer;
+
+                self.draw_grh(roma, tile_id, image_id, x, y, z);
+            }
+        }
+    }
+
+    fn draw_layer_1(&self, roma: &mut Roma, y: usize, x: usize) {
+        let layer = 1;
+        let range = range_by_layer(layer);
+
+        let (y_start, y_end) = (y.saturating_sub(range), min(y + range, 99));
+        let (x_start, x_end) = (x.saturating_sub(range), min(x + range, 99));
+
+        for (y, x) in iproduct!(y_start..=y_end, x_start..=x_end) {
+            let tile = &self.current_map.tiles[x][99 - y];
+            if tile.graphics[layer] != 0 {
+                let z = calculate_z(layer, y, x);
+                let x = x * TILE_SIZE;
+                let y = y * TILE_SIZE;
+                let image_id = tile.graphics[layer] as usize;
+                let tile_id = y * 10000 + x * 4 + layer;
+
+                self.draw_grh(roma, tile_id, image_id, x, y, z);
+            }
+        }
+    }
+
+    fn draw_layer_2(&self, roma: &mut Roma, y: usize, x: usize) {
+        let layer = 2;
+        let range = range_by_layer(layer);
+
+        let (y_start, y_end) = (y.saturating_sub(range), min(y + range, 99));
+        let (x_start, x_end) = (x.saturating_sub(range), min(x + range, 99));
+
+        for (y, x) in iproduct!(y_start..=y_end, x_start..=x_end) {
+            let tile = &self.current_map.tiles[x][99 - y];
+            if let Some(entity_id) = tile.user {
+                let entity = &self.entities[entity_id];
+                self.draw_entity(roma, entity, layer);
+                continue;
+            }
+            if tile.graphics[layer] != 0 {
+                let tile_id = y * 10000 + x * 4 + layer;
+                let z = calculate_z(layer, y, x);
+                let world_y = y * TILE_SIZE;
+                let world_x = x * TILE_SIZE;
+                let image_id = tile.graphics[layer] as usize;
+                self.draw_grh(roma, tile_id, image_id, world_x, world_y, z);
+            }
+        }
+    }
+
+    fn draw_layer_3(&self, roma: &mut Roma, y: usize, x: usize) {
+        let layer = 3;
+        let range = range_by_layer(layer);
+        let (y_start, y_end) = (y.saturating_sub(range), min(y + range, 99));
+        let (x_start, x_end) = (x.saturating_sub(range), min(x + range, 99));
+
+        for (y, x) in iproduct!(y_start..=y_end, x_start..=x_end) {
+            let tile = &self.current_map.tiles[x][99 - y];
+            if tile.graphics[layer] != 0 {
+                let z = calculate_z(layer, y, x);
+                let x = x * TILE_SIZE;
+                let y = y * TILE_SIZE;
+                let image_id = tile.graphics[layer] as usize;
+                let tile_id = y * 10000 + x * 4 + layer;
+
+                self.draw_grh(roma, tile_id, image_id, x, y, z);
             }
         }
     }
 
     const ZERO_OFFSET: &Offset = &Offset { x: 0, y: 0 };
+    fn draw_entity(&self, roma: &mut Roma, entity: &Entity, layer: usize) {
+        let x = entity.position[0];
+        let y = entity.position[0];
+        let z = calculate_z(layer, y, x);
+        let world_x = entity.world_position[0];
+        let world_y = entity.world_position[1];
 
-    pub fn draw_entities(&self, roma: &mut Roma) {
-        let entities = self
-            .entities
-            .iter()
-            .filter(|e| self.position.distance(e.position) < 15.);
-        for entity in entities {
-            let Vec2 { x, y } = entity.position;
-            let z = calculate_z(2, y as usize, x as usize);
-            let x = x * 32.;
-            let y = y * 32.;
-
-            if entity.body != 0 {
-                let y = y - 20.;
-                let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
-                    self.draw_animation(roma, entity.id + 1, body.animations[0], x, y, z);
-                    &body.head_offset
-                } else {
-                    Self::ZERO_OFFSET
-                };
-                if entity.head != 0 {
-                    if let Some(head) = self.resources.heads.get(&entity.head) {
-                        let x = x - head_offset.x as f32;
-                        let y = y - head_offset.y as f32;
-                        self.draw_grh(roma, entity.id + 3, head.images[0], x, y, z);
-                    }
+        if entity.body != 0 {
+            let y = world_y - 20;
+            let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
+                self.draw_animation(roma, entity.id + 1, body.animations[0], world_x, y, z);
+                &body.head_offset
+            } else {
+                Self::ZERO_OFFSET
+            };
+            if entity.head != 0 {
+                if let Some(head) = self.resources.heads.get(&entity.head) {
+                    let x = world_x - head_offset.x;
+                    let y = y - head_offset.y;
+                    self.draw_grh(roma, entity.id + 3, head.images[0], x, y, z);
                 }
             }
         }
@@ -132,8 +211,8 @@ impl Finisterra {
         roma: &mut Roma,
         entity_id: usize,
         id: usize,
-        x: f32,
-        y: f32,
+        x: usize,
+        y: usize,
         z: usize,
     ) {
         if let Some(animation) = self.resources.animations.get(&id) {
@@ -146,8 +225,8 @@ impl Finisterra {
         roma: &mut Roma,
         entity_id: usize,
         image_id: usize,
-        x: f32,
-        y: f32,
+        x: usize,
+        y: usize,
         z: usize,
     ) {
         if let Some(image) = self.resources.images.get(&image_id) {
@@ -162,31 +241,30 @@ impl Finisterra {
         roma: &mut Roma,
         entity_id: usize,
         image: &Image,
-        x: f32,
-        y: f32,
+        x: usize,
+        y: usize,
         z: usize,
     ) {
-        let image_num = image.file_num.to_string();
-        let image_path = format!("./assets/99z/graphics/{image_num}.png");
-        roma.graphics.load_texture(image_num.clone(), &image_path);
+        let image_num = image.file_num as usize;
+        roma.graphics.load_texture(&image_num);
 
-        let x = x - (image.width / 2) as f32;
+        let x = (x as f32 - (image.width as f32 / 2.)).round() as usize;
 
         roma.graphics.draw_texture(
             entity_id,
-            image_num,
-            x,
-            y,
-            z,
-            Some(DrawTextureParams {
+            DrawParams {
+                texture_id: image_num,
+                x,
+                y,
+                z,
                 source: Some(Rect::new(
-                    image.x as f32,
-                    image.y as f32,
-                    image.width as f32,
-                    image.height as f32,
+                    image.x.into(),
+                    image.y.into(),
+                    image.width.into(),
+                    image.height.into(),
                 )),
                 flip_y: true,
-            }),
+            },
         );
     }
 }
@@ -201,9 +279,9 @@ fn calculate_z(layer: usize, y: usize, x: usize) -> usize {
 
 fn range_by_layer(layer: usize) -> usize {
     match layer {
-        0 => 15,
-        1 => 18,
-        2 => 16,
-        _ => 20,
+        0 => 8,
+        1 => 8,
+        2 => 10,
+        _ => 9,
     }
 }

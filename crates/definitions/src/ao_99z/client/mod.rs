@@ -1,10 +1,9 @@
-use std::collections::BTreeMap;
-
 use byteorder::ReadBytesExt;
+use rustc_hash::FxHashMap;
 
 use crate::{
     animation::Animation,
-    atlas::Atlas,
+    atlas::{Atlas, AtlasResource, AtlasType, Dictionary, TexturePackerAtlas},
     body::Body,
     client::ClientResources,
     error::Error,
@@ -32,11 +31,11 @@ pub struct ClientResourcesPaths<'a> {
     pub fxs: &'a str,
     pub maps: &'a str,
     pub graphics: &'a str,
-    pub atlas: Option<&'a str>,
+    pub atlas: Option<AtlasResource<'a>>,
 }
 
-pub fn load_bodies(path: &str) -> Result<BTreeMap<usize, Body>, Error> {
-    let mut bodies = BTreeMap::new();
+pub fn load_bodies(path: &str) -> Result<FxHashMap<usize, Body>, Error> {
+    let mut bodies = FxHashMap::default();
     let mut reader = get_binary_reader(path)?;
 
     reader.skip_header();
@@ -62,8 +61,8 @@ pub fn load_bodies(path: &str) -> Result<BTreeMap<usize, Body>, Error> {
     Ok(bodies)
 }
 
-pub fn load_head(path: &str) -> Result<BTreeMap<usize, Head>, Error> {
-    let mut heads = BTreeMap::new();
+pub fn load_head(path: &str) -> Result<FxHashMap<usize, Head>, Error> {
+    let mut heads = FxHashMap::default();
     let mut reader = get_binary_reader(path)?;
 
     reader.skip_header();
@@ -84,8 +83,8 @@ pub fn load_head(path: &str) -> Result<BTreeMap<usize, Head>, Error> {
     Ok(heads)
 }
 
-pub fn load_headgears(path: &str) -> Result<BTreeMap<usize, HeadGear>, Error> {
-    let mut headgears = BTreeMap::new();
+pub fn load_headgears(path: &str) -> Result<FxHashMap<usize, HeadGear>, Error> {
+    let mut headgears = FxHashMap::default();
     let mut reader = get_binary_reader(path)?;
 
     reader.skip_header();
@@ -107,8 +106,8 @@ pub fn load_headgears(path: &str) -> Result<BTreeMap<usize, HeadGear>, Error> {
 }
 
 /// this one is from .dat file (?)
-pub fn load_weapons(path: &str) -> Result<BTreeMap<usize, Weapon>, Error> {
-    let mut weapons = BTreeMap::new();
+pub fn load_weapons(path: &str) -> Result<FxHashMap<usize, Weapon>, Error> {
+    let mut weapons = FxHashMap::default();
     let reader = get_ini_reader(path)?;
 
     let count = reader.get_count("NumArmas");
@@ -133,8 +132,8 @@ pub fn load_weapons(path: &str) -> Result<BTreeMap<usize, Weapon>, Error> {
     Ok(weapons)
 }
 
-pub fn load_shields(path: &str) -> Result<BTreeMap<usize, Shield>, Error> {
-    let mut shields = BTreeMap::new();
+pub fn load_shields(path: &str) -> Result<FxHashMap<usize, Shield>, Error> {
+    let mut shields = FxHashMap::default();
     let reader = get_ini_reader(path)?;
 
     let count = reader.get_count("NumEscudos");
@@ -159,8 +158,8 @@ pub fn load_shields(path: &str) -> Result<BTreeMap<usize, Shield>, Error> {
     Ok(shields)
 }
 
-pub fn load_fxs(path: &str) -> Result<BTreeMap<usize, FX>, Error> {
-    let mut fxs = BTreeMap::new();
+pub fn load_fxs(path: &str) -> Result<FxHashMap<usize, FX>, Error> {
+    let mut fxs = FxHashMap::default();
     let mut reader = get_binary_reader(path)?;
 
     reader.skip_header();
@@ -180,8 +179,8 @@ pub fn load_fxs(path: &str) -> Result<BTreeMap<usize, FX>, Error> {
     Ok(fxs)
 }
 
-pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
-    let mut maps = BTreeMap::new();
+pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
+    let mut maps = FxHashMap::default();
 
     let dir = std::fs::read_dir(path).map_err(|_| Error::FileNotFound)?;
     for entry in dir {
@@ -231,15 +230,15 @@ pub fn load_maps(path: &str) -> Result<BTreeMap<usize, Map>, Error> {
 }
 
 pub struct Graphics {
-    pub images: BTreeMap<usize, Image>,
-    pub animations: BTreeMap<usize, Animation>,
+    pub images: FxHashMap<usize, Image>,
+    pub animations: FxHashMap<usize, Animation>,
 }
 
-pub fn load_graphics(path: &str, atlas: Option<&str>) -> Result<Graphics, Error> {
-    let mut images = BTreeMap::new();
-    let mut animations = BTreeMap::new();
+pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Result<Graphics, Error> {
+    let mut images = FxHashMap::default();
+    let mut animations = FxHashMap::default();
 
-    let mut images_by_file_num = BTreeMap::new();
+    let mut images_by_file_num = FxHashMap::default();
 
     let mut reader = get_binary_reader(path)?;
 
@@ -290,37 +289,20 @@ pub fn load_graphics(path: &str, atlas: Option<&str>) -> Result<Graphics, Error>
         };
     }
 
-    if let Some(atlas) = atlas {
-        let bytes = std::fs::read_to_string(atlas).map_err(|_| Error::FileNotFound)?;
-        println!("Will parse atlas");
-        let atlas: Atlas = toml::from_str(&bytes).map_err(|_| Error::Parse)?;
+    if let Some(atlas_resource) = atlas_resource {
+        let bytes = std::fs::read_to_string(atlas_resource.metadata_path)
+            .map_err(|_| Error::FileNotFound)?;
+        let atlas: Atlas = match atlas_resource.atlas_type {
+            AtlasType::Finisterra => toml::from_str(&bytes).map_err(|_| Error::Parse)?,
+            AtlasType::TexturePacker => toml::from_str::<TexturePackerAtlas>(&bytes)
+                .map_err(|_| Error::Parse)?
+                .into(),
+            AtlasType::Yatp => toml::from_str::<Dictionary>(&bytes)
+                .map_err(|_| Error::Parse)?
+                .into(),
+        };
+        atlas.update_images(&mut images, &images_by_file_num, atlas_resource.image_id);
         println!("Atlas parsed");
-        // for each atlas region, find image and calculate coordinates in the texture
-        for region in atlas.regions {
-            let Ok(image_id) = region.name.parse() else {
-                println!("> atlas convertion > atlas region doesn't correspond to image {}", region.name);
-                continue;
-            };
-
-            let Some(image_ids) = images_by_file_num.get_mut(&image_id) else {
-                println!("> atlas convertion > {image_id} wasn't loaded");
-                continue;
-            };
-
-            for image_id in image_ids {
-                let Some(image) = images.get_mut(image_id) else {
-                    println!("> atlas convertion > image not found {image_id}");
-                    continue;
-                };
-                println!("> atlas convertion > image before convert {image:?}");
-
-                image.x += region.x as u16;
-                image.y += region.y as u16;
-                image.file_num = 0;
-
-                println!("> atlas convertion > image after convert {image:?}");
-            }
-        }
     }
 
     Ok(Graphics { images, animations })

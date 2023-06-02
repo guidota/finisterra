@@ -10,3 +10,5 @@ byteorder = "1.4.3"
 rust-ini = "0.19"
 serde.workspace = true
 toml.workspace = true
+rustc-hash.workspace = true
+itertools = "0.10"

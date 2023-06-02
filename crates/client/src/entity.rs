@@ -1,13 +1,16 @@
 use definitions::client::ClientResources;
 use rand::{seq::IteratorRandom, Rng};
-use roma::graphics::vec2::{vec2, Vec2};
 
+use crate::TILE_SIZE;
+
+#[derive(Debug)]
 pub struct Entity {
     pub id: usize,
     pub body: usize,
     pub head: usize,
     pub name: String,
-    pub position: Vec2,
+    pub position: [usize; 2],
+    pub world_position: [usize; 2],
 }
 
 impl Entity {
@@ -56,7 +59,8 @@ impl Entity {
             id,
             body: *random_body,
             head: random_head,
-            position: vec2(x as f32, y as f32),
+            position: [x, y],
+            world_position: [x * TILE_SIZE, y * TILE_SIZE],
             name: "Pandora".to_string(),
         }
     }

@@ -24,14 +24,14 @@ pub struct Roma {
 }
 
 impl Roma {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: Window, base_path: String) -> Self {
         let input = WinitInputHelper::new();
         let camera = Camera2D::new(
             window.inner_size().width as f32,
             window.inner_size().height as f32,
         );
         Self {
-            graphics: Graphics::new(window).await,
+            graphics: Graphics::new(window, base_path).await,
             camera,
             input,
         }
@@ -56,17 +56,17 @@ pub trait Game {
     fn update(&mut self, roma: &mut Roma, delta: Duration);
 }
 
-pub async fn run<G>(mut game: G)
+pub async fn run<G>(base_path: String, mut game: G)
 where
     G: Game + 'static,
 {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_inner_size(dpi::PhysicalSize::new(800., 600.))
+        .with_inner_size(dpi::PhysicalSize::new(480., 480.))
         .build(&event_loop)
         .unwrap();
 
-    let mut app = Roma::new(window).await;
+    let mut app = Roma::new(window, base_path).await;
     let mut last_tick = Instant::now();
     event_loop.run(move |window_event, _, control_flow| {
         match window_event {

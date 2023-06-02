@@ -95,6 +95,7 @@ pub struct Tile {
     // these fields could be only on server side
     pub obj: Option<Obj>,
     pub npc: Option<NpcIndex>,
+    pub user: Option<usize>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
