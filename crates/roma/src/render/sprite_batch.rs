@@ -5,7 +5,7 @@ use wgpu::{
     RenderPipeline, SurfaceConfiguration,
 };
 
-use crate::graphics::vec2::Vec2;
+use crate::{graphics::vec2::Vec2, resources::texture};
 
 pub(crate) struct SpriteBatchRenderPass {
     pub pipeline: RenderPipeline,
@@ -57,7 +57,7 @@ impl SpriteBatchRenderPass {
 
 #[derive(Default, Debug, Clone)]
 pub struct SpriteData {
-    pub z: usize,
+    pub z: f32,
     pub texture_id: usize,
     pub entity_id: usize,
 }
@@ -151,7 +151,7 @@ impl DeviceSpriteBatchPipelineExt for Device {
                         },
                         alpha: BlendComponent {
                             src_factor: BlendFactor::One,
-                            dst_factor: BlendFactor::One,
+                            dst_factor: BlendFactor::SrcAlpha,
                             operation: BlendOperation::Add,
                         },
                     }),
@@ -164,10 +164,16 @@ impl DeviceSpriteBatchPipelineExt for Device {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),
                 polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
+                unclipped_depth: true,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: texture::Texture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::GreaterEqual,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,

@@ -21,7 +21,8 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * vec4<f32>(model.position, 1.0);
+    var temp  = camera.view_proj * vec4<f32>(model.position, 1.0);
+    out.clip_position = vec4(temp.xy, model.position.z, 1.0);
     return out;
 }
 
@@ -31,7 +32,15 @@ var t_diffuse: texture_2d<f32>;
 @group(0)@binding(1)
 var s_diffuse: sampler;
 
+fn discard_if_transparent(color: vec4<f32>) {
+  if color.w < 0.001 {
+    discard;
+  }
+}
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    var output = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    discard_if_transparent(output);
+    return output;
 }

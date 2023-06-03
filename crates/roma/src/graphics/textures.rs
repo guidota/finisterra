@@ -62,12 +62,12 @@ impl Textures {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Clone)]
 pub struct DrawParams {
     pub texture_id: usize,
     pub x: usize,
     pub y: usize,
-    pub z: usize,
+    pub z: f32,
     pub source: Option<Rect>,
     pub flip_y: bool,
 }
@@ -76,6 +76,7 @@ pub struct DrawParams {
 pub struct DrawStrictParams {
     pub x: f32,
     pub y: f32,
+    pub z: f32,
     pub sx: f32,
     pub sy: f32,
     pub sw: f32,
@@ -96,6 +97,7 @@ impl DrawParams {
         DrawStrictParams {
             x: self.x as f32,
             y: self.y as f32,
+            z: self.z,
             sx: source.x as f32,
             sy: source.y as f32,
             sw: source.w as f32,
@@ -171,17 +173,22 @@ impl Graphics {
             flip_y,
             x,
             y,
+            z,
             sx,
             sy,
             sw,
             sh,
         } = params;
 
+        if !(0. ..=1.).contains(&z) {
+            println!("NOT in [0,1]");
+        }
+
         let p = [
-            [x, y, 0.],
-            [x + sw, y, 0.],
-            [x + sw, y + sh, 0.],
-            [x, y + sh, 0.],
+            [x, y, z],
+            [x + sw, y, z],
+            [x + sw, y + sh, z],
+            [x, y + sh, z],
         ];
 
         let mut tex_coords = [

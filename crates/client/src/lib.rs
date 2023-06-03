@@ -53,7 +53,7 @@ impl Default for Finisterra {
         let resources = load_client_resources(paths).expect("can load client resources");
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
-        for i in 0..100000 {
+        for i in 0..10000 {
             let entity = Entity::random(1000000 + i * 10, &resources);
             current_map.tiles[entity.position[0]][99 - entity.position[1]].user = Some(i);
             println!("entity: {:?}", entity);
@@ -88,10 +88,10 @@ impl Finisterra {
     pub fn draw_map(&self, roma: &mut Roma) {
         let (x, y) = (self.position.x as usize, self.position.y as usize);
 
-        self.draw_layer_0(roma, y, x);
         self.draw_layer_1(roma, y, x);
         self.draw_layer_2(roma, y, x);
         self.draw_layer_3(roma, y, x);
+        self.draw_layer_0(roma, y, x);
     }
 
     fn draw_layer_0(&self, roma: &mut Roma, y: usize, x: usize) {
@@ -213,7 +213,7 @@ impl Finisterra {
         id: usize,
         x: usize,
         y: usize,
-        z: usize,
+        z: f32,
     ) {
         if let Some(animation) = self.resources.animations.get(&id) {
             self.draw_grh(roma, entity_id, animation.frames[0], x, y, z);
@@ -227,7 +227,7 @@ impl Finisterra {
         image_id: usize,
         x: usize,
         y: usize,
-        z: usize,
+        z: f32,
     ) {
         if let Some(image) = self.resources.images.get(&image_id) {
             self.draw_image(roma, entity_id, image, x, y, z);
@@ -243,7 +243,7 @@ impl Finisterra {
         image: &Image,
         x: usize,
         y: usize,
-        z: usize,
+        z: f32,
     ) {
         let image_num = image.file_num as usize;
         roma.graphics.load_texture(&image_num);
@@ -269,12 +269,13 @@ impl Finisterra {
     }
 }
 
-fn calculate_z(layer: usize, y: usize, x: usize) -> usize {
-    match layer {
+fn calculate_z(layer: usize, y: usize, x: usize) -> f32 {
+    (match layer {
         0 => 0,
         3 => 4000,
         _ => layer * 1000 + (100 - y) * 10 + x,
-    }
+    }) as f32
+        / 4000.
 }
 
 fn range_by_layer(layer: usize) -> usize {
