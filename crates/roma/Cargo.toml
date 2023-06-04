@@ -12,7 +12,6 @@ bytemuck = { version = "1.12", features = ["derive"] }
 anyhow = "1.0"
 winit_input_helper = "0.14"
 derive_builder = "0.12"
-bumpalo = { version = "3.13", features = ["collections"] }
 rustc-hash.workspace = true
 
 [dependencies.image]

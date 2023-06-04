@@ -1414,7 +1414,6 @@ name = "roma"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bumpalo",
  "bytemuck",
  "cgmath",
  "derive_builder",

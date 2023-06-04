@@ -1,5 +1,3 @@
-use bumpalo::Bump;
-
 use crate::draw::DrawStrictParams;
 
 #[repr(C)]
@@ -51,10 +49,10 @@ pub fn draw_params_to_vertex(params: &DrawStrictParams) -> Vec<Vertex> {
     ];
 
     let mut tex_coords = [
-        [sx / texture_width, sy / texture_height],
-        [(sx + sw) / texture_width, sy / texture_height],
-        [(sx + sw) / texture_width, (sy + sh) / texture_height],
         [sx / texture_width, (sy + sh) / texture_height],
+        [(sx + sw) / texture_width, (sy + sh) / texture_height],
+        [(sx + sw) / texture_width, sy / texture_height],
+        [sx / texture_width, sy / texture_height],
     ];
 
     if flip_y {

@@ -104,13 +104,16 @@ impl Finisterra {
         let (x_start, x_end) = (x.saturating_sub(self.tiles_w), min(x + self.tiles_w, 99));
         for (y, x) in iproduct!(y_start..=y_end, x_start..=x_end) {
             let tile = &self.current_map.tiles[x][y];
+            let x = x * TILE_SIZE;
+            let y = y * TILE_SIZE;
+
             for layer in 0..4 {
-                if tile.graphics[layer] != 0 {
-                    let z = calculate_z(layer, y, x);
-                    let x = x * TILE_SIZE;
-                    let y = y * TILE_SIZE;
-                    let image_id = tile.graphics[layer] as usize;
-                    self.draw_grh(roma, image_id, x, y, z);
+                match tile.graphics[layer] {
+                    0 => (),
+                    grh => {
+                        let z = calculate_z(layer, y, x);
+                        self.draw_grh(roma, grh, x, y, z);
+                    }
                 }
             }
             if let Some(user) = tile.user {
@@ -168,7 +171,7 @@ impl Finisterra {
             y,
             z,
             source: Some(Rect::new(image.x, image.y, image.width, image.height)),
-            flip_y: true,
+            flip_y: false,
         });
     }
 }
