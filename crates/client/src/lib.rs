@@ -129,17 +129,16 @@ impl Finisterra {
         let world_y = entity.world_position[1];
 
         if entity.body != 0 {
-            let y = world_y;
             let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
-                self.draw_animation(roma, body.animations[0], world_x, y, z);
+                self.draw_animation(roma, body.animations[0], world_x, world_y, z);
                 &body.head_offset
             } else {
                 Self::ZERO_OFFSET
             };
             if entity.head != 0 {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
-                    let x = world_x - head_offset.x;
-                    let y = y - head_offset.y;
+                    let x = (world_x as isize + head_offset.x) as usize;
+                    let y = (world_y as isize - head_offset.y) as usize;
                     self.draw_grh(roma, head.images[0], x, y, z);
                 }
             }

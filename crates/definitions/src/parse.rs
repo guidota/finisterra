@@ -21,6 +21,10 @@ pub trait ArgentumReadExt: std::io::Read {
         self.read_u16::<Endian>().unwrap()
     }
 
+    fn read_signed_integer(&mut self) -> i16 {
+        self.read_i16::<Endian>().unwrap()
+    }
+
     fn read_bool(&mut self) -> bool {
         self.read_u8().unwrap() == 0
     }

@@ -51,8 +51,8 @@ pub fn load_bodies(path: &str) -> Result<FxHashMap<usize, Body>, Error> {
                     reader.read_integer().into(),
                 ],
                 head_offset: Offset {
-                    x: reader.read_integer().into(),
-                    y: reader.read_integer().into(),
+                    x: reader.read_signed_integer().into(),
+                    y: reader.read_signed_integer().into(),
                 },
                 ..Default::default()
             },
@@ -170,8 +170,8 @@ pub fn load_fxs(path: &str) -> Result<FxHashMap<usize, FX>, Error> {
             FX {
                 animation: reader.read_integer().into(),
                 offset: Offset {
-                    x: reader.read_integer().into(),
-                    y: reader.read_integer().into(),
+                    x: reader.read_signed_integer().into(),
+                    y: reader.read_signed_integer().into(),
                 },
             },
         );
