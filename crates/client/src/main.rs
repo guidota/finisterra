@@ -1,4 +1,4 @@
-use client::Finisterra;
+use client::{Finisterra, RENDER_H, RENDER_W};
 use roma::{
     roma::Roma,
     settings::{RendererSettingsBuilder, SettingsBuilder, WindowSettingsBuilder},
@@ -11,8 +11,8 @@ fn main() {
     let base_path = "./assets/99z/graphics/".to_string();
     let window_settings = WindowSettingsBuilder::default()
         .window_title("Roma")
-        .window_width(800_usize)
-        .window_height(600_usize)
+        .window_width(RENDER_W)
+        .window_height(RENDER_H)
         .build()
         .unwrap();
     let renderer_settings = RendererSettingsBuilder::default()

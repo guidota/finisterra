@@ -93,7 +93,7 @@ impl Renderer {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let vertices = bytemuck::cast_slice(&instructions.vertices);
+        let vertices = bytemuck::cast_slice(instructions.vertices.as_slice());
         self.state
             .queue
             .write_buffer(&self.render_pass.vertex_buffer, 0, vertices);

@@ -1,3 +1,5 @@
+use bumpalo::Bump;
+
 use crate::draw::DrawStrictParams;
 
 #[repr(C)]
@@ -29,45 +31,44 @@ impl Vertex {
     }
 }
 
-impl From<&DrawStrictParams> for Vec<Vertex> {
-    fn from(value: &DrawStrictParams) -> Self {
-        let texture_width = value.texture_width;
-        let texture_height = value.texture_height;
-        let flip_y = value.flip_y;
-        let x = value.x;
-        let y = value.y;
-        let z = value.z;
-        let sx = value.sx;
-        let sy = value.sy;
-        let sw = value.sw;
-        let sh = value.sh;
+pub fn draw_params_to_vertex(params: &DrawStrictParams) -> Vec<Vertex> {
+    let texture_width = params.texture_width;
+    let texture_height = params.texture_height;
+    let flip_y = params.flip_y;
+    let x = params.x;
+    let y = params.y;
+    let z = params.z;
+    let sx = params.sx;
+    let sy = params.sy;
+    let sw = params.sw;
+    let sh = params.sh;
 
-        let p = [
-            [x, y, z],
-            [x + sw, y, z],
-            [x + sw, y + sh, z],
-            [x, y + sh, z],
-        ];
+    let p = [
+        [x, y, z],
+        [x + sw, y, z],
+        [x + sw, y + sh, z],
+        [x, y + sh, z],
+    ];
 
-        let mut tex_coords = [
-            [sx / texture_width, sy / texture_height],
-            [(sx + sw) / texture_width, sy / texture_height],
-            [(sx + sw) / texture_width, (sy + sh) / texture_height],
-            [sx / texture_width, (sy + sh) / texture_height],
-        ];
+    let mut tex_coords = [
+        [sx / texture_width, sy / texture_height],
+        [(sx + sw) / texture_width, sy / texture_height],
+        [(sx + sw) / texture_width, (sy + sh) / texture_height],
+        [sx / texture_width, (sy + sh) / texture_height],
+    ];
 
-        if flip_y {
-            tex_coords.swap(0, 3);
-            tex_coords.swap(1, 2);
-        }
-
-        let mut vertices = vec![];
-        for i in 0..4 {
-            vertices.push(Vertex {
-                position: p[i],
-                tex_coords: tex_coords[i],
-            });
-        }
-        vertices
+    if flip_y {
+        tex_coords.swap(0, 3);
+        tex_coords.swap(1, 2);
     }
+
+    let mut vertices = Vec::with_capacity(4);
+    for i in 0..4 {
+        let vertex = Vertex {
+            position: p[i],
+            tex_coords: tex_coords[i],
+        };
+        vertices.push(vertex);
+    }
+    vertices
 }

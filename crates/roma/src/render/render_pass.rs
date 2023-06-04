@@ -10,7 +10,7 @@ pub(crate) struct RenderPass {
 }
 
 impl RenderPass {
-    pub const MAX_SPRITES: usize = 2560;
+    pub const MAX_SPRITES: usize = 8196;
     const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
 

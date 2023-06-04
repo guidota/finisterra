@@ -35,10 +35,10 @@ pub(crate) struct Dictionary {
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct Rect {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
+    pub x: usize,
+    pub y: usize,
+    pub width: usize,
+    pub height: usize,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -58,8 +58,8 @@ pub enum AtlasType {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Atlas {
     pub images: Vec<AtlasItem>,
-    pub width: u32,
-    pub height: u32,
+    pub width: usize,
+    pub height: usize,
 }
 
 /// Describes where to find an image in the atlas
@@ -84,8 +84,8 @@ impl From<Dictionary> for Atlas {
 
         Self {
             images,
-            width: value.width,
-            height: value.height,
+            width: value.width as usize,
+            height: value.height as usize,
         }
     }
 }
@@ -100,14 +100,14 @@ impl From<TexturePackerAtlas> for Atlas {
             images.push(AtlasItem {
                 image_id: region.name.parse::<usize>().unwrap(),
                 rect: Rect {
-                    x: region.x,
-                    y: region.y,
-                    width: region.w,
-                    height: region.h,
+                    x: region.x as usize,
+                    y: region.y as usize,
+                    width: region.w as usize,
+                    height: region.h as usize,
                 },
             });
-            width = region.atlas_width;
-            height = region.atlas_height;
+            width = region.atlas_width as usize;
+            height = region.atlas_height as usize;
         }
 
         Self {
@@ -122,14 +122,14 @@ impl Atlas {
     pub fn update_images(
         &self,
         images: &mut FxHashMap<usize, Image>,
-        images_by_file_num: &FxHashMap<u32, Vec<usize>>,
+        images_by_file_num: &FxHashMap<usize, Vec<usize>>,
         atlas_file_num: usize,
     ) {
         // for each atlas region, find image and calculate coordinates in the texture
         for atlas_item in &self.images {
             let image_id = atlas_item.image_id;
 
-            let Some(image_ids) = images_by_file_num.get(&(image_id as u32)) else {
+            let Some(image_ids) = images_by_file_num.get(&image_id) else {
                 continue;
             };
 
@@ -137,10 +137,13 @@ impl Atlas {
                 let Some(image) = images.get_mut(image_id) else {
                     continue;
                 };
+                image.x += atlas_item.rect.x;
+                image.y += atlas_item.rect.y;
+                // ensure image is not bigger than atlas item
+                image.width = std::cmp::min(image.width, atlas_item.rect.width);
+                image.height = std::cmp::min(image.height, atlas_item.rect.height);
 
-                image.x += atlas_item.rect.x as u16;
-                image.y += atlas_item.rect.y as u16;
-                image.file_num = atlas_file_num as u32;
+                image.file_num = atlas_file_num;
             }
         }
     }

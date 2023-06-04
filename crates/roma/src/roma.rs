@@ -11,7 +11,10 @@ use winit_input_helper::WinitInputHelper;
 
 use crate::{
     draw::{DrawParams, DrawStrictParams},
-    render::{vertex::Vertex, Batch, Instructions, Renderer},
+    render::{
+        vertex::{draw_params_to_vertex, Vertex},
+        Batch, Instructions, Renderer,
+    },
     resources::camera::Camera2D,
     settings::Settings,
 };
@@ -65,13 +68,11 @@ impl Roma {
         Instructions { vertices, batches }
     }
 
-    fn prepare_vertices(&self, batch: &[DrawStrictParams]) -> Vec<Vertex> {
-        let mut vertices = Vec::with_capacity(batch.len() * 4);
-
-        for draw_params in batch {
-            vertices.append(&mut draw_params.into());
+    fn prepare_vertices(&self, batches: &[DrawStrictParams]) -> Vec<Vertex> {
+        let mut vertices = Vec::with_capacity(batches.len() * 4);
+        for param in batches {
+            vertices.append(&mut draw_params_to_vertex(param));
         }
-
         vertices
     }
 
