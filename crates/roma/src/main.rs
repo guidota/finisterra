@@ -1,40 +1,36 @@
 use std::time::Duration;
 
-use pollster::block_on;
-use roma::{graphics::textures::DrawParams, run, Game, Roma};
+use roma::{
+    draw::DrawParams,
+    roma::{Game, Roma},
+    settings::{RendererSettingsBuilder, SettingsBuilder, WindowSettingsBuilder},
+};
 
 struct MyGame {}
 
 impl Game for MyGame {
     fn update(&mut self, roma: &mut Roma, _delta: Duration) {
-        roma.graphics.load_texture(&1);
-        roma.graphics.load_texture(&2);
-        roma.graphics.draw_texture(
-            0,
-            DrawParams {
-                texture_id: 1,
-                ..Default::default()
-            },
-        );
+        roma.set_camera_position(0, 0);
+        roma.draw_texture(DrawParams {
+            texture_id: 1,
+            flip_y: true,
+            ..Default::default()
+        });
 
-        roma.graphics.draw_texture(
-            1,
-            DrawParams {
-                texture_id: 2,
-                x: 200,
-                y: 200,
-                ..Default::default()
-            },
-        );
-        roma.graphics.draw_texture(
-            2,
-            DrawParams {
-                texture_id: 2,
-                x: 400,
-                y: 400,
-                ..Default::default()
-            },
-        );
+        roma.draw_texture(DrawParams {
+            texture_id: 1,
+            x: 200,
+            y: 200,
+            flip_y: true,
+            ..Default::default()
+        });
+        roma.draw_texture(DrawParams {
+            texture_id: 1,
+            x: 400,
+            y: 400,
+            flip_y: true,
+            ..Default::default()
+        });
         //
         // roma.graphics.draw_texture(
         //     4.to_string(),
@@ -54,5 +50,21 @@ impl Game for MyGame {
 fn main() {
     let game = MyGame {};
     let base_path = "./assets/99z/graphics/".to_string();
-    block_on(run(base_path, game));
+    let window_settings = WindowSettingsBuilder::default()
+        .window_title("Roma")
+        .window_width(800_usize)
+        .window_height(600_usize)
+        .build()
+        .unwrap();
+    let renderer_settings = RendererSettingsBuilder::default()
+        .present_mode(wgpu::PresentMode::AutoNoVsync)
+        .base_path(base_path)
+        .build()
+        .unwrap();
+    let settings = SettingsBuilder::default()
+        .window(window_settings)
+        .renderer(renderer_settings)
+        .build()
+        .unwrap();
+    Roma::run_game(settings, game);
 }
