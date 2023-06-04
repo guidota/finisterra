@@ -51,8 +51,8 @@ pub fn load_bodies(path: &str) -> Result<FxHashMap<usize, Body>, Error> {
                     reader.read_integer().into(),
                 ],
                 head_offset: Offset {
-                    x: reader.read_integer().into(),
-                    y: reader.read_integer().into(),
+                    x: reader.read_signed_integer().into(),
+                    y: reader.read_signed_integer().into(),
                 },
                 ..Default::default()
             },
@@ -170,8 +170,8 @@ pub fn load_fxs(path: &str) -> Result<FxHashMap<usize, FX>, Error> {
             FX {
                 animation: reader.read_integer().into(),
                 offset: Offset {
-                    x: reader.read_integer().into(),
-                    y: reader.read_integer().into(),
+                    x: reader.read_signed_integer().into(),
+                    y: reader.read_signed_integer().into(),
                 },
             },
         );
@@ -223,6 +223,9 @@ pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
                 reader.read_integer();
             }
         }
+        for i in 0..100 {
+            map.tiles[i].reverse();
+        }
         maps.insert(id, map);
     }
 
@@ -259,10 +262,10 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
                 let image = Image {
                     id: grh.into(),
                     file_num: reader.read_integer().into(),
-                    x: reader.read_integer(),
-                    y: reader.read_integer(),
-                    width: reader.read_integer(),
-                    height: reader.read_integer(),
+                    x: reader.read_integer().into(),
+                    y: reader.read_integer().into(),
+                    width: reader.read_integer().into(),
+                    height: reader.read_integer().into(),
                 };
                 images_by_file_num
                     .entry(image.file_num)

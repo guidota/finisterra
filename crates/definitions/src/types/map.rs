@@ -85,7 +85,7 @@ pub struct MapInfo {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Tile {
-    pub graphics: [GrhIndex; 4],
+    pub graphics: [usize; 4],
     pub light: Option<Light>,
     pub particle: Option<Particle>,
     pub exit: Option<WorldPosition>,

@@ -1,32 +1,32 @@
 use std::time::Duration;
 
-use roma::{event::VirtualKeyCode, graphics::vec2::vec2, Roma};
+use roma::{roma::Roma, VirtualKeyCode};
 
 use crate::Finisterra;
 
 impl Finisterra {
     pub fn process_input(&mut self, roma: &mut Roma, delta: Duration) {
-        let mut move_position = vec2(0., 0.);
-        if roma.input.key_held(VirtualKeyCode::Right) {
-            move_position.x = 1.;
+        let mut move_position = (0., 0.);
+        if roma.input().key_held(VirtualKeyCode::Right) {
+            move_position.0 = 1.;
         }
 
-        if roma.input.key_held(VirtualKeyCode::Left) {
-            move_position.x = -1.;
+        if roma.input().key_held(VirtualKeyCode::Left) {
+            move_position.0 = -1.;
         }
 
-        if roma.input.key_held(VirtualKeyCode::Down) {
-            move_position.y = -1.;
+        if roma.input().key_held(VirtualKeyCode::Down) {
+            move_position.1 = -1.;
         }
 
-        if roma.input.key_held(VirtualKeyCode::Up) {
-            move_position.y = 1.;
+        if roma.input().key_held(VirtualKeyCode::Up) {
+            move_position.1 = 1.;
         }
 
-        if move_position.x != 0. || move_position.y != 0. {
+        if move_position.0 != 0. || move_position.1 != 0. {
             let distance = 5. * delta.as_secs_f32();
-            self.position.x += move_position.x * distance;
-            self.position.y += move_position.y * distance;
+            self.position.0 += move_position.0 * distance;
+            self.position.1 += move_position.1 * distance;
         }
 
         //
