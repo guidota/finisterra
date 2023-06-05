@@ -10,7 +10,7 @@ pub(crate) struct RenderPass {
 }
 
 impl RenderPass {
-    pub const MAX_SPRITES: usize = 2560;
+    pub const MAX_SPRITES: usize = 50000;
     const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
 
@@ -166,7 +166,19 @@ pub fn create_color_attachment(view: &wgpu::TextureView) -> wgpu::RenderPassColo
 fn create_color_targets(config: &wgpu::SurfaceConfiguration) -> wgpu::ColorTargetState {
     wgpu::ColorTargetState {
         format: config.format,
-        blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+        // blend: Some(wgpu::BlendState {
+        //     color: wgpu::BlendComponent {
+        //         src_factor: wgpu::BlendFactor::SrcAlpha,
+        //         dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+        //         operation: wgpu::BlendOperation::Add,
+        //     },
+        //     alpha: wgpu::BlendComponent {
+        //         src_factor: wgpu::BlendFactor::One,
+        //         dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+        //         operation: wgpu::BlendOperation::Add,
+        //     },
+        // }),
         write_mask: wgpu::ColorWrites::ALL,
     }
 }

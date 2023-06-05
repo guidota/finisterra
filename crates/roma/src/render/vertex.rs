@@ -1,10 +1,11 @@
-use crate::draw::DrawStrictParams;
+use crate::draw::DrawImageStrictParams;
 
 #[repr(C)]
 #[derive(PartialEq, PartialOrd, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
 pub struct Vertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
+    pub color: [f32; 4],
 }
 
 impl Vertex {
@@ -24,12 +25,17 @@ impl Vertex {
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
             ],
         }
     }
 }
 
-pub fn draw_params_to_vertex(params: &DrawStrictParams) -> Vec<Vertex> {
+pub fn draw_params_to_vertex(params: &DrawImageStrictParams) -> Vec<Vertex> {
     let texture_width = params.texture_width;
     let texture_height = params.texture_height;
     let flip_y = params.flip_y;
@@ -65,6 +71,12 @@ pub fn draw_params_to_vertex(params: &DrawStrictParams) -> Vec<Vertex> {
         let vertex = Vertex {
             position: p[i],
             tex_coords: tex_coords[i],
+            color: [
+                params.color.r as f32,
+                params.color.g as f32,
+                params.color.b as f32,
+                params.color.a as f32,
+            ],
         };
         vertices.push(vertex);
     }

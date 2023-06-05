@@ -1,7 +1,7 @@
-use std::iter::once;
+use std::{cell::RefCell, iter::once};
 
 use crate::{
-    resources::{camera::Camera2D, texture},
+    resources::{camera::Camera2D, text_brush::TextBrush, texture},
     settings::RendererSettings,
 };
 
@@ -9,14 +9,14 @@ use self::{
     camera::Camera,
     render_pass::{create_color_attachment, create_depth_attachment, RenderPass},
     state::State,
-    textures::Textures,
+    textures::{TextureID, Textures},
     vertex::Vertex,
 };
 
 mod camera;
 mod render_pass;
 mod state;
-mod textures;
+pub(crate) mod textures;
 pub(crate) mod vertex;
 
 pub struct Renderer {
@@ -33,7 +33,7 @@ pub(crate) struct Instructions {
 }
 
 pub(crate) struct Batch {
-    pub(crate) texture_id: usize,
+    pub(crate) texture_id: TextureID,
     pub(crate) size: u32,
 }
 
@@ -78,12 +78,67 @@ impl Renderer {
         self.camera.update_projection(&self.state.queue, projection);
     }
 
-    pub(crate) fn prepare_texture(&mut self, id: usize) {
-        self.textures
-            .load_texture(&self.state.device, &self.state.queue, id);
+    pub(crate) fn update_glyphs(&mut self, text_brush: &mut TextBrush) {
+        let id = TextureID::Glyph(0);
+        let textures = RefCell::new(&mut self.textures);
+        text_brush.process_queue(
+            |size, data| {
+                // Data is single byte per pixel, so we need to convert it to RGBA
+                let data = data
+                    .iter()
+                    .flat_map(|&byte| {
+                        let alpha = if byte == 0 { 0 } else { 255 };
+                        once(byte)
+                            .chain(once(byte))
+                            .chain(once(byte))
+                            .chain(once(alpha))
+                    })
+                    .collect::<Vec<_>>();
+                let textures = textures.borrow_mut();
+                let texture = &textures.get_texture(&id).unwrap().texture;
+                self.state.queue.write_texture(
+                    wgpu::ImageCopyTexture {
+                        texture,
+                        mip_level: 0,
+                        origin: wgpu::Origin3d {
+                            x: size.min[0],
+                            y: size.min[1],
+                            z: 0,
+                        },
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    &data,
+                    wgpu::ImageDataLayout {
+                        offset: 0,
+                        bytes_per_row: Some(size.width() * 4),
+                        rows_per_image: Some(size.height()),
+                    },
+                    wgpu::Extent3d {
+                        width: size.width(),
+                        height: size.height(),
+                        depth_or_array_layers: 1,
+                    },
+                );
+            },
+            |dimensions| {
+                textures
+                    .borrow_mut()
+                    .recreate_texture(&self.state.device, id, dimensions)
+            },
+        );
     }
 
-    pub(crate) fn get_texture(&self, id: &usize) -> Option<&texture::Texture> {
+    pub(crate) fn prepare_texture(&mut self, id: usize) {
+        self.textures
+            .load_image(&self.state.device, &self.state.queue, id);
+    }
+
+    pub(crate) fn recreate_texture(&mut self, id: TextureID, dimensions: (u32, u32)) {
+        self.textures
+            .recreate_texture(&self.state.device, id, dimensions);
+    }
+
+    pub(crate) fn get_texture(&self, id: &TextureID) -> Option<&texture::Texture> {
         self.textures.get_texture(id)
     }
 

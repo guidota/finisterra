@@ -7,7 +7,7 @@ use definitions::{
 };
 use itertools::iproduct;
 use roma::{
-    draw::{DrawParams, Rect},
+    draw::{DrawImageParams, DrawTextParams, Rect},
     roma::{Game, Roma},
 };
 use std::{cmp::min, time::Duration};
@@ -31,8 +31,8 @@ pub struct Finisterra {
     tiles_h: usize,
 }
 
-pub const RENDER_W: usize = 480;
-pub const RENDER_H: usize = 480;
+pub const RENDER_W: usize = 800;
+pub const RENDER_H: usize = 600;
 
 impl Default for Finisterra {
     fn default() -> Self {
@@ -57,8 +57,11 @@ impl Default for Finisterra {
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 
-        for i in 0..20000 {
-            let entity = Entity::random(1000000 + i * 10, &resources);
+        let mut name_generator = names::Generator::default();
+        for i in 0..100 {
+            let mut entity = Entity::random(1000000 + i * 10, &resources);
+            entity.name = name_generator.next().unwrap();
+
             current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
             println!("entity: {:?}", entity);
             entities.push(entity);
@@ -143,6 +146,18 @@ impl Finisterra {
                 }
             }
         }
+
+        // draw entity name on entity position
+        let draw_text_params = DrawTextParams {
+            text: &entity.name,
+            x: world_x,
+            y: world_y - 20,
+            z,
+            color: roma::Color::RED,
+            size: 14,
+            ..Default::default()
+        };
+        roma.draw_text(draw_text_params);
     }
 
     fn draw_animation(&self, roma: &mut Roma, id: usize, x: usize, y: usize, z: f32) {
@@ -161,13 +176,14 @@ impl Finisterra {
         let image_num = image.file_num;
         let x = x - image.width / 2;
 
-        roma.draw_texture(DrawParams {
+        roma.draw_image(DrawImageParams {
             texture_id: image_num,
             x,
             y,
             z,
             source: Some(Rect::new(image.x, image.y, image.width, image.height)),
-            flip_y: false,
+            color: roma::Color::WHITE,
+            ..Default::default()
         });
     }
 }

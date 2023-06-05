@@ -5,7 +5,7 @@ use crate::resources::texture::{self, Texture};
 pub(crate) struct Textures {
     base_path: String,
     pub(crate) bind_group_layout: wgpu::BindGroupLayout,
-    inner: FxHashMap<usize, InnerTexture>,
+    textures: FxHashMap<TextureID, InnerTexture>,
 }
 
 enum InnerTexture {
@@ -14,6 +14,12 @@ enum InnerTexture {
         bind_group: wgpu::BindGroup,
     },
     NotPresent,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum TextureID {
+    Image(usize),
+    Glyph(usize),
 }
 
 impl Textures {
@@ -39,35 +45,46 @@ impl Textures {
             ],
             label: Some("texture_bind_group_layout"),
         });
+        let textures = FxHashMap::default();
 
         Self {
             bind_group_layout,
             base_path: base_path.to_string(),
-            inner: FxHashMap::default(),
+            textures,
         }
     }
 
-    pub(crate) fn load_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, id: usize) {
-        if self.inner.contains_key(&id) {
+    pub(crate) fn recreate_texture(
+        &mut self,
+        device: &wgpu::Device,
+        id: TextureID,
+        dimensions: (u32, u32),
+    ) {
+        let texture = Texture::from_dimensions_text(device, dimensions);
+        let bind_group = self.create_bind_group(device, &texture);
+
+        let texture = InnerTexture::Present {
+            texture,
+            bind_group,
+        };
+
+        self.textures.insert(id, texture);
+    }
+
+    pub(crate) fn load_image(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        image_id: usize,
+    ) {
+        let id = TextureID::Image(image_id);
+        if self.textures.contains_key(&id) {
             return;
         }
-        let path = format!("{}/{}.png", self.base_path, id);
+        let path = format!("{}/{}.png", self.base_path, image_id);
         let texture = match Texture::from_path(device, queue, &path) {
             Ok(texture) => {
-                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: &self.bind_group_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&texture.view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&texture.sampler),
-                        },
-                    ],
-                    label: Some("diffuse_bind_group"),
-                });
+                let bind_group = self.create_bind_group(device, &texture);
 
                 InnerTexture::Present {
                     texture,
@@ -77,18 +94,35 @@ impl Textures {
             _ => InnerTexture::NotPresent,
         };
 
-        self.inner.insert(id, texture);
+        self.textures.insert(id, texture);
     }
 
-    pub(crate) fn get_bind_group(&self, id: &usize) -> Option<&wgpu::BindGroup> {
-        match self.inner.get(id) {
+    fn create_bind_group(&self, device: &wgpu::Device, texture: &Texture) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        })
+    }
+
+    pub(crate) fn get_bind_group(&self, id: &TextureID) -> Option<&wgpu::BindGroup> {
+        match self.textures.get(id) {
             Some(InnerTexture::Present { bind_group, .. }) => Some(bind_group),
             _ => None,
         }
     }
 
-    pub(crate) fn get_texture(&self, id: &usize) -> Option<&texture::Texture> {
-        match self.inner.get(id) {
+    pub(crate) fn get_texture(&self, id: &TextureID) -> Option<&texture::Texture> {
+        match self.textures.get(id) {
             Some(InnerTexture::Present { texture, .. }) => Some(texture),
             _ => None,
         }

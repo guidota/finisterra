@@ -1,6 +1,7 @@
 use std::{fs::File, io::Read, path::Path};
 
 pub mod camera;
+pub mod text_brush;
 pub mod texture;
 
 pub struct FileReaderError {

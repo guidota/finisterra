@@ -95,4 +95,55 @@ impl Texture {
             height: dimensions.1,
         }
     }
+
+    pub fn from_texture(
+        device: &wgpu::Device,
+        texture: wgpu::Texture,
+        label: Option<&str>,
+    ) -> Self {
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label,
+            ..Default::default()
+        });
+
+        let size = texture.size();
+
+        Self {
+            texture,
+            view,
+            sampler,
+            width: size.width,
+            height: size.height,
+        }
+    }
+
+    pub fn from_dimensions_text(device: &wgpu::Device, dimensions: (u32, u32)) -> Self {
+        let size = wgpu::Extent3d {
+            width: dimensions.0,
+            height: dimensions.1,
+            depth_or_array_layers: 1,
+        };
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("wgpu-text Cache Texture"),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+
+        Self {
+            texture,
+            view,
+            sampler,
+            width: dimensions.0,
+            height: dimensions.1,
+        }
+    }
 }

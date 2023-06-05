@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use roma::{
-    draw::DrawParams,
+    draw::{DrawImageParams, DrawTextParams},
     roma::{Game, Roma},
     settings::{RendererSettingsBuilder, SettingsBuilder, WindowSettingsBuilder},
 };
@@ -11,39 +11,28 @@ struct MyGame {}
 impl Game for MyGame {
     fn update(&mut self, roma: &mut Roma, _delta: Duration) {
         roma.set_camera_position(0, 0);
-        roma.draw_texture(DrawParams {
+        roma.draw_image(DrawImageParams {
             texture_id: 1,
-            flip_y: true,
             ..Default::default()
         });
+        // roma.draw_image(DrawParams {
+        //     texture_id: 1,
+        //     x: 200,
+        //     y: 200,
+        //     ..Default::default()
+        // });
 
-        roma.draw_texture(DrawParams {
-            texture_id: 1,
-            x: 200,
-            y: 200,
-            flip_y: true,
-            ..Default::default()
-        });
-        roma.draw_texture(DrawParams {
-            texture_id: 1,
-            x: 400,
-            y: 400,
-            flip_y: true,
-            ..Default::default()
-        });
-        //
-        // roma.graphics.draw_texture(
-        //     4.to_string(),
-        //     1.to_string(),
-        //     0.,
-        //     100.,
-        //     Color::WHITE,
-        //     Some(DrawTextureParams {
-        //         flip_y: true,
-        //         // source: Some(Rect::new(0., 0., 32., 32.)),
-        //         ..Default::default()
-        //     }),
-        // );
+        let draw_text_params = DrawTextParams {
+            text: "Pandora",
+            x: 0,
+            y: 0,
+            z: 1.0,
+            size: 12,
+            color: wgpu::Color::RED,
+            flip_y: false,
+            align: roma::draw::TextAlign::Center,
+        };
+        roma.draw_text(draw_text_params);
     }
 }
 
