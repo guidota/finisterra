@@ -1,6 +1,32 @@
+use std::{fs::File, io::Read, path::Path};
+
 use image::GenericImageView;
 
-use crate::resources::read_file;
+pub struct FileReaderError {
+    _msg: String,
+}
+
+pub fn open_file(path: &Path) -> Result<File, FileReaderError> {
+    match File::open(path) {
+        Ok(file) => Ok(file),
+        Err(e) => Err(FileReaderError {
+            _msg: e.to_string(),
+        }),
+    }
+}
+
+pub fn read_file(path: &str) -> Result<Vec<u8>, FileReaderError> {
+    let path = Path::new(path);
+    let mut file = open_file(path)?;
+    let mut buffer = Vec::new();
+    let read_result = file.read_to_end(&mut buffer);
+    match read_result {
+        Ok(_) => Ok(buffer),
+        Err(e) => Err(FileReaderError {
+            _msg: e.to_string(),
+        }),
+    }
+}
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -95,55 +121,26 @@ impl Texture {
             height: dimensions.1,
         }
     }
-
-    pub fn from_texture(
-        device: &wgpu::Device,
-        texture: wgpu::Texture,
-        label: Option<&str>,
-    ) -> Self {
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label,
-            ..Default::default()
-        });
-
-        let size = texture.size();
-
-        Self {
-            texture,
-            view,
-            sampler,
-            width: size.width,
-            height: size.height,
-        }
-    }
-
-    pub fn from_dimensions_text(device: &wgpu::Device, dimensions: (u32, u32)) -> Self {
-        let size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
-            depth_or_array_layers: 1,
-        };
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("wgpu-text Cache Texture"),
-            size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
-
-        Self {
-            texture,
-            view,
-            sampler,
-            width: dimensions.0,
-            height: dimensions.1,
-        }
-    }
+    //
+    // pub fn from_texture(
+    //     device: &wgpu::Device,
+    //     texture: wgpu::Texture,
+    //     label: Option<&str>,
+    // ) -> Self {
+    //     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    //     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+    //         label,
+    //         ..Default::default()
+    //     });
+    //
+    //     let size = texture.size();
+    //
+    //     Self {
+    //         texture,
+    //         view,
+    //         sampler,
+    //         width: size.width,
+    //         height: size.height,
+    //     }
+    // }
 }

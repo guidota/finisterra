@@ -1,4 +1,4 @@
-use crate::settings::RendererSettings;
+use wgpu::PresentMode;
 
 pub(crate) struct State {
     pub(crate) window: winit::window::Window,
@@ -10,7 +10,7 @@ pub(crate) struct State {
 }
 
 impl State {
-    pub async fn init(window: winit::window::Window, settings: &RendererSettings) -> Self {
+    pub async fn init(window: winit::window::Window, present_mode: PresentMode) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
@@ -47,8 +47,8 @@ impl State {
             .find(|f| f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
 
-        let present_mode = if surface_caps.present_modes.contains(&settings.present_mode) {
-            settings.present_mode
+        let present_mode = if surface_caps.present_modes.contains(&present_mode) {
+            present_mode
         } else {
             surface_caps.present_modes[0]
         };

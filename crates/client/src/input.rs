@@ -1,25 +1,25 @@
-use std::time::Duration;
-
-use roma::{roma::Roma, VirtualKeyCode};
+use roma::{get_delta, get_input, VirtualKeyCode};
 
 use crate::Finisterra;
 
 impl Finisterra {
-    pub fn process_input(&mut self, roma: &mut Roma, delta: Duration) {
+    pub fn process_input(&mut self) {
+        let delta = get_delta();
+        let input = get_input();
         let mut move_position = (0., 0.);
-        if roma.input().key_held(VirtualKeyCode::Right) {
+        if input.key_held(VirtualKeyCode::Right) {
             move_position.0 = 1.;
         }
 
-        if roma.input().key_held(VirtualKeyCode::Left) {
+        if input.key_held(VirtualKeyCode::Left) {
             move_position.0 = -1.;
         }
 
-        if roma.input().key_held(VirtualKeyCode::Down) {
+        if input.key_held(VirtualKeyCode::Down) {
             move_position.1 = -1.;
         }
 
-        if roma.input().key_held(VirtualKeyCode::Up) {
+        if input.key_held(VirtualKeyCode::Up) {
             move_position.1 = 1.;
         }
 
