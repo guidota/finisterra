@@ -5,7 +5,8 @@ use winit_input_helper::WinitInputHelper;
 
 use crate::{
     camera::{Camera, Camera2D},
-    image_renderer::ImageRenderer,
+    font::Fonts,
+    renderer::ImageRenderer,
     state::State,
     Settings,
 };
@@ -17,6 +18,7 @@ pub struct Roma {
     depth_texture_view: wgpu::TextureView,
     camera: Camera,
     pub(crate) camera2d: Camera2D,
+    pub(crate) fonts: Fonts,
 
     delta: Duration,
 }
@@ -25,11 +27,15 @@ impl Roma {
     pub async fn new(settings: Settings) -> Self {
         let camera = Camera::init();
         let camera2d = Camera2D::new(settings.width, settings.height);
-        let image_renderer =
+        let mut image_renderer =
             ImageRenderer::init(&settings.textures_folder, &camera.bind_group_layout);
         let input = WinitInputHelper::new();
 
         let depth_texture_view = Self::create_depth_texture();
+        let (texture_id, font_texture) = Fonts::create_font_texture();
+        image_renderer.add_texture(texture_id, &font_texture);
+
+        let fonts = Fonts::init();
 
         Self {
             input,
@@ -38,6 +44,7 @@ impl Roma {
             camera2d,
             depth_texture_view,
             delta: Duration::from_secs(0),
+            fonts,
         }
     }
 

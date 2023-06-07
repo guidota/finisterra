@@ -3,7 +3,7 @@ use wgpu::util::DeviceExt;
 
 use crate::{roma::get_state, DrawImageParams, Rect};
 
-mod texture;
+pub(crate) mod texture;
 
 type Texture = (wgpu::BindGroup, (usize, usize));
 
@@ -47,7 +47,7 @@ struct Batch {
 
 impl ImageRenderer {
     // make this dynamic
-    pub const MAX_SPRITES: usize = 2560;
+    pub const MAX_SPRITES: usize = 20000;
     const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
     pub fn init(textures_folder: &str, camera_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
@@ -55,7 +55,7 @@ impl ImageRenderer {
         let device = &state.device;
         let config = &state.config;
 
-        let shader = device.create_shader_module(wgpu::include_wgsl!("image.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -146,15 +146,22 @@ impl ImageRenderer {
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
+        let textures = FxHashMap::default();
+
         Self {
             bind_group_layout,
             pipeline,
             index_buffer,
             vertex_buffer,
             queue: FxHashMap::default(),
-            textures: FxHashMap::default(),
+            textures,
             textures_folder: textures_folder.to_string(),
         }
+    }
+
+    pub(crate) fn add_texture(&mut self, id: usize, texture: &texture::Texture) {
+        self.textures
+            .insert(id, Some(texture.to_bind_group(&self.bind_group_layout)));
     }
 
     fn load_texture(&mut self, id: usize) {
@@ -166,25 +173,7 @@ impl ImageRenderer {
         let queue = &state.queue;
         let path = format!("{}/{}.png", self.textures_folder, id);
         let texture = match texture::Texture::from_path(device, queue, &path) {
-            Ok(texture) => {
-                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: &self.bind_group_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&texture.view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&texture.sampler),
-                        },
-                    ],
-                    label: Some("diffuse_bind_group"),
-                });
-
-                let dimensions = (texture.width as usize, texture.height as usize);
-                Some((bind_group, dimensions))
-            }
+            Ok(texture) => Some(texture.to_bind_group(&self.bind_group_layout)),
             _ => None,
         };
 
@@ -249,10 +238,10 @@ impl ImageRenderer {
 
 #[repr(C)]
 #[derive(PartialEq, PartialOrd, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
-struct Vertex {
-    position: [f32; 3],
-    tex_coords: [f32; 2],
-    // pub color: [f32; 4],
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub tex_coords: [f32; 2],
+    pub color: [f32; 4],
 }
 
 impl Vertex {
@@ -271,6 +260,11 @@ impl Vertex {
                     offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
                 },
             ],
         }
@@ -338,6 +332,7 @@ impl From<&DrawImageStrictParams> for Vec<Vertex> {
             let vertex = Vertex {
                 position: p[i],
                 tex_coords: tex_coords[i],
+                color: params.color,
             };
             vertices.push(vertex);
         }

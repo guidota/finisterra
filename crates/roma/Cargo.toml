@@ -12,7 +12,7 @@ bytemuck = { version = "1.12", features = ["derive"] }
 anyhow = "1.0"
 winit_input_helper = "0.14"
 derive_builder = "0.12"
-glyph_brush = "0.7"
+bmfont = { version = "0.3", features = ["serde", "serde_json"] }
 rustc-hash.workspace = true
 
 [dependencies.image]

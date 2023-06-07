@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use font::RESERVED_ID;
 use pollster::block_on;
 use roma::{get_roma, get_state, init_roma};
 pub use wgpu::PresentMode;
@@ -11,7 +12,8 @@ pub use winit::{
 pub use winit_input_helper::WinitInputHelper;
 
 mod camera;
-mod image_renderer;
+mod font;
+mod renderer;
 pub mod roma;
 mod state;
 
@@ -33,21 +35,59 @@ pub struct DrawImageParams {
     pub source: Option<Rect>,
     pub flip_y: bool,
 }
+
 pub fn draw_image(params: DrawImageParams) {
     let roma = get_roma();
     roma.image_renderer.queue(params);
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DrawTextParams<'s> {
     pub text: &'s str,
     pub x: usize,
+    pub y: usize,
     pub z: f32,
     pub color: [f32; 4],
 }
 
-pub fn draw_text(_params: DrawTextParams) {
-    let _roma = get_roma();
+pub fn draw_text(params: DrawTextParams) {
+    let roma = get_roma();
+    let font = roma.fonts.get_font();
+    match font.parse(params.text) {
+        Ok(chars) => {
+            let (data, total_width) =
+                chars
+                    .into_iter()
+                    .fold((vec![], 0), |(mut data, mut total_width), char| {
+                        let x = params.x.saturating_add_signed(char.screen_rect.x as isize);
+                        let y = params.y.saturating_add_signed(char.screen_rect.y as isize);
+                        let source = Rect {
+                            x: char.page_rect.x as usize,
+                            y: char.page_rect.y as usize,
+                            w: char.screen_rect.width as usize,
+                            h: char.screen_rect.height as usize,
+                        };
+                        total_width += source.w;
+                        data.push((x, y, source));
+                        (data, total_width)
+                    });
+
+            let offset_x = total_width / 2;
+            for (x, y, source) in data {
+                let x = x.saturating_sub(offset_x);
+                roma.image_renderer.queue(DrawImageParams {
+                    texture_id: RESERVED_ID,
+                    x,
+                    y,
+                    z: params.z,
+                    color: params.color,
+                    source: Some(source),
+                    flip_y: false,
+                });
+            }
+        }
+        Err(_) => println!("Couldn't parse text!"),
+    }
 }
 
 pub fn set_camera_position(x: usize, y: usize) {

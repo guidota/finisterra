@@ -2,6 +2,8 @@ use std::{fs::File, io::Read, path::Path};
 
 use image::GenericImageView;
 
+use crate::roma::get_state;
+
 pub struct FileReaderError {
     _msg: String,
 }
@@ -121,26 +123,30 @@ impl Texture {
             height: dimensions.1,
         }
     }
-    //
-    // pub fn from_texture(
-    //     device: &wgpu::Device,
-    //     texture: wgpu::Texture,
-    //     label: Option<&str>,
-    // ) -> Self {
-    //     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    //     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-    //         label,
-    //         ..Default::default()
-    //     });
-    //
-    //     let size = texture.size();
-    //
-    //     Self {
-    //         texture,
-    //         view,
-    //         sampler,
-    //         width: size.width,
-    //         height: size.height,
-    //     }
-    // }
+}
+
+impl Texture {
+    pub fn to_bind_group(
+        &self,
+        bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> (wgpu::BindGroup, (usize, usize)) {
+        let device = &get_state().device;
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&self.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        let dimensions = (self.width as usize, self.height as usize);
+        (bind_group, dimensions)
+    }
 }

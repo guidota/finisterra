@@ -6,7 +6,7 @@ use definitions::{
     Offset,
 };
 use itertools::iproduct;
-use roma::{draw_image, set_camera_position, DrawImageParams, Rect};
+use roma::{draw_image, draw_text, set_camera_position, DrawImageParams, DrawTextParams, Rect};
 use std::cmp::min;
 
 use definitions::{client::load_client_resources, map::Map};
@@ -63,7 +63,7 @@ impl Default for Finisterra {
         let mut entities = vec![];
 
         let mut name_generator = names::Generator::default();
-        for i in 0..100 {
+        for i in 0..10000 {
             let mut entity = Entity::random(1000000 + i * 10, &resources);
             entity.name = name_generator.next().unwrap();
 
@@ -143,18 +143,15 @@ impl Finisterra {
                 }
             }
         }
-        //
         // // draw entity name on entity position
-        // let draw_text_params = DrawTextParams {
-        //     text: &entity.name,
-        //     x: world_x,
-        //     y: world_y - 20,
-        //     z,
-        //     color: roma::Color::RED,
-        //     size: 14,
-        //     ..Default::default()
-        // };
-        // roma.draw_text(draw_text_params);
+        let draw_text_params = DrawTextParams {
+            text: &entity.name,
+            x: world_x,
+            y: world_y - 20,
+            z,
+            color: [1., 0., 0., 0.8],
+        };
+        draw_text(draw_text_params.clone());
     }
 
     fn draw_animation(&self, id: usize, x: usize, y: usize, z: f32) {
