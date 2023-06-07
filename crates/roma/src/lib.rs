@@ -17,7 +17,7 @@ mod renderer;
 pub mod roma;
 mod state;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Rect {
     pub x: usize,
     pub y: usize,
@@ -52,41 +52,24 @@ pub struct DrawTextParams<'s> {
 
 pub fn draw_text(params: DrawTextParams) {
     let roma = get_roma();
-    let font = roma.fonts.get_font();
-    match font.parse(params.text) {
-        Ok(chars) => {
-            let (data, total_width) =
-                chars
-                    .into_iter()
-                    .fold((vec![], 0), |(mut data, mut total_width), char| {
-                        let x = params.x.saturating_add_signed(char.screen_rect.x as isize);
-                        let y = params.y.saturating_add_signed(char.screen_rect.y as isize);
-                        let source = Rect {
-                            x: char.page_rect.x as usize,
-                            y: char.page_rect.y as usize,
-                            w: char.screen_rect.width as usize,
-                            h: char.screen_rect.height as usize,
-                        };
-                        total_width += source.w;
-                        data.push((x, y, source));
-                        (data, total_width)
-                    });
 
-            let offset_x = total_width / 2;
-            for (x, y, source) in data {
-                let x = x.saturating_sub(offset_x);
-                roma.image_renderer.queue(DrawImageParams {
-                    texture_id: RESERVED_ID,
-                    x,
-                    y,
-                    z: params.z,
-                    color: params.color,
-                    source: Some(source),
-                    flip_y: false,
-                });
-            }
-        }
-        Err(_) => println!("Couldn't parse text!"),
+    let (data, total_width) = roma.fonts.parse(params.text);
+    let offset_x = total_width / 2;
+    for (x, y, source) in data {
+        let x = params
+            .x
+            .saturating_add_signed(*x as isize)
+            .saturating_sub(offset_x);
+        let y = params.y.saturating_add_signed(*y as isize);
+        roma.image_renderer.queue(DrawImageParams {
+            texture_id: RESERVED_ID,
+            x,
+            y,
+            z: params.z,
+            color: params.color,
+            source: Some(*source),
+            flip_y: false,
+        });
     }
 }
 
