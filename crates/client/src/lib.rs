@@ -6,11 +6,8 @@ use definitions::{
     Offset,
 };
 use itertools::iproduct;
-use roma::{
-    draw::{DrawParams, Rect},
-    roma::{Game, Roma},
-};
-use std::{cmp::min, time::Duration};
+use roma::{draw_image, set_camera_position, DrawImageParams, Rect};
+use std::cmp::min;
 
 use definitions::{client::load_client_resources, map::Map};
 use entity::Entity;
@@ -31,8 +28,16 @@ pub struct Finisterra {
     tiles_h: usize,
 }
 
-pub const RENDER_W: usize = 480;
-pub const RENDER_H: usize = 480;
+impl Finisterra {
+    pub fn game_loop(&mut self) {
+        self.process_input();
+        self.update_camera();
+        self.draw_map();
+    }
+}
+
+pub const RENDER_W: usize = 800;
+pub const RENDER_H: usize = 600;
 
 impl Default for Finisterra {
     fn default() -> Self {
@@ -57,8 +62,11 @@ impl Default for Finisterra {
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 
-        for i in 0..20000 {
-            let entity = Entity::random(1000000 + i * 10, &resources);
+        let mut name_generator = names::Generator::default();
+        for i in 0..100 {
+            let mut entity = Entity::random(1000000 + i * 10, &resources);
+            entity.name = name_generator.next().unwrap();
+
             current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
             println!("entity: {:?}", entity);
             entities.push(entity);
@@ -79,25 +87,17 @@ impl Default for Finisterra {
     }
 }
 
-impl Game for Finisterra {
-    fn update(&mut self, roma: &mut Roma, delta: Duration) {
-        self.process_input(roma, delta);
-        self.update_camera(roma);
-        self.draw_map(roma);
-    }
-}
-
 const TILE_SIZE: usize = 32;
 const HALF_TILE: usize = TILE_SIZE / 2;
 
 impl Finisterra {
-    pub fn update_camera(&self, roma: &mut Roma) {
+    pub fn update_camera(&self) {
         let x = (self.position.0 * 32. - HALF_TILE as f32) as usize;
         let y = (self.position.1 * 32.) as usize;
-        roma.set_camera_position(x, y);
+        set_camera_position(x, y);
     }
 
-    pub fn draw_map(&self, roma: &mut Roma) {
+    pub fn draw_map(&self) {
         let (x, y) = (self.position.0 as usize, self.position.1 as usize);
 
         let (y_start, y_end) = (y.saturating_sub(self.tiles_h), min(y + self.tiles_h, 99));
@@ -110,18 +110,18 @@ impl Finisterra {
             for layer in 0..4 {
                 if tile.graphics[layer] != 0 {
                     let z = calculate_z(layer, y, x);
-                    self.draw_grh(roma, tile.graphics[layer], world_x, world_y, z);
+                    self.draw_grh(tile.graphics[layer], world_x, world_y, z);
                 }
             }
             if let Some(user) = tile.user {
                 let entity = &self.entities[user];
-                self.draw_entity(roma, entity, 2);
+                self.draw_entity(entity, 2);
             }
         }
     }
 
     const ZERO_OFFSET: &Offset = &Offset { x: 0, y: 0 };
-    fn draw_entity(&self, roma: &mut Roma, entity: &Entity, layer: usize) {
+    fn draw_entity(&self, entity: &Entity, layer: usize) {
         let x = entity.position[0];
         let y = entity.position[1];
         let z = calculate_z(layer, y, x);
@@ -130,7 +130,7 @@ impl Finisterra {
 
         if entity.body != 0 {
             let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
-                self.draw_animation(roma, body.animations[0], world_x, world_y, z);
+                self.draw_animation(body.animations[0], world_x, world_y, z);
                 &body.head_offset
             } else {
                 Self::ZERO_OFFSET
@@ -139,35 +139,53 @@ impl Finisterra {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
                     let x = (world_x as isize + head_offset.x) as usize;
                     let y = (world_y as isize - head_offset.y) as usize;
-                    self.draw_grh(roma, head.images[0], x, y, z);
+                    self.draw_grh(head.images[0], x, y, z);
                 }
             }
         }
+        //
+        // // draw entity name on entity position
+        // let draw_text_params = DrawTextParams {
+        //     text: &entity.name,
+        //     x: world_x,
+        //     y: world_y - 20,
+        //     z,
+        //     color: roma::Color::RED,
+        //     size: 14,
+        //     ..Default::default()
+        // };
+        // roma.draw_text(draw_text_params);
     }
 
-    fn draw_animation(&self, roma: &mut Roma, id: usize, x: usize, y: usize, z: f32) {
+    fn draw_animation(&self, id: usize, x: usize, y: usize, z: f32) {
         if let Some(animation) = self.resources.animations.get(&id) {
-            self.draw_grh(roma, animation.frames[0], x, y, z);
+            self.draw_grh(animation.frames[0], x, y, z);
         }
     }
 
-    fn draw_grh(&self, roma: &mut Roma, image_id: usize, x: usize, y: usize, z: f32) {
+    fn draw_grh(&self, image_id: usize, x: usize, y: usize, z: f32) {
         if let Some(image) = self.resources.images.get(&image_id) {
-            self.draw_image(roma, image, x, y, z);
+            self.draw_image(image, x, y, z);
         }
     }
 
-    fn draw_image(&self, roma: &mut Roma, image: &Image, x: usize, y: usize, z: f32) {
+    fn draw_image(&self, image: &Image, x: usize, y: usize, z: f32) {
         let image_num = image.file_num;
         let x = x - image.width / 2;
 
-        roma.draw_texture(DrawParams {
+        draw_image(DrawImageParams {
             texture_id: image_num,
             x,
             y,
             z,
-            source: Some(Rect::new(image.x, image.y, image.width, image.height)),
-            flip_y: false,
+            source: Some(Rect {
+                x: image.x,
+                y: image.y,
+                w: image.width,
+                h: image.height,
+            }),
+            color: [1., 1., 1., 1.],
+            ..Default::default()
         });
     }
 }

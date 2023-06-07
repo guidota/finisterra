@@ -1,166 +1,158 @@
-use std::time::{Duration, Instant};
+use std::{iter::once, time::Duration};
 
-use pollster::block_on;
-use rustc_hash::FxHashMap;
-use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
+use winit::window::Window;
 use winit_input_helper::WinitInputHelper;
 
 use crate::{
-    draw::{DrawParams, DrawStrictParams},
-    render::{
-        vertex::{draw_params_to_vertex, Vertex},
-        Batch, Instructions, Renderer,
-    },
-    resources::camera::Camera2D,
-    settings::Settings,
+    camera::{Camera, Camera2D},
+    image_renderer::ImageRenderer,
+    state::State,
+    Settings,
 };
 
 pub struct Roma {
-    pub(crate) renderer: Renderer,
-    camera: Camera2D,
     input: WinitInputHelper,
+    pub(crate) image_renderer: ImageRenderer,
 
-    /// The current frame's draw instructions per texture
-    frame_instructions: FxHashMap<usize, Vec<DrawStrictParams>>,
+    depth_texture_view: wgpu::TextureView,
+    camera: Camera,
+    pub(crate) camera2d: Camera2D,
+
+    delta: Duration,
 }
 
 impl Roma {
-    pub fn input(&self) -> &winit_input_helper::WinitInputHelper {
-        &self.input
-    }
+    pub async fn new(settings: Settings) -> Self {
+        let camera = Camera::init();
+        let camera2d = Camera2D::new(settings.width, settings.height);
+        let image_renderer =
+            ImageRenderer::init(&settings.textures_folder, &camera.bind_group_layout);
+        let input = WinitInputHelper::new();
 
-    pub fn set_camera_position(&mut self, x: usize, y: usize) {
-        self.camera.set_position(x, y);
-    }
+        let depth_texture_view = Self::create_depth_texture();
 
-    pub fn draw_texture(&mut self, draw_params: DrawParams) {
-        self.renderer.prepare_texture(draw_params.texture_id);
-        match self.renderer.get_texture(&draw_params.texture_id) {
-            Some(texture) => {
-                let texture_id = draw_params.texture_id;
-                let draw_params = draw_params.to_strict(texture);
-                self.frame_instructions
-                    .entry(texture_id)
-                    .or_default()
-                    .push(draw_params);
-            }
-            None => {
-                println!("> draw_texture > texture not found or unable to load");
-            }
+        Self {
+            input,
+            image_renderer,
+            camera,
+            camera2d,
+            depth_texture_view,
+            delta: Duration::from_secs(0),
         }
     }
 
-    fn prepare_instructions(&mut self) -> Instructions {
-        self.renderer.update_camera(&self.camera);
-        let mut vertices = vec![];
-        let mut batches = vec![];
-        for (texture_id, draw_params) in self.frame_instructions.iter() {
-            batches.push(Batch {
-                texture_id: *texture_id,
-                size: draw_params.len() as u32,
+    fn create_depth_texture() -> wgpu::TextureView {
+        let state = get_state();
+
+        let size = wgpu::Extent3d {
+            width: state.config.width,
+            height: state.config.height,
+            depth_or_array_layers: 1,
+        };
+        let desc = wgpu::TextureDescriptor {
+            label: Some("depth_texture"),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth24PlusStencil8,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[wgpu::TextureFormat::Depth24PlusStencil8],
+        };
+        let texture = state.device.create_texture(&desc);
+
+        texture.create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    pub(crate) fn input(&mut self) -> &mut WinitInputHelper {
+        &mut self.input
+    }
+
+    pub(crate) fn get_delta(&self) -> Duration {
+        self.delta
+    }
+
+    pub(crate) fn set_delta(&mut self, delta: Duration) {
+        self.delta = delta;
+    }
+
+    pub(crate) fn resize(&mut self, physical_size: &winit::dpi::PhysicalSize<u32>) {
+        let state = get_state_mut();
+        state.resize(*physical_size);
+        self.depth_texture_view = Self::create_depth_texture();
+    }
+
+    fn update_camera(&mut self) {
+        let projection = self.camera2d.build_view_projection_matrix();
+        self.camera.update_projection(projection);
+    }
+
+    pub(crate) fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        self.update_camera();
+        let state = get_state();
+        let frame = state.surface.get_current_texture()?;
+        let view = &frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let mut encoder = state
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
             });
-            vertices.append(&mut self.prepare_vertices(draw_params));
-        }
-        Instructions { vertices, batches }
-    }
-
-    fn prepare_vertices(&self, batches: &[DrawStrictParams]) -> Vec<Vertex> {
-        let mut vertices = Vec::with_capacity(batches.len() * 4);
-        for param in batches {
-            vertices.append(&mut draw_params_to_vertex(param));
-        }
-        vertices
-    }
-
-    pub fn run_game<G: Game + 'static>(settings: Settings, mut game: G) {
-        block_on(async {
-            let event_loop = EventLoop::new();
-            let window = WindowBuilder::new()
-                .with_title(settings.window.window_title.clone())
-                .with_inner_size(winit::dpi::PhysicalSize::new(
-                    settings.window.window_width as u32,
-                    settings.window.window_height as u32,
-                ))
-                .build(&event_loop)
-                .expect("> Roma > couldn't create window");
-            let renderer = Renderer::new(&settings.renderer, window).await;
-            let camera = Camera2D::new(settings.window.window_width, settings.window.window_height);
-
-            let input = WinitInputHelper::new();
-
-            let mut roma = Roma {
-                renderer,
-                camera,
-                input,
-                frame_instructions: FxHashMap::default(),
-            };
-
-            let mut last_tick = Instant::now();
-            event_loop.run(move |window_event, _, control_flow| {
-                match window_event {
-                    Event::WindowEvent {
-                        ref event,
-                        window_id,
-                    } if window_id == roma.renderer.window().id() => match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(physical_size) => {
-                            roma.renderer.resize(physical_size);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            roma.renderer.resize(new_inner_size);
-                        }
-                        _ => {
-                            roma.input.update(&window_event);
-                        }
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: true,
                     },
-                    Event::RedrawRequested(window_id)
-                        if window_id == roma.renderer.window().id() =>
-                    {
-                        let now = Instant::now();
-                        let delta = now - last_tick;
-                        last_tick = now;
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_texture_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(0.0),
+                        store: true,
+                    }),
 
-                        game.update(&mut roma, delta);
-
-                        let instructions = roma.prepare_instructions();
-                        match roma.renderer.render(instructions) {
-                            Ok(_) => {}
-                            Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                                let new_size = *roma.renderer.size();
-                                roma.renderer.resize(&new_size);
-                            }
-                            Err(wgpu::SurfaceError::OutOfMemory) => {
-                                *control_flow = ControlFlow::Exit
-                            }
-
-                            Err(wgpu::SurfaceError::Timeout) => println!("Surface timeout"),
-                        }
-                        roma.frame_instructions.clear();
-                    }
-                    Event::RedrawEventsCleared => {
-                        // RedrawRequested will only trigger once, unless we manually request it.
-                        roma.renderer.window().request_redraw();
-                    }
-                    _ => {}
-                }
+                    stencil_ops: None,
+                }),
             });
-        });
+
+            self.image_renderer
+                .render_pass(&mut render_pass, &self.camera.bind_group);
+        }
+
+        state.queue.submit(once(encoder.finish()));
+        frame.present();
+        Ok(())
     }
 }
 
-pub trait Game {
-    fn update(&mut self, roma: &mut Roma, delta: Duration);
+static mut ROMA: Option<Roma> = None;
+static mut STATE: Option<State> = None;
+
+pub(crate) async fn init_roma(window: Window, settings: Settings) {
+    unsafe {
+        STATE = Some(State::init(window, settings.present_mode).await);
+        ROMA = Some(Roma::new(settings).await);
+    }
+}
+pub(crate) fn get_roma() -> &'static mut Roma {
+    unsafe { ROMA.as_mut().unwrap_or_else(|| panic!()) }
+}
+
+pub(crate) fn get_state() -> &'static State {
+    unsafe { STATE.as_ref().unwrap_or_else(|| panic!()) }
+}
+
+pub(crate) fn get_state_mut() -> &'static mut State {
+    unsafe { STATE.as_mut().unwrap_or_else(|| panic!()) }
+}
+
+pub(crate) fn get_device() -> &'static wgpu::Device {
+    &get_state().device
 }

@@ -1,6 +1,32 @@
+use std::{fs::File, io::Read, path::Path};
+
 use image::GenericImageView;
 
-use crate::resources::read_file;
+pub struct FileReaderError {
+    _msg: String,
+}
+
+pub fn open_file(path: &Path) -> Result<File, FileReaderError> {
+    match File::open(path) {
+        Ok(file) => Ok(file),
+        Err(e) => Err(FileReaderError {
+            _msg: e.to_string(),
+        }),
+    }
+}
+
+pub fn read_file(path: &str) -> Result<Vec<u8>, FileReaderError> {
+    let path = Path::new(path);
+    let mut file = open_file(path)?;
+    let mut buffer = Vec::new();
+    let read_result = file.read_to_end(&mut buffer);
+    match read_result {
+        Ok(_) => Ok(buffer),
+        Err(e) => Err(FileReaderError {
+            _msg: e.to_string(),
+        }),
+    }
+}
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -95,4 +121,26 @@ impl Texture {
             height: dimensions.1,
         }
     }
+    //
+    // pub fn from_texture(
+    //     device: &wgpu::Device,
+    //     texture: wgpu::Texture,
+    //     label: Option<&str>,
+    // ) -> Self {
+    //     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    //     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+    //         label,
+    //         ..Default::default()
+    //     });
+    //
+    //     let size = texture.size();
+    //
+    //     Self {
+    //         texture,
+    //         view,
+    //         sampler,
+    //         width: size.width,
+    //         height: size.height,
+    //     }
+    // }
 }
