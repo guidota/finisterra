@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use font::RESERVED_ID;
 use pollster::block_on;
 use roma::{get_roma, get_state, init_roma};
 pub use wgpu::PresentMode;
@@ -11,11 +12,12 @@ pub use winit::{
 pub use winit_input_helper::WinitInputHelper;
 
 mod camera;
-mod image_renderer;
+mod font;
+mod renderer;
 pub mod roma;
 mod state;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Rect {
     pub x: usize,
     pub y: usize,
@@ -33,21 +35,44 @@ pub struct DrawImageParams {
     pub source: Option<Rect>,
     pub flip_y: bool,
 }
+
 pub fn draw_image(params: DrawImageParams) {
     let roma = get_roma();
     roma.image_renderer.queue(params);
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DrawTextParams<'s> {
     pub text: &'s str,
     pub x: usize,
+    pub y: usize,
     pub z: f32,
     pub color: [f32; 4],
 }
 
-pub fn draw_text(_params: DrawTextParams) {
-    let _roma = get_roma();
+pub fn draw_text(params: DrawTextParams) {
+    let roma = get_roma();
+
+    let (data, total_width) = roma.fonts.parse(params.text);
+    let offset_x = total_width / 2;
+    let to_params_iter = data.iter().map(|(x, y, source)| {
+        let x = params
+            .x
+            .saturating_add_signed(*x as isize)
+            .saturating_sub(offset_x);
+        let y = params.y.saturating_add_signed(*y as isize);
+        DrawImageParams {
+            texture_id: RESERVED_ID,
+            x,
+            y,
+            z: params.z,
+            color: params.color,
+            source: Some(*source),
+            flip_y: false,
+        }
+    });
+    roma.image_renderer
+        .queue_multiple(RESERVED_ID, to_params_iter);
 }
 
 pub fn set_camera_position(x: usize, y: usize) {

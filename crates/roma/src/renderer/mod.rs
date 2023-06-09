@@ -3,7 +3,7 @@ use wgpu::util::DeviceExt;
 
 use crate::{roma::get_state, DrawImageParams, Rect};
 
-mod texture;
+pub(crate) mod texture;
 
 type Texture = (wgpu::BindGroup, (usize, usize));
 
@@ -17,29 +17,15 @@ pub(crate) struct ImageRenderer {
 
     textures_folder: String,
 
-    queue: FxHashMap<usize, Vec<DrawImageStrictParams>>,
-}
-
-#[derive(Default, Debug)]
-pub struct DrawImageStrictParams {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub sx: f32,
-    pub sy: f32,
-    pub sw: f32,
-    pub sh: f32,
-    pub texture_width: f32,
-    pub texture_height: f32,
-    pub flip_y: bool,
-    pub color: [f32; 4],
+    queue: FxHashMap<usize, Vec<DrawImageParams>>,
+    sprites: Vec<Sprite>,
 }
 
 struct Instructions {
-    vertices: Vec<Vertex>,
     batches: Vec<Batch>,
 }
 
+#[derive(Default)]
 struct Batch {
     texture_id: usize,
     size: u32,
@@ -47,7 +33,7 @@ struct Batch {
 
 impl ImageRenderer {
     // make this dynamic
-    pub const MAX_SPRITES: usize = 2560;
+    pub const MAX_SPRITES: usize = 8196;
     const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
     pub fn init(textures_folder: &str, camera_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
@@ -55,7 +41,7 @@ impl ImageRenderer {
         let device = &state.device;
         let config = &state.config;
 
-        let shader = device.create_shader_module(wgpu::include_wgsl!("image.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -146,19 +132,27 @@ impl ImageRenderer {
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
+        let textures = FxHashMap::default();
+
         Self {
             bind_group_layout,
             pipeline,
             index_buffer,
             vertex_buffer,
             queue: FxHashMap::default(),
-            textures: FxHashMap::default(),
+            textures,
             textures_folder: textures_folder.to_string(),
+            sprites: Vec::with_capacity(Self::MAX_SPRITES),
         }
     }
 
-    fn load_texture(&mut self, id: usize) {
-        if self.textures.contains_key(&id) {
+    pub(crate) fn add_texture(&mut self, id: usize, texture: &texture::Texture) {
+        self.textures
+            .insert(id, Some(texture.to_bind_group(&self.bind_group_layout)));
+    }
+
+    fn load_texture(&mut self, id: &usize) {
+        if self.textures.contains_key(id) {
             return;
         }
         let state = get_state();
@@ -166,57 +160,53 @@ impl ImageRenderer {
         let queue = &state.queue;
         let path = format!("{}/{}.png", self.textures_folder, id);
         let texture = match texture::Texture::from_path(device, queue, &path) {
-            Ok(texture) => {
-                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: &self.bind_group_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&texture.view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&texture.sampler),
-                        },
-                    ],
-                    label: Some("diffuse_bind_group"),
-                });
-
-                let dimensions = (texture.width as usize, texture.height as usize);
-                Some((bind_group, dimensions))
-            }
+            Ok(texture) => Some(texture.to_bind_group(&self.bind_group_layout)),
             _ => None,
         };
 
-        self.textures.insert(id, texture);
+        self.textures.insert(*id, texture);
     }
 
     pub fn queue(&mut self, params: DrawImageParams) {
         let id = params.texture_id;
-        self.load_texture(id);
+        self.queue
+            .entry(id)
+            .or_insert_with(|| Vec::with_capacity(Self::MAX_SPRITES))
+            .push(params);
+    }
 
-        // if valid request, convert and push to queue
-        if let Some(Some((_, dimensions))) = self.textures.get(&id) {
-            let params = params.convert_to_strict(*dimensions);
-            self.queue.entry(id).or_default().push(params);
-        }
+    pub fn queue_multiple<I>(&mut self, texture_id: usize, params: I)
+    where
+        I: Iterator<Item = DrawImageParams>,
+    {
+        self.queue.entry(texture_id).or_default().extend(params);
     }
 
     fn process_queue(&mut self) -> Instructions {
-        let mut vertices = vec![];
+        self.sprites.clear();
         let mut batches = vec![];
 
-        for (texture_id, batch_draw_params) in self.queue.iter() {
-            batches.push(Batch {
+        let texture_ids: Vec<_> = self.queue.keys().copied().collect();
+        texture_ids.iter().for_each(|id| self.load_texture(id));
+
+        for (texture_id, batch_draws) in &self.queue {
+            let Some(Some((_, dimensions))) = self.textures.get(texture_id) else {
+                    continue;
+                };
+
+            let batch = Batch {
                 texture_id: *texture_id,
-                size: batch_draw_params.len() as u32,
-            });
-            for draw_params in batch_draw_params {
-                vertices.append(&mut draw_params.into());
+                size: batch_draws.len() as u32,
+            };
+            for draw_params in batch_draws {
+                self.sprites.push(draw_params.create_sprite(dimensions));
             }
+
+            batches.push(batch);
         }
+
         self.queue.clear();
-        Instructions { vertices, batches }
+        Instructions { batches }
     }
 
     pub fn render_pass<'pass>(
@@ -228,7 +218,7 @@ impl ImageRenderer {
         if instructions.batches.is_empty() {
             return;
         }
-        let vertices = bytemuck::cast_slice(instructions.vertices.as_slice());
+        let vertices = bytemuck::cast_slice(self.sprites.as_slice());
         get_state()
             .queue
             .write_buffer(&self.vertex_buffer, 0, vertices);
@@ -249,10 +239,10 @@ impl ImageRenderer {
 
 #[repr(C)]
 #[derive(PartialEq, PartialOrd, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
-struct Vertex {
-    position: [f32; 3],
-    tex_coords: [f32; 2],
-    // pub color: [f32; 4],
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub tex_coords: [f32; 2],
+    pub color: [f32; 4],
 }
 
 impl Vertex {
@@ -272,47 +262,35 @@ impl Vertex {
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
             ],
         }
     }
 }
 
 impl DrawImageParams {
-    fn convert_to_strict(self, dimensions: (usize, usize)) -> DrawImageStrictParams {
+    fn create_sprite(&self, dimensions: &(usize, usize)) -> Sprite {
         let source = self.source.unwrap_or(Rect {
             x: 0,
             y: 0,
             w: dimensions.0,
             h: dimensions.1,
         });
-        DrawImageStrictParams {
-            x: self.x as f32,
-            y: self.y as f32,
-            z: self.z,
-            sx: source.x as f32,
-            sy: source.y as f32,
-            sw: source.w as f32,
-            sh: source.h as f32,
-            texture_width: dimensions.0 as f32,
-            texture_height: dimensions.1 as f32,
-            flip_y: self.flip_y,
-            color: self.color,
-        }
-    }
-}
-
-impl From<&DrawImageStrictParams> for Vec<Vertex> {
-    fn from(params: &DrawImageStrictParams) -> Self {
-        let texture_width = params.texture_width;
-        let texture_height = params.texture_height;
+        let params = self;
+        let texture_width = dimensions.0 as f32;
+        let texture_height = dimensions.1 as f32;
         let flip_y = params.flip_y;
-        let x = params.x;
-        let y = params.y;
+        let x = params.x as f32;
+        let y = params.y as f32;
+        let sx = source.x as f32;
+        let sy = source.y as f32;
+        let sw = source.w as f32;
+        let sh = source.h as f32;
         let z = params.z;
-        let sx = params.sx;
-        let sy = params.sy;
-        let sw = params.sw;
-        let sh = params.sh;
 
         let p = [
             [x, y, z],
@@ -333,14 +311,38 @@ impl From<&DrawImageStrictParams> for Vec<Vertex> {
             tex_coords.swap(1, 2);
         }
 
-        let mut vertices = Vec::with_capacity(4);
-        for i in 0..4 {
-            let vertex = Vertex {
-                position: p[i],
-                tex_coords: tex_coords[i],
-            };
-            vertices.push(vertex);
+        Sprite {
+            top_left: Vertex {
+                position: p[0],
+                tex_coords: tex_coords[0],
+                color: params.color,
+            },
+            bottom_left: Vertex {
+                position: p[1],
+                tex_coords: tex_coords[1],
+                color: params.color,
+            },
+            bottom_right: Vertex {
+                position: p[2],
+                tex_coords: tex_coords[2],
+                color: params.color,
+            },
+            top_right: Vertex {
+                position: p[3],
+                tex_coords: tex_coords[3],
+                color: params.color,
+            },
         }
-        vertices
     }
+}
+
+#[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
+#[repr(C)]
+struct Sprite {
+    // The order of these fields matters, as it'll determine the
+    // winding order of the quad.
+    top_left: Vertex,
+    bottom_left: Vertex,
+    bottom_right: Vertex,
+    top_right: Vertex,
 }
