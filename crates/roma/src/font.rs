@@ -1,15 +1,14 @@
 use std::io::Cursor;
 
-use bmfont::{BMFont, OrdinateOrientation};
+use bmfont::{BMFont, CharPosition, OrdinateOrientation};
 use rustc_hash::FxHashMap;
+use smol_str::SmolStr;
 
-use crate::{renderer::texture, roma::get_state, Rect};
-
-type ParseResult = Vec<(i32, i32, Rect)>;
+use crate::{renderer::texture, roma::get_state};
 
 pub struct Fonts {
     pub font: BMFont,
-    pub cache_glyphs: FxHashMap<String, (ParseResult, usize)>,
+    pub cache_glyphs: FxHashMap<SmolStr, (Vec<CharPosition>, u32)>,
 }
 pub const RESERVED_ID: usize = 40000;
 
@@ -26,31 +25,21 @@ impl Fonts {
         }
     }
 
-    pub fn parse(&mut self, text: &str) -> &(ParseResult, usize) {
-        self.cache_glyphs
-            .entry(text.to_string())
-            .or_insert_with(|| {
-                let Ok(chars) = self.font.parse(text) else {
-                    return (vec![], 0);
-                };
+    pub fn parse(&mut self, text: SmolStr) -> Option<&(Vec<CharPosition>, u32)> {
+        if !self.cache_glyphs.contains_key(&text) {
+            let chars = self.font.parse(&text);
+            let result = chars.into_iter().fold(
+                (Vec::with_capacity(text.len()), 0),
+                |(mut char_positions, mut total_width), char| {
+                    total_width += char.screen_rect.width;
+                    char_positions.push(char);
+                    (char_positions, total_width)
+                },
+            );
+            self.cache_glyphs.insert(text.clone(), result);
+        }
 
-                chars.into_iter().fold(
-                    (Vec::with_capacity(text.len()), 0),
-                    |(mut data, mut total_width), char| {
-                        let x = char.screen_rect.x;
-                        let y = char.screen_rect.y;
-                        let source = Rect {
-                            x: char.page_rect.x as usize,
-                            y: char.page_rect.y as usize,
-                            w: char.screen_rect.width as usize,
-                            h: char.screen_rect.height as usize,
-                        };
-                        total_width += source.w;
-                        data.push((x, y, source));
-                        (data, total_width)
-                    },
-                )
-            })
+        self.cache_glyphs.get(&text)
     }
 
     pub fn create_font_texture() -> (usize, texture::Texture) {

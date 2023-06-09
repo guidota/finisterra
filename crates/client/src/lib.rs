@@ -7,8 +7,9 @@ use definitions::{
 };
 use itertools::iproduct;
 use roma::{
-    draw_image, draw_text, get_delta, set_camera_position, DrawImageParams, DrawTextParams, Rect,
+    draw_image, draw_text, get_delta, set_camera_position, DrawImageParams, DrawTextParams,
 };
+use smol_str::SmolStr;
 use std::cmp::min;
 
 use definitions::{client::load_client_resources, map::Map};
@@ -37,18 +38,16 @@ impl Finisterra {
         self.draw_map();
         let delta = get_delta();
         draw_text(roma::DrawTextParams {
-            text: &format!("{:.2}", 1. / delta.as_secs_f32()),
+            text: SmolStr::new(format!("{:.0}", 1. / delta.as_secs_f32())),
+            position: [50. * 32., 50. * 32., 1.],
             color: [1., 0., 0., 1.],
-            z: 1.,
-            x: 50 * 32,
-            y: 50 * 32,
         });
     }
 }
 
-pub const RENDER_W: usize = 1920;
-pub const RENDER_H: usize = 1080;
-const CHARS: usize = 1000;
+pub const RENDER_W: usize = 800;
+pub const RENDER_H: usize = 600;
+const CHARS: usize = 5000;
 
 impl Default for Finisterra {
     fn default() -> Self {
@@ -76,7 +75,7 @@ impl Default for Finisterra {
         let mut name_generator = names::Generator::default();
         for i in 0..CHARS {
             let mut entity = Entity::random(1000000 + i * 10, &resources);
-            entity.name = name_generator.next().unwrap();
+            entity.name = SmolStr::new(name_generator.next().unwrap());
 
             current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
             println!("entity: {:?}", entity);
@@ -156,13 +155,11 @@ impl Finisterra {
         }
         // // draw entity name on entity position
         let draw_text_params = DrawTextParams {
-            text: &entity.name,
-            x: world_x,
-            y: world_y - 10,
-            z,
+            text: entity.name.clone(),
+            position: [world_x as f32, world_y as f32 - 10., z],
             color: [1., 0., 0., 0.8],
         };
-        draw_text(draw_text_params.clone());
+        draw_text(draw_text_params);
     }
 
     fn draw_animation(&self, id: usize, x: usize, y: usize, z: f32) {
@@ -183,15 +180,13 @@ impl Finisterra {
 
         draw_image(DrawImageParams {
             texture_id: image_num,
-            x,
-            y,
-            z,
-            source: Some(Rect {
-                x: image.x,
-                y: image.y,
-                w: image.width,
-                h: image.height,
-            }),
+            position: [x as f32, y as f32, z],
+            source: Some([
+                image.x as f32,
+                image.y as f32,
+                image.width as f32,
+                image.height as f32,
+            ]),
             color: [1., 1., 1., 1.],
             ..Default::default()
         });

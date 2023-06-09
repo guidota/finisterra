@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap;
 use wgpu::util::DeviceExt;
 
-use crate::{roma::get_state, DrawImageParams, Rect};
+use crate::{roma::get_state, DrawImageParams};
 
 pub(crate) mod texture;
 
@@ -23,6 +23,7 @@ pub(crate) struct ImageRenderer {
 
 struct Instructions {
     batches: Vec<Batch>,
+    sprites: usize,
 }
 
 #[derive(Default)]
@@ -142,7 +143,7 @@ impl ImageRenderer {
             queue: FxHashMap::default(),
             textures,
             textures_folder: textures_folder.to_string(),
-            sprites: Vec::with_capacity(Self::MAX_SPRITES),
+            sprites: vec![Sprite::default(); Self::MAX_SPRITES],
         }
     }
 
@@ -175,38 +176,43 @@ impl ImageRenderer {
             .push(params);
     }
 
-    pub fn queue_multiple<I>(&mut self, texture_id: usize, params: I)
-    where
-        I: Iterator<Item = DrawImageParams>,
-    {
-        self.queue.entry(texture_id).or_default().extend(params);
+    pub fn queue_multiple(&mut self, texture_id: usize, params: &mut Vec<DrawImageParams>) {
+        self.queue
+            .entry(texture_id)
+            .or_insert_with(|| Vec::with_capacity(Self::MAX_SPRITES))
+            .append(params);
     }
 
     fn process_queue(&mut self) -> Instructions {
-        self.sprites.clear();
         let mut batches = vec![];
 
         let texture_ids: Vec<_> = self.queue.keys().copied().collect();
         texture_ids.iter().for_each(|id| self.load_texture(id));
 
-        for (texture_id, batch_draws) in &self.queue {
-            let Some(Some((_, dimensions))) = self.textures.get(texture_id) else {
-                    continue;
-                };
-
-            let batch = Batch {
-                texture_id: *texture_id,
-                size: batch_draws.len() as u32,
+        let mut sprite_index = 0;
+        for texture_id in texture_ids {
+            let Some(draws) = self.queue.get_mut(&texture_id) else {
+                continue;
             };
-            for draw_params in batch_draws {
-                self.sprites.push(draw_params.create_sprite(dimensions));
-            }
+            let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
+                continue;
+            };
+            let batch = Batch {
+                texture_id,
+                size: draws.len() as u32,
+            };
 
             batches.push(batch);
+            for draw in draws.drain(..) {
+                draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
+                sprite_index += 1;
+            }
         }
 
-        self.queue.clear();
-        Instructions { batches }
+        Instructions {
+            batches,
+            sprites: sprite_index,
+        }
     }
 
     pub fn render_pass<'pass>(
@@ -218,7 +224,7 @@ impl ImageRenderer {
         if instructions.batches.is_empty() {
             return;
         }
-        let vertices = bytemuck::cast_slice(self.sprites.as_slice());
+        let vertices = bytemuck::cast_slice(&self.sprites[..instructions.sprites]);
         get_state()
             .queue
             .write_buffer(&self.vertex_buffer, 0, vertices);
@@ -273,25 +279,16 @@ impl Vertex {
 }
 
 impl DrawImageParams {
-    fn create_sprite(&self, dimensions: &(usize, usize)) -> Sprite {
-        let source = self.source.unwrap_or(Rect {
-            x: 0,
-            y: 0,
-            w: dimensions.0,
-            h: dimensions.1,
-        });
-        let params = self;
-        let texture_width = dimensions.0 as f32;
-        let texture_height = dimensions.1 as f32;
-        let flip_y = params.flip_y;
-        let x = params.x as f32;
-        let y = params.y as f32;
-        let sx = source.x as f32;
-        let sy = source.y as f32;
-        let sw = source.w as f32;
-        let sh = source.h as f32;
-        let z = params.z;
+    fn update_sprite(self, sprite: &mut Sprite, dimensions: &(usize, usize)) {
+        let (texture_width, texture_height) = (dimensions.0 as f32, dimensions.1 as f32);
 
+        let source = self
+            .source
+            .unwrap_or([0., 0., texture_width, texture_height]);
+        let color = self.color;
+        let flip_y = self.flip_y;
+        let [x, y, z] = self.position;
+        let [sx, sy, sw, sh] = source;
         let p = [
             [x, y, z],
             [x + sw, y, z],
@@ -311,32 +308,30 @@ impl DrawImageParams {
             tex_coords.swap(1, 2);
         }
 
-        Sprite {
-            top_left: Vertex {
-                position: p[0],
-                tex_coords: tex_coords[0],
-                color: params.color,
-            },
-            bottom_left: Vertex {
-                position: p[1],
-                tex_coords: tex_coords[1],
-                color: params.color,
-            },
-            bottom_right: Vertex {
-                position: p[2],
-                tex_coords: tex_coords[2],
-                color: params.color,
-            },
-            top_right: Vertex {
-                position: p[3],
-                tex_coords: tex_coords[3],
-                color: params.color,
-            },
-        }
+        sprite.top_left = Vertex {
+            position: p[0],
+            tex_coords: tex_coords[0],
+            color,
+        };
+        sprite.bottom_left = Vertex {
+            position: p[1],
+            tex_coords: tex_coords[1],
+            color,
+        };
+        sprite.bottom_right = Vertex {
+            position: p[2],
+            tex_coords: tex_coords[2],
+            color,
+        };
+        sprite.top_right = Vertex {
+            position: p[3],
+            tex_coords: tex_coords[3],
+            color,
+        };
     }
 }
 
-#[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
+#[derive(Default, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
 #[repr(C)]
 struct Sprite {
     // The order of these fields matters, as it'll determine the
