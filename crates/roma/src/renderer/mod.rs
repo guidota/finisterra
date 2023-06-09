@@ -36,7 +36,7 @@ pub struct DrawImageStrictParams {
 }
 
 struct Instructions {
-    vertices: Vec<Vertex>,
+    vertices: Vec<Sprite>,
     batches: Vec<Batch>,
 }
 
@@ -191,6 +191,21 @@ impl ImageRenderer {
         }
     }
 
+    pub fn queue_multiple<I>(&mut self, texture_id: usize, params: I)
+    where
+        I: Iterator<Item = DrawImageParams>,
+    {
+        self.load_texture(texture_id);
+
+        // if valid request, convert and push to queue
+        if let Some(Some((_, dimensions))) = self.textures.get(&texture_id) {
+            let params: Vec<_> = params
+                .map(|params| params.convert_to_strict(*dimensions))
+                .collect();
+            self.queue.entry(texture_id).or_default().extend(params);
+        }
+    }
+
     fn process_queue(&mut self) -> Instructions {
         let mut vertices = vec![];
         let mut batches = vec![];
@@ -201,7 +216,7 @@ impl ImageRenderer {
                 size: batch_draw_params.len() as u32,
             });
             for draw_params in batch_draw_params {
-                vertices.append(&mut draw_params.into());
+                vertices.push(draw_params.into());
             }
         }
         self.queue.clear();
@@ -272,7 +287,7 @@ impl Vertex {
 }
 
 impl DrawImageParams {
-    fn convert_to_strict(self, dimensions: (usize, usize)) -> DrawImageStrictParams {
+    fn convert_to_strict(&self, dimensions: (usize, usize)) -> DrawImageStrictParams {
         let source = self.source.unwrap_or(Rect {
             x: 0,
             y: 0,
@@ -295,7 +310,18 @@ impl DrawImageParams {
     }
 }
 
-impl From<&DrawImageStrictParams> for Vec<Vertex> {
+#[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
+#[repr(C)]
+struct Sprite {
+    // The order of these fields matters, as it'll determine the
+    // winding order of the quad.
+    top_left: Vertex,
+    bottom_left: Vertex,
+    bottom_right: Vertex,
+    top_right: Vertex,
+}
+
+impl From<&DrawImageStrictParams> for Sprite {
     fn from(params: &DrawImageStrictParams) -> Self {
         let texture_width = params.texture_width;
         let texture_height = params.texture_height;
@@ -327,15 +353,27 @@ impl From<&DrawImageStrictParams> for Vec<Vertex> {
             tex_coords.swap(1, 2);
         }
 
-        let mut vertices = Vec::with_capacity(4);
-        for i in 0..4 {
-            let vertex = Vertex {
-                position: p[i],
-                tex_coords: tex_coords[i],
+        Sprite {
+            top_left: Vertex {
+                position: p[0],
+                tex_coords: tex_coords[0],
                 color: params.color,
-            };
-            vertices.push(vertex);
+            },
+            bottom_left: Vertex {
+                position: p[1],
+                tex_coords: tex_coords[1],
+                color: params.color,
+            },
+            bottom_right: Vertex {
+                position: p[2],
+                tex_coords: tex_coords[2],
+                color: params.color,
+            },
+            top_right: Vertex {
+                position: p[3],
+                tex_coords: tex_coords[3],
+                color: params.color,
+            },
         }
-        vertices
     }
 }

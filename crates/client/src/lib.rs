@@ -46,8 +46,9 @@ impl Finisterra {
     }
 }
 
-pub const RENDER_W: usize = 800;
-pub const RENDER_H: usize = 600;
+pub const RENDER_W: usize = 480;
+pub const RENDER_H: usize = 480;
+const CHARS: usize = 100000;
 
 impl Default for Finisterra {
     fn default() -> Self {
@@ -73,7 +74,7 @@ impl Default for Finisterra {
         let mut entities = vec![];
 
         let mut name_generator = names::Generator::default();
-        for i in 0..1000 {
+        for i in 0..CHARS {
             let mut entity = Entity::random(1000000 + i * 10, &resources);
             entity.name = name_generator.next().unwrap();
 
