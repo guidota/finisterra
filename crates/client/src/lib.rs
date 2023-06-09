@@ -46,9 +46,9 @@ impl Finisterra {
     }
 }
 
-pub const RENDER_W: usize = 480;
-pub const RENDER_H: usize = 480;
-const CHARS: usize = 100000;
+pub const RENDER_W: usize = 1920;
+pub const RENDER_H: usize = 1080;
+const CHARS: usize = 1000;
 
 impl Default for Finisterra {
     fn default() -> Self {

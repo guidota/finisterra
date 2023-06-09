@@ -55,7 +55,6 @@ pub fn draw_text(params: DrawTextParams) {
 
     let (data, total_width) = roma.fonts.parse(params.text);
     let offset_x = total_width / 2;
-
     let to_params_iter = data.iter().map(|(x, y, source)| {
         let x = params
             .x
@@ -74,14 +73,6 @@ pub fn draw_text(params: DrawTextParams) {
     });
     roma.image_renderer
         .queue_multiple(RESERVED_ID, to_params_iter);
-    // for (x, y, source) in data {
-    //     let x = params
-    //         .x
-    //         .saturating_add_signed(*x as isize)
-    //         .saturating_sub(offset_x);
-    //     let y = params.y.saturating_add_signed(*y as isize);
-    //     roma.image_renderer.queue();
-    // }
 }
 
 pub fn set_camera_position(x: usize, y: usize) {

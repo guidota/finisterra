@@ -33,9 +33,10 @@ impl Fonts {
                 let Ok(chars) = self.font.parse(text) else {
                     return (vec![], 0);
                 };
-                chars
-                    .into_iter()
-                    .fold((vec![], 0), |(mut data, mut total_width), char| {
+
+                chars.into_iter().fold(
+                    (Vec::with_capacity(text.len()), 0),
+                    |(mut data, mut total_width), char| {
                         let x = char.screen_rect.x;
                         let y = char.screen_rect.y;
                         let source = Rect {
@@ -47,7 +48,8 @@ impl Fonts {
                         total_width += source.w;
                         data.push((x, y, source));
                         (data, total_width)
-                    })
+                    },
+                )
             })
     }
 

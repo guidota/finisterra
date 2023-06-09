@@ -11,7 +11,6 @@ cgmath = "0.18"
 bytemuck = { version = "1.12", features = ["derive"] }
 anyhow = "1.0"
 winit_input_helper = "0.14"
-derive_builder = "0.12"
 bmfont = { version = "0.3", features = ["serde", "serde_json"] }
 rustc-hash.workspace = true
 
