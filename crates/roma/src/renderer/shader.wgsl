@@ -6,27 +6,61 @@ struct CameraUniform {
 var<uniform> camera: CameraUniform;
 
 struct VertexInput {
-    @location(0) position: vec3<f32>,
-    @location(1) tex_coords: vec2<f32>,
-    @location(2) color: vec4<f32>,
+    @builtin(vertex_index) vertex_index : u32,
+    @location(0) top_left: vec2<f32>,
+    @location(1) bottom_right: vec2<f32>,
+    @location(2) tex_top_left: vec2<f32>,
+    @location(3) tex_bottom_right: vec2<f32>,
+    @location(4) color: vec4<f32>,
+    @location(5) z: f32,
 }
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) tex_coords: vec2<f32>,
+    @location(0) tex_pos: vec2<f32>,
     @location(1) color: vec4<f32>,
 }
 
+/* @group(2) @binding(0) var<storage, read> vertex_data: array<VertexInput>; */
+
 @vertex
-fn vs_main(
-    model: VertexInput,
-) -> VertexOutput {
-    var out: VertexOutput;
-    out.tex_coords = model.tex_coords;
-    var temp  = camera.view_proj * vec4<f32>(model.position, 1.0);
-    out.clip_position = vec4(temp.xy, model.position.z, 1.0);
-    out.color = model.color;
-    return out;
+fn vs_main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+
+    var pos: vec2<f32>;
+    var left: f32 = input.top_left.x;
+    var right: f32 = input.bottom_right.x;
+    var top: f32 = input.top_left.y;
+    var bottom: f32 = input.bottom_right.y;
+
+    switch (input.vertex_index) {
+        case 0u: {
+            pos = vec2<f32>(left, top);
+            output.tex_pos = input.tex_top_left;
+            break;
+        }
+        case 1u: {
+            pos = vec2<f32>(right, top);
+            output.tex_pos = vec2<f32>(input.tex_bottom_right.x, input.tex_top_left.y);
+            break;
+        }
+        case 2u: {
+            pos = vec2<f32>(left, bottom);
+            output.tex_pos = vec2<f32>(input.tex_top_left.x, input.tex_bottom_right.y);
+            break;
+        }
+        case 3u: {
+            pos = vec2<f32>(right, bottom);
+            output.tex_pos = input.tex_bottom_right;
+            break;
+        }
+        default: {}
+    }
+
+    output.clip_position = camera.view_proj * vec4<f32>(pos, input.z, 1.0);
+    output.clip_position.z = input.z;
+    output.color = input.color;
+    return output;
 }
 
 // Fragment shader
@@ -43,7 +77,7 @@ fn discard_if_transparent(color: vec4<f32>) {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var output = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    var output = textureSample(t_diffuse, s_diffuse, in.tex_pos);
     discard_if_transparent(output);
     return output * in.color;
 }

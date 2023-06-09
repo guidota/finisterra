@@ -45,9 +45,9 @@ impl Finisterra {
     }
 }
 
-pub const RENDER_W: usize = 800;
-pub const RENDER_H: usize = 600;
-const CHARS: usize = 5000;
+pub const RENDER_W: usize = 480;
+pub const RENDER_H: usize = 480;
+const CHARS: usize = 20000;
 
 impl Default for Finisterra {
     fn default() -> Self {
@@ -132,11 +132,9 @@ impl Finisterra {
 
     const ZERO_OFFSET: &Offset = &Offset { x: 0, y: 0 };
     fn draw_entity(&self, entity: &Entity, layer: usize) {
-        let x = entity.position[0];
-        let y = entity.position[1];
+        let [x, y] = entity.position;
+        let [world_x, world_y] = entity.world_position;
         let z = calculate_z(layer, y, x);
-        let world_x = entity.world_position[0];
-        let world_y = entity.world_position[1];
 
         if entity.body != 0 {
             let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
@@ -147,13 +145,13 @@ impl Finisterra {
             };
             if entity.head != 0 {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
-                    let x = (world_x as isize + head_offset.x) as usize;
+                    let x = (world_x as isize - head_offset.x) as usize;
                     let y = (world_y as isize - head_offset.y) as usize;
                     self.draw_grh(head.images[0], x, y, z);
                 }
             }
         }
-        // // draw entity name on entity position
+        // draw entity name on entity position
         let draw_text_params = DrawTextParams {
             text: entity.name.clone(),
             position: [world_x as f32, world_y as f32 - 10., z],
