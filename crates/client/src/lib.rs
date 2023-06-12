@@ -1,7 +1,7 @@
 use definitions::{
-    atlas::{AtlasResource, AtlasType},
+    ao_20,
+    // atlas::{AtlasResource, AtlasType},
     client::ClientResources,
-    client::ClientResourcesPaths,
     image::Image,
     Offset,
 };
@@ -12,7 +12,7 @@ use roma::{
 use smol_str::SmolStr;
 use std::cmp::min;
 
-use definitions::{client::load_client_resources, map::Map};
+use definitions::map::Map;
 use entity::Entity;
 use settings::Settings;
 
@@ -45,30 +45,47 @@ impl Finisterra {
     }
 }
 
-pub const RENDER_W: usize = 480;
-pub const RENDER_H: usize = 480;
-const CHARS: usize = 20000;
+pub const RENDER_W: usize = 1920;
+pub const RENDER_H: usize = 1080;
+const CHARS: usize = 1000;
 
 impl Default for Finisterra {
     fn default() -> Self {
-        let atlas = AtlasResource {
-            metadata_path: "./assets/finisterra/atlas.toml",
-            image_id: 0,
-            atlas_type: AtlasType::Yatp,
+        // AO 9.9z
+        // let atlas = AtlasResource {
+        //     metadata_path: "./assets/finisterra/atlas.toml",
+        //     image_id: 0,
+        //     atlas_type: AtlasType::Yatp,
+        // };
+        // let paths = ClientResourcesPaths {
+        //     bodies: "./assets/99z/Personajes.ind",
+        //     heads: "./assets/99z/Cabezas.ind",
+        //     weapons: "./assets/99z/Armas.dat",
+        //     shields: "./assets/99z/Escudos.dat",
+        //     headgears: "./assets/99z/Cascos.ind",
+        //     fxs: "./assets/99z/Fxs.ind",
+        //     maps: "./assets/99z/maps/",
+        //     graphics: "./assets/99z/Graficos.ind",
+        //     atlas: Some(atlas),
+        // };
+        //
+        // let resources = load_client_resources(paths).expect("can load client resources");
+        // -----------
+        // AO 20
+        let paths = ao_20::client::ClientResourcesPaths {
+            bodies: "./assets/ao_20/init/cuerpos.dat",
+            templates: "./assets/ao_20/init/moldes.ini",
+            heads: "./assets/ao_20/init/cabezas.ini",
+            weapons: "./assets/ao_20/init/armas.dat",
+            shields: "./assets/ao_20/init/escudos.dat",
+            headgears: "./assets/ao_20/init/cascos.ini",
+            fxs: "./assets/ao_20/init/fxs.ind",
+            maps: "./assets/ao_20/maps/",
+            graphics: "./assets/ao_20/init/graficos.ind",
+            atlas: None,
         };
-        let paths = ClientResourcesPaths {
-            bodies: "./assets/99z/Personajes.ind",
-            heads: "./assets/99z/Cabezas.ind",
-            weapons: "./assets/99z/Armas.dat",
-            shields: "./assets/99z/Escudos.dat",
-            headgears: "./assets/99z/Cascos.ind",
-            fxs: "./assets/99z/Fxs.ind",
-            maps: "./assets/99z/maps/",
-            graphics: "./assets/99z/Graficos.ind",
-            atlas: Some(atlas),
-        };
-
-        let resources = load_client_resources(paths).expect("can load client resources");
+        let resources =
+            ao_20::client::load_client_resources(paths).expect("can load client resources");
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 
@@ -78,7 +95,6 @@ impl Default for Finisterra {
             entity.name = SmolStr::new(name_generator.next().unwrap());
 
             current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
-            println!("entity: {:?}", entity);
             entities.push(entity);
         }
 
@@ -147,7 +163,7 @@ impl Finisterra {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
                     let x = (world_x as isize - head_offset.x) as usize;
                     let y = (world_y as isize - head_offset.y) as usize;
-                    self.draw_grh(head.images[0], x, y, z);
+                    self.draw_grh(head.images[2], x, y, z);
                 }
             }
         }
@@ -155,7 +171,7 @@ impl Finisterra {
         let draw_text_params = DrawTextParams {
             text: entity.name.clone(),
             position: [world_x as f32, world_y as f32 - 10., z],
-            color: [1., 0., 0., 0.8],
+            color: [1., 0., 0., 1.],
         };
         draw_text(draw_text_params);
     }

@@ -1,9 +1,9 @@
-pub mod body;
-pub mod gear;
-pub mod head;
-pub mod shield;
+// pub mod body;
+// pub mod gear;
+// pub mod head;
+// pub mod shield;
 pub mod template;
-pub mod weapon;
+// pub mod weapon;
 
 use ini::{Ini, Properties};
 

@@ -1,5 +1,5 @@
-mod ao_20;
-mod ao_99z;
+pub mod ao_20;
+pub mod ao_99z;
 mod ao_libre;
 pub(crate) mod error;
 pub(crate) mod parse;

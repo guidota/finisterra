@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use ini::Ini;
+use rustc_hash::FxHashMap;
 
 use crate::parse::get_ini_reader;
 
@@ -43,8 +44,8 @@ pub fn parse_templates_from_bytes(mut bytes: &[u8]) -> BTreeMap<usize, Template>
     templates
 }
 
-pub fn parse_templates(path: &str) -> BTreeMap<usize, Template> {
-    let mut templates = BTreeMap::new();
+pub fn parse_templates(path: &str) -> FxHashMap<usize, Template> {
+    let mut templates = FxHashMap::default();
 
     let ini = get_ini_reader(path).unwrap();
     for template in 1..=get_count(&ini, "Moldes") {
@@ -117,15 +118,14 @@ impl Iterator for TempalateIntoIterator {
             x -= self.template.dirs.2;
         }
 
-        let x = self.template.x + (x * self.template.width);
-        let y = self.template.y + (y * self.template.height);
+        let min_x = self.template.x + (x * self.template.width);
+        let min_y = self.template.y + (y * self.template.height);
         let rect = Rect {
-            min: (x, y),
-            max: (x + self.template.width, y + self.template.height),
+            min: (min_x, min_y),
+            max: (min_x + self.template.width, min_y + self.template.height),
         };
 
-        let id = self.index;
         self.index += 1;
-        Some((id, rect))
+        Some((y, rect))
     }
 }

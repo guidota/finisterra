@@ -1,5 +1,5 @@
 use super::{get_count, get_number};
-use crate::{ao_20::init::Head, parse::get_ini_reader};
+use crate::{head::Head, parse::get_ini_reader};
 use ini::Ini;
 use std::collections::BTreeMap;
 
@@ -29,10 +29,12 @@ fn parse_head(head_number: usize, ini: &Ini) -> Head {
     let head_section = ini
         .section(Some(&format!("HEAD{head_number}")))
         .expect("Head {head_number} doesn't exist");
-    Head(
-        get_number(head_section, "Head1"),
-        get_number(head_section, "Head2"),
-        get_number(head_section, "Head3"),
-        get_number(head_section, "Head4"),
-    )
+    Head {
+        images: [
+            get_number(head_section, "Head1"),
+            get_number(head_section, "Head2"),
+            get_number(head_section, "Head3"),
+            get_number(head_section, "Head4"),
+        ],
+    }
 }
