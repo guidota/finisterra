@@ -5,7 +5,7 @@ mod settings;
 
 fn main() {
     let mut game = Finisterra::default();
-    let base_path = "./assets/ao_20/graphics/".to_string();
+    let base_path = "./assets/99z/graphics/".to_string();
     // let window_settings = WindowSettingsBuilder::default()
     //     .window_title("Roma")
     //     .window_width(RENDER_W)

@@ -1,5 +1,7 @@
 use definitions::{
     ao_20,
+    ao_99z,
+    atlas::{AtlasResource, AtlasType},
     // atlas::{AtlasResource, AtlasType},
     client::ClientResources,
     image::Image,
@@ -47,45 +49,46 @@ impl Finisterra {
 
 pub const RENDER_W: usize = 1920;
 pub const RENDER_H: usize = 1080;
-const CHARS: usize = 1000;
+const CHARS: usize = 100000;
 
 impl Default for Finisterra {
     fn default() -> Self {
         // AO 9.9z
-        // let atlas = AtlasResource {
-        //     metadata_path: "./assets/finisterra/atlas.toml",
-        //     image_id: 0,
-        //     atlas_type: AtlasType::Yatp,
-        // };
-        // let paths = ClientResourcesPaths {
-        //     bodies: "./assets/99z/Personajes.ind",
-        //     heads: "./assets/99z/Cabezas.ind",
-        //     weapons: "./assets/99z/Armas.dat",
-        //     shields: "./assets/99z/Escudos.dat",
-        //     headgears: "./assets/99z/Cascos.ind",
-        //     fxs: "./assets/99z/Fxs.ind",
-        //     maps: "./assets/99z/maps/",
-        //     graphics: "./assets/99z/Graficos.ind",
-        //     atlas: Some(atlas),
-        // };
-        //
-        // let resources = load_client_resources(paths).expect("can load client resources");
+        let atlas = AtlasResource {
+            metadata_path: "./assets/finisterra/atlas.toml",
+            image_id: 0,
+            atlas_type: AtlasType::Yatp,
+        };
+        let paths = ao_99z::client::ClientResourcesPaths {
+            bodies: "./assets/99z/Personajes.ind",
+            heads: "./assets/99z/Cabezas.ind",
+            weapons: "./assets/99z/Armas.dat",
+            shields: "./assets/99z/Escudos.dat",
+            headgears: "./assets/99z/Cascos.ind",
+            fxs: "./assets/99z/Fxs.ind",
+            maps: "./assets/99z/maps/",
+            graphics: "./assets/99z/Graficos.ind",
+            atlas: Some(atlas),
+        };
+
+        let resources =
+            ao_99z::client::load_client_resources(paths).expect("can load client resources");
         // -----------
         // AO 20
-        let paths = ao_20::client::ClientResourcesPaths {
-            bodies: "./assets/ao_20/init/cuerpos.dat",
-            templates: "./assets/ao_20/init/moldes.ini",
-            heads: "./assets/ao_20/init/cabezas.ini",
-            weapons: "./assets/ao_20/init/armas.dat",
-            shields: "./assets/ao_20/init/escudos.dat",
-            headgears: "./assets/ao_20/init/cascos.ini",
-            fxs: "./assets/ao_20/init/fxs.ind",
-            maps: "./assets/ao_20/maps/",
-            graphics: "./assets/ao_20/init/graficos.ind",
-            atlas: None,
-        };
-        let resources =
-            ao_20::client::load_client_resources(paths).expect("can load client resources");
+        // let paths = ao_20::client::ClientResourcesPaths {
+        //     bodies: "./assets/ao_20/init/cuerpos.dat",
+        //     templates: "./assets/ao_20/init/moldes.ini",
+        //     heads: "./assets/ao_20/init/cabezas.ini",
+        //     weapons: "./assets/ao_20/init/armas.dat",
+        //     shields: "./assets/ao_20/init/escudos.dat",
+        //     headgears: "./assets/ao_20/init/cascos.ini",
+        //     fxs: "./assets/ao_20/init/fxs.ind",
+        //     maps: "./assets/ao_20/maps/",
+        //     graphics: "./assets/ao_20/init/graficos.ind",
+        //     atlas: None,
+        // };
+        // let resources =
+        //     ao_20::client::load_client_resources(paths).expect("can load client resources");
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 

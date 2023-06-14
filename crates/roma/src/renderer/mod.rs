@@ -33,7 +33,7 @@ struct Batch {
 
 impl ImageRenderer {
     // make this dynamic
-    pub const MAX_SPRITES: usize = 20000;
+    pub const MAX_SPRITES: usize = 50000;
     // const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
     // const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
     pub fn init(textures_folder: &str, camera_bind_group_layout: &wgpu::BindGroupLayout) -> Self {

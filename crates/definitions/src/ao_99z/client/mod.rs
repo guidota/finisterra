@@ -54,7 +54,6 @@ pub fn load_bodies(path: &str) -> Result<FxHashMap<usize, Body>, Error> {
                     x: reader.read_signed_integer().into(),
                     y: reader.read_signed_integer().into(),
                 },
-                ..Default::default()
             },
         );
     }
