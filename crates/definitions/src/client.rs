@@ -17,6 +17,3 @@ pub struct ClientResources {
     pub headgears: FxHashMap<usize, HeadGear>,
     pub fxs: FxHashMap<usize, FX>,
 }
-
-pub use crate::ao_99z::client::load_client_resources;
-pub use crate::ao_99z::client::ClientResourcesPaths;

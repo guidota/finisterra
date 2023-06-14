@@ -1,17 +1,18 @@
 use definitions::{
-    atlas::{AtlasResource, AtlasType},
+    ao_20,
+    // atlas::{AtlasResource, AtlasType},
     client::ClientResources,
-    client::ClientResourcesPaths,
     image::Image,
     Offset,
 };
 use itertools::iproduct;
 use roma::{
-    draw_image, draw_text, get_delta, set_camera_position, DrawImageParams, DrawTextParams, Rect,
+    draw_image, draw_text, get_delta, set_camera_position, DrawImageParams, DrawTextParams,
 };
+use smol_str::SmolStr;
 use std::cmp::min;
 
-use definitions::{client::load_client_resources, map::Map};
+use definitions::map::Map;
 use entity::Entity;
 use settings::Settings;
 
@@ -37,11 +38,9 @@ impl Finisterra {
         self.draw_map();
         let delta = get_delta();
         draw_text(roma::DrawTextParams {
-            text: &format!("{:.2}", 1. / delta.as_secs_f32()),
+            text: SmolStr::new(format!("{:.0}", 1. / delta.as_secs_f32())),
+            position: [50. * 32., 50. * 32., 1.],
             color: [1., 0., 0., 1.],
-            z: 1.,
-            x: 50 * 32,
-            y: 50 * 32,
         });
     }
 }
@@ -52,34 +51,50 @@ const CHARS: usize = 1000;
 
 impl Default for Finisterra {
     fn default() -> Self {
-        let atlas = AtlasResource {
-            metadata_path: "./assets/finisterra/atlas.toml",
-            image_id: 0,
-            atlas_type: AtlasType::Yatp,
+        // AO 9.9z
+        // let atlas = AtlasResource {
+        //     metadata_path: "./assets/finisterra/atlas.toml",
+        //     image_id: 0,
+        //     atlas_type: AtlasType::Yatp,
+        // };
+        // let paths = ClientResourcesPaths {
+        //     bodies: "./assets/99z/Personajes.ind",
+        //     heads: "./assets/99z/Cabezas.ind",
+        //     weapons: "./assets/99z/Armas.dat",
+        //     shields: "./assets/99z/Escudos.dat",
+        //     headgears: "./assets/99z/Cascos.ind",
+        //     fxs: "./assets/99z/Fxs.ind",
+        //     maps: "./assets/99z/maps/",
+        //     graphics: "./assets/99z/Graficos.ind",
+        //     atlas: Some(atlas),
+        // };
+        //
+        // let resources = load_client_resources(paths).expect("can load client resources");
+        // -----------
+        // AO 20
+        let paths = ao_20::client::ClientResourcesPaths {
+            bodies: "./assets/ao_20/init/cuerpos.dat",
+            templates: "./assets/ao_20/init/moldes.ini",
+            heads: "./assets/ao_20/init/cabezas.ini",
+            weapons: "./assets/ao_20/init/armas.dat",
+            shields: "./assets/ao_20/init/escudos.dat",
+            headgears: "./assets/ao_20/init/cascos.ini",
+            fxs: "./assets/ao_20/init/fxs.ind",
+            maps: "./assets/ao_20/maps/",
+            graphics: "./assets/ao_20/init/graficos.ind",
+            atlas: None,
         };
-        let paths = ClientResourcesPaths {
-            bodies: "./assets/99z/Personajes.ind",
-            heads: "./assets/99z/Cabezas.ind",
-            weapons: "./assets/99z/Armas.dat",
-            shields: "./assets/99z/Escudos.dat",
-            headgears: "./assets/99z/Cascos.ind",
-            fxs: "./assets/99z/Fxs.ind",
-            maps: "./assets/99z/maps/",
-            graphics: "./assets/99z/Graficos.ind",
-            atlas: Some(atlas),
-        };
-
-        let resources = load_client_resources(paths).expect("can load client resources");
+        let resources =
+            ao_20::client::load_client_resources(paths).expect("can load client resources");
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 
         let mut name_generator = names::Generator::default();
         for i in 0..CHARS {
             let mut entity = Entity::random(1000000 + i * 10, &resources);
-            entity.name = name_generator.next().unwrap();
+            entity.name = SmolStr::new(name_generator.next().unwrap());
 
             current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
-            println!("entity: {:?}", entity);
             entities.push(entity);
         }
 
@@ -133,11 +148,9 @@ impl Finisterra {
 
     const ZERO_OFFSET: &Offset = &Offset { x: 0, y: 0 };
     fn draw_entity(&self, entity: &Entity, layer: usize) {
-        let x = entity.position[0];
-        let y = entity.position[1];
+        let [x, y] = entity.position;
+        let [world_x, world_y] = entity.world_position;
         let z = calculate_z(layer, y, x);
-        let world_x = entity.world_position[0];
-        let world_y = entity.world_position[1];
 
         if entity.body != 0 {
             let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
@@ -148,21 +161,19 @@ impl Finisterra {
             };
             if entity.head != 0 {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
-                    let x = (world_x as isize + head_offset.x) as usize;
+                    let x = (world_x as isize - head_offset.x) as usize;
                     let y = (world_y as isize - head_offset.y) as usize;
-                    self.draw_grh(head.images[0], x, y, z);
+                    self.draw_grh(head.images[2], x, y, z);
                 }
             }
         }
-        // // draw entity name on entity position
+        // draw entity name on entity position
         let draw_text_params = DrawTextParams {
-            text: &entity.name,
-            x: world_x,
-            y: world_y - 10,
-            z,
-            color: [1., 0., 0., 0.8],
+            text: entity.name.clone(),
+            position: [world_x as f32, world_y as f32 - 10., z],
+            color: [1., 0., 0., 1.],
         };
-        draw_text(draw_text_params.clone());
+        draw_text(draw_text_params);
     }
 
     fn draw_animation(&self, id: usize, x: usize, y: usize, z: f32) {
@@ -183,15 +194,13 @@ impl Finisterra {
 
         draw_image(DrawImageParams {
             texture_id: image_num,
-            x,
-            y,
-            z,
-            source: Some(Rect {
-                x: image.x,
-                y: image.y,
-                w: image.width,
-                h: image.height,
-            }),
+            position: [x as f32, y as f32, z],
+            source: Some([
+                image.x as f32,
+                image.y as f32,
+                image.width as f32,
+                image.height as f32,
+            ]),
             color: [1., 1., 1., 1.],
             ..Default::default()
         });

@@ -1,5 +1,5 @@
 use super::{get_count, get_number};
-use crate::{ao_20::init::Weapon, parse::get_ini_reader};
+use crate::{parse::get_ini_reader, weapon::Weapon};
 use ini::Ini;
 use std::collections::BTreeMap;
 
@@ -39,10 +39,12 @@ fn parse_weapon(number: usize, ini: &Ini) -> Result<Weapon, ParseError> {
     let section = ini
         .section(Some(&format!("Arma{number}")))
         .ok_or(ParseError::WeaponNotFound(number))?;
-    Ok(Weapon(
-        get_number(section, "Dir1"),
-        get_number(section, "Dir2"),
-        get_number(section, "Dir3"),
-        get_number(section, "Dir4"),
-    ))
+    Ok(Weapon {
+        animations: [
+            get_number(section, "Dir1"),
+            get_number(section, "Dir2"),
+            get_number(section, "Dir3"),
+            get_number(section, "Dir4"),
+        ],
+    })
 }

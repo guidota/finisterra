@@ -1,5 +1,6 @@
 use definitions::client::ClientResources;
 use rand::{seq::IteratorRandom, Rng};
+use smol_str::SmolStr;
 
 use crate::TILE_SIZE;
 
@@ -8,7 +9,7 @@ pub struct Entity {
     pub id: usize,
     pub body: usize,
     pub head: usize,
-    pub name: String,
+    pub name: SmolStr,
     pub position: [usize; 2],
     pub world_position: [usize; 2],
 }
@@ -61,7 +62,7 @@ impl Entity {
             head: random_head,
             position: [x, y],
             world_position: [x * TILE_SIZE, y * TILE_SIZE],
-            name: "Pandora".to_string(),
+            name: SmolStr::new("Pandora"),
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::{
     font::Fonts,
     renderer::ImageRenderer,
     state::State,
-    Settings,
+    DrawImageParams, Settings,
 };
 
 pub struct Roma {
@@ -21,10 +21,12 @@ pub struct Roma {
     pub(crate) fonts: Fonts,
 
     delta: Duration,
+
+    pub(crate) staging: Vec<DrawImageParams>,
 }
 
 impl Roma {
-    pub async fn new(settings: Settings) -> Self {
+    pub async fn new(settings: Settings) -> Roma {
         let camera = Camera::init();
         let camera2d = Camera2D::new(settings.width, settings.height);
         let mut image_renderer =
@@ -45,6 +47,7 @@ impl Roma {
             depth_texture_view,
             delta: Duration::from_secs(0),
             fonts,
+            staging: Vec::with_capacity(ImageRenderer::MAX_SPRITES),
         }
     }
 

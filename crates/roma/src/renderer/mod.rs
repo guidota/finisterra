@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap;
 use wgpu::util::DeviceExt;
 
-use crate::{roma::get_state, DrawImageParams, Rect};
+use crate::{roma::get_state, Color, DrawImageParams};
 
 pub(crate) mod texture;
 
@@ -12,7 +12,6 @@ pub(crate) struct ImageRenderer {
     textures: FxHashMap<usize, Option<Texture>>,
 
     pipeline: wgpu::RenderPipeline,
-    index_buffer: wgpu::Buffer,
     vertex_buffer: wgpu::Buffer,
 
     textures_folder: String,
@@ -23,6 +22,7 @@ pub(crate) struct ImageRenderer {
 
 struct Instructions {
     batches: Vec<Batch>,
+    sprites: usize,
 }
 
 #[derive(Default)]
@@ -33,9 +33,9 @@ struct Batch {
 
 impl ImageRenderer {
     // make this dynamic
-    pub const MAX_SPRITES: usize = 8196;
-    const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
-    const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
+    pub const MAX_SPRITES: usize = 20000;
+    // const MAX_INDICES: usize = Self::MAX_SPRITES * 6;
+    // const MAX_VERTICES: usize = Self::MAX_SPRITES * 4;
     pub fn init(textures_folder: &str, camera_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
         let state = get_state();
         let device = &state.device;
@@ -63,6 +63,7 @@ impl ImageRenderer {
             ],
             label: Some("texture_bind_group_layout"),
         });
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
@@ -75,7 +76,11 @@ impl ImageRenderer {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[Vertex::desc()],
+                buffers: &[wgpu::VertexBufferLayout {
+                    array_stride: std::mem::size_of::<Sprite>() as wgpu::BufferAddress,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4, 5 => Float32],
+                }],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -87,8 +92,8 @@ impl ImageRenderer {
                 })],
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                strip_index_format: Some(wgpu::IndexFormat::Uint16),
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -110,25 +115,10 @@ impl ImageRenderer {
             multiview: None,
         });
 
-        let mut indices: [u16; Self::MAX_INDICES] = [0u16; Self::MAX_INDICES];
-        for i in 0..Self::MAX_SPRITES {
-            indices[i * 6] = (i * 4) as u16;
-            indices[i * 6 + 1] = (i * 4 + 1) as u16;
-            indices[i * 6 + 2] = (i * 4 + 2) as u16;
-            indices[i * 6 + 3] = (i * 4) as u16;
-            indices[i * 6 + 4] = (i * 4 + 2) as u16;
-            indices[i * 6 + 5] = (i * 4 + 3) as u16;
-        }
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
-        let vertices = [Vertex::default(); Self::MAX_VERTICES];
+        let sprites_data = [Sprite::default(); Self::MAX_SPRITES];
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Sprite Batch Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
+            label: Some("Sprite Batch Storage Buffer"),
+            contents: bytemuck::cast_slice(&sprites_data),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
@@ -137,12 +127,11 @@ impl ImageRenderer {
         Self {
             bind_group_layout,
             pipeline,
-            index_buffer,
-            vertex_buffer,
             queue: FxHashMap::default(),
             textures,
             textures_folder: textures_folder.to_string(),
-            sprites: Vec::with_capacity(Self::MAX_SPRITES),
+            sprites: vec![Sprite::default(); Self::MAX_SPRITES],
+            vertex_buffer,
         }
     }
 
@@ -175,38 +164,43 @@ impl ImageRenderer {
             .push(params);
     }
 
-    pub fn queue_multiple<I>(&mut self, texture_id: usize, params: I)
-    where
-        I: Iterator<Item = DrawImageParams>,
-    {
-        self.queue.entry(texture_id).or_default().extend(params);
+    pub fn queue_multiple(&mut self, texture_id: usize, params: &mut Vec<DrawImageParams>) {
+        self.queue
+            .entry(texture_id)
+            .or_insert_with(|| Vec::with_capacity(Self::MAX_SPRITES))
+            .append(params);
     }
 
     fn process_queue(&mut self) -> Instructions {
-        self.sprites.clear();
         let mut batches = vec![];
 
         let texture_ids: Vec<_> = self.queue.keys().copied().collect();
         texture_ids.iter().for_each(|id| self.load_texture(id));
 
-        for (texture_id, batch_draws) in &self.queue {
-            let Some(Some((_, dimensions))) = self.textures.get(texture_id) else {
-                    continue;
-                };
-
-            let batch = Batch {
-                texture_id: *texture_id,
-                size: batch_draws.len() as u32,
+        let mut sprite_index = 0;
+        for texture_id in texture_ids {
+            let Some(draws) = self.queue.get_mut(&texture_id) else {
+                continue;
             };
-            for draw_params in batch_draws {
-                self.sprites.push(draw_params.create_sprite(dimensions));
-            }
+            let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
+                continue;
+            };
+            let batch = Batch {
+                texture_id,
+                size: draws.len() as u32,
+            };
 
             batches.push(batch);
+            for draw in draws.drain(..) {
+                draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
+                sprite_index += 1;
+            }
         }
 
-        self.queue.clear();
-        Instructions { batches }
+        Instructions {
+            batches,
+            sprites: sprite_index,
+        }
     }
 
     pub fn render_pass<'pass>(
@@ -218,92 +212,48 @@ impl ImageRenderer {
         if instructions.batches.is_empty() {
             return;
         }
-        let vertices = bytemuck::cast_slice(self.sprites.as_slice());
+        let sprite_data = bytemuck::cast_slice(&self.sprites[..instructions.sprites]);
         get_state()
             .queue
-            .write_buffer(&self.vertex_buffer, 0, vertices);
+            .write_buffer(&self.vertex_buffer, 0, sprite_data);
+
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(1, camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
         let mut offset = 0;
         for Batch { texture_id, size } in instructions.batches {
             if let Some(Some((bind_group, _))) = self.textures.get(&texture_id) {
                 render_pass.set_bind_group(0, bind_group, &[]);
-                render_pass.draw_indexed(offset..(offset + size * 6), 0, 0..1);
+                render_pass.draw(0..4, offset..(offset + size));
             }
-            offset += size * 6;
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(PartialEq, PartialOrd, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
-    pub color: [f32; 4],
-}
-
-impl Vertex {
-    fn desc() -> wgpu::VertexBufferLayout<'static> {
-        use std::mem;
-        wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x4,
-                },
-            ],
+            offset += size;
         }
     }
 }
 
 impl DrawImageParams {
-    fn create_sprite(&self, dimensions: &(usize, usize)) -> Sprite {
-        let source = self.source.unwrap_or(Rect {
-            x: 0,
-            y: 0,
-            w: dimensions.0,
-            h: dimensions.1,
-        });
-        let params = self;
-        let texture_width = dimensions.0 as f32;
-        let texture_height = dimensions.1 as f32;
-        let flip_y = params.flip_y;
-        let x = params.x as f32;
-        let y = params.y as f32;
-        let sx = source.x as f32;
-        let sy = source.y as f32;
-        let sw = source.w as f32;
-        let sh = source.h as f32;
-        let z = params.z;
+    fn update_sprite(self, sprite: &mut Sprite, dimensions: &(usize, usize)) {
+        let (texture_width, texture_height) = (dimensions.0 as f32, dimensions.1 as f32);
 
+        let source = self
+            .source
+            .unwrap_or([0., 0., texture_width, texture_height]);
+        let color = self.color;
+        let flip_y = self.flip_y;
+        let [x, y, z] = self.position;
+        let [sx, sy, sw, sh] = source;
         let p = [
-            [x, y, z],
-            [x + sw, y, z],
-            [x + sw, y + sh, z],
-            [x, y + sh, z],
+            [x, y],
+            [x + sw, y + sh],
+            // [x + sw, y + sh, z],
+            // [x, y + sh, z],
         ];
 
         let mut tex_coords = [
             [sx / texture_width, (sy + sh) / texture_height],
-            [(sx + sw) / texture_width, (sy + sh) / texture_height],
             [(sx + sw) / texture_width, sy / texture_height],
-            [sx / texture_width, sy / texture_height],
+            // [(sx + sw) / texture_width, (sy + sh) / texture_height],
+            // [sx / texture_width, sy / texture_height],
         ];
 
         if flip_y {
@@ -311,38 +261,26 @@ impl DrawImageParams {
             tex_coords.swap(1, 2);
         }
 
-        Sprite {
-            top_left: Vertex {
-                position: p[0],
-                tex_coords: tex_coords[0],
-                color: params.color,
-            },
-            bottom_left: Vertex {
-                position: p[1],
-                tex_coords: tex_coords[1],
-                color: params.color,
-            },
-            bottom_right: Vertex {
-                position: p[2],
-                tex_coords: tex_coords[2],
-                color: params.color,
-            },
-            top_right: Vertex {
-                position: p[3],
-                tex_coords: tex_coords[3],
-                color: params.color,
-            },
-        }
+        sprite.top_left = p[0];
+        sprite.bottom_right = p[1];
+
+        sprite.tex_top_left = tex_coords[0];
+        sprite.tex_bottom_right = tex_coords[1];
+
+        sprite.color = color;
+        sprite.z = z;
     }
 }
 
-#[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
+#[derive(Default, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
 #[repr(C)]
 struct Sprite {
-    // The order of these fields matters, as it'll determine the
-    // winding order of the quad.
-    top_left: Vertex,
-    bottom_left: Vertex,
-    bottom_right: Vertex,
-    top_right: Vertex,
+    top_left: [f32; 2],
+    bottom_right: [f32; 2],
+
+    tex_top_left: [f32; 2],
+    tex_bottom_right: [f32; 2],
+
+    color: Color,
+    z: f32,
 }

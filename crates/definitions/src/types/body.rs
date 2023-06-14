@@ -4,7 +4,6 @@ use crate::Offset;
 pub struct Body {
     pub animations: [usize; 4],
     pub head_offset: Offset,
-    pub override_file_num: Option<usize>,
 }
 
 // #[derive(Default, Clone, Debug)]

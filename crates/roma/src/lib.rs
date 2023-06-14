@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 use font::RESERVED_ID;
 use pollster::block_on;
 use roma::{get_roma, get_state, init_roma};
+use smol_str::SmolStr;
 pub use wgpu::PresentMode;
 pub use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -17,22 +18,16 @@ mod renderer;
 pub mod roma;
 mod state;
 
-#[derive(Default, Debug, Copy, Clone)]
-pub struct Rect {
-    pub x: usize,
-    pub y: usize,
-    pub w: usize,
-    pub h: usize,
-}
+pub type Position = [f32; 3];
+pub type Color = [f32; 4];
+pub type Rect = [f32; 4];
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct DrawImageParams {
     pub texture_id: usize,
-    pub x: usize,
-    pub y: usize,
-    pub z: f32,
-    pub color: [f32; 4],
+    pub position: Position,
     pub source: Option<Rect>,
+    pub color: Color,
     pub flip_y: bool,
 }
 
@@ -42,37 +37,42 @@ pub fn draw_image(params: DrawImageParams) {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct DrawTextParams<'s> {
-    pub text: &'s str,
-    pub x: usize,
-    pub y: usize,
-    pub z: f32,
-    pub color: [f32; 4],
+pub struct DrawTextParams {
+    pub text: SmolStr,
+    pub position: Position,
+    pub color: Color,
 }
 
 pub fn draw_text(params: DrawTextParams) {
     let roma = get_roma();
+    let Some((char_positions, total_width)) = roma.fonts.parse(params.text) else {return};
 
-    let (data, total_width) = roma.fonts.parse(params.text);
-    let offset_x = total_width / 2;
-    let to_params_iter = data.iter().map(|(x, y, source)| {
-        let x = params
-            .x
-            .saturating_add_signed(*x as isize)
-            .saturating_sub(offset_x);
-        let y = params.y.saturating_add_signed(*y as isize);
-        DrawImageParams {
+    let offset_x = *total_width as f32 / 2.;
+    let [draw_x, draw_y, draw_z] = params.position;
+
+    let chars_staging = &mut roma.staging;
+    for char in char_positions {
+        let x = char.screen_rect.x;
+        let y = char.screen_rect.y;
+        let source = [
+            char.page_rect.x as f32,
+            char.page_rect.y as f32,
+            char.screen_rect.width as f32,
+            char.screen_rect.height as f32,
+        ];
+
+        let x = draw_x + x as f32 - offset_x;
+        let y = draw_y + y as f32;
+        chars_staging.push(DrawImageParams {
             texture_id: RESERVED_ID,
-            x,
-            y,
-            z: params.z,
+            position: [x, y, draw_z],
             color: params.color,
-            source: Some(*source),
+            source: Some(source),
             flip_y: false,
-        }
-    });
+        });
+    }
     roma.image_renderer
-        .queue_multiple(RESERVED_ID, to_params_iter);
+        .queue_multiple(RESERVED_ID, chars_staging);
 }
 
 pub fn set_camera_position(x: usize, y: usize) {

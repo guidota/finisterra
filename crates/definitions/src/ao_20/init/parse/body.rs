@@ -1,6 +1,7 @@
-use super::{get_count, get_number, to_number};
-use crate::{ao_20::init::Body, parse::get_ini_reader};
+use super::{get_count, get_number, template::Template, to_number};
+use crate::{body::Body, parse::get_ini_reader};
 use ini::Ini;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
 #[derive(Debug)]
@@ -61,7 +62,11 @@ pub fn parse_bodies(path: &str) -> Result<BTreeMap<usize, Body>, ParseError> {
     Ok(bodies)
 }
 
-fn parse_body(body_number: usize, ini: &Ini) -> Result<Body, ParseError> {
+fn parse_body(
+    body_number: usize,
+    ini: &Ini,
+    templates: FxHashMap<usize, Template>,
+) -> Result<Body, ParseError> {
     let body_section = ini
         .section(Some(&format!("BODY{body_number}")))
         .ok_or(ParseError::NoBodyFound(body_number))?;
@@ -82,6 +87,9 @@ fn parse_body(body_number: usize, ini: &Ini) -> Result<Body, ParseError> {
     let file_num = body_section.get("FileNum").map(to_number);
     if let Some(file_num) = file_num {
         let std = get_number(body_section, "Std");
+        if let Some(template) = templates.get(&std) {
+            // template.dirs
+        }
         return Ok(Body::AnimatedWithTemplate {
             template_id: std,
             file_num,

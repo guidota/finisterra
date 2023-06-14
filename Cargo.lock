@@ -93,12 +93,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "array2d"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79093d31d0a9c7832c71ad74dd945b7861f721e6f242aa67be253a5eecbac937"
-
-[[package]]
 name = "arrayref"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -308,7 +302,6 @@ dependencies = [
 name = "client"
 version = "0.1.0"
 dependencies = [
- "array2d",
  "definitions",
  "itertools",
  "names",
@@ -316,6 +309,7 @@ dependencies = [
  "roma",
  "rustc-hash",
  "serde",
+ "smol_str",
  "toml",
 ]
 
@@ -1273,6 +1267,8 @@ dependencies = [
  "image",
  "pollster",
  "rustc-hash",
+ "smallvec",
+ "smol_str",
  "wgpu",
  "winit",
  "winit_input_helper",
@@ -1413,6 +1409,15 @@ dependencies = [
  "wayland-client",
  "wayland-cursor",
  "wayland-protocols",
+]
+
+[[package]]
+name = "smol_str"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
