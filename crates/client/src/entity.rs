@@ -1,6 +1,6 @@
 use definitions::client::ClientResources;
 use rand::{seq::IteratorRandom, Rng};
-use smol_str::SmolStr;
+use roma::SmolStr;
 
 use crate::TILE_SIZE;
 
@@ -18,36 +18,6 @@ impl Entity {
     pub fn random(id: usize, resources: &ClientResources) -> Self {
         let mut rng = rand::thread_rng();
         let (random_body, _) = resources.bodies.iter().choose(&mut rng).unwrap();
-        //
-        // match body {
-        //     Body::AnimatedWithTemplate {
-        //         template_id,
-        //         file_num,
-        //         head_offset,
-        //     } => {
-        //         if let Some(template) = resources.body_templates.get(template_id) {
-        //             if template.width == 0 {
-        //                 continue;
-        //             }
-        //             if file_num != &0 && head_offset.1 != 0 {
-        //                 break *id;
-        //             }
-        //         }
-        //     }
-        //     Body::Animated { walks, head_offset } => {
-        //         let first_animation = walks.0;
-        //         if head_offset.1 == 0 {
-        //             continue;
-        //         }
-        //         if let Some(animation) = resources.animations.get(&first_animation.to_string())
-        //         {
-        //             let first_image = &animation.frames[0];
-        //             if resources.images.contains_key(first_image) {
-        //                 break *id;
-        //             }
-        //         }
-        //     }
-        // }
         let random_head = loop {
             let (id, head) = resources.heads.iter().choose(&mut rng).unwrap();
             if head.images[0] != 0 {

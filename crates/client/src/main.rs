@@ -4,24 +4,8 @@ use roma::{run_game, Settings};
 mod settings;
 
 fn main() {
-    let mut game = Finisterra::default();
+    let mut game = Finisterra::ao_99z();
     let base_path = "./assets/99z/graphics/".to_string();
-    // let window_settings = WindowSettingsBuilder::default()
-    //     .window_title("Roma")
-    //     .window_width(RENDER_W)
-    //     .window_height(RENDER_H)
-    //     .build()
-    //     .unwrap();
-    // let renderer_settings = RendererSettingsBuilder::default()
-    //     .present_mode(roma::PresentMode::AutoNoVsync)
-    //     .base_path(base_path)
-    //     .build()
-    //     .unwrap();
-    // let settings = SettingsBuilder::default()
-    //     .window(window_settings)
-    //     .renderer(renderer_settings)
-    //     .build()
-    //     .unwrap();
     let settings = Settings {
         width: RENDER_W,
         height: RENDER_H,

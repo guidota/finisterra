@@ -114,15 +114,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "assets-analyzer"
-version = "0.1.0"
-dependencies = [
- "definitions",
- "serde",
- "toml",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,7 +300,6 @@ dependencies = [
  "roma",
  "rustc-hash",
  "serde",
- "smol_str",
  "toml",
 ]
 

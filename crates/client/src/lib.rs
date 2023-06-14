@@ -8,10 +8,10 @@ use definitions::{
     Offset,
 };
 use itertools::iproduct;
+use roma::SmolStr;
 use roma::{
     draw_image, draw_text, get_delta, set_camera_position, DrawImageParams, DrawTextParams,
 };
-use smol_str::SmolStr;
 use std::cmp::min;
 
 use definitions::map::Map;
@@ -21,6 +21,13 @@ use settings::Settings;
 pub mod entity;
 pub mod input;
 pub mod settings;
+
+pub const RENDER_W: usize = 1920;
+pub const RENDER_H: usize = 1080;
+
+const CHARS: usize = 100000;
+const TILE_SIZE: usize = 32;
+const HALF_TILE: usize = TILE_SIZE / 2;
 
 pub struct Finisterra {
     pub settings: Settings,
@@ -34,61 +41,21 @@ pub struct Finisterra {
 }
 
 impl Finisterra {
-    pub fn game_loop(&mut self) {
-        self.process_input();
-        self.update_camera();
-        self.draw_map();
-        let delta = get_delta();
-        draw_text(roma::DrawTextParams {
-            text: SmolStr::new(format!("{:.0}", 1. / delta.as_secs_f32())),
-            position: [50. * 32., 50. * 32., 1.],
-            color: [1., 0., 0., 1.],
-        });
-    }
-}
-
-pub const RENDER_W: usize = 1920;
-pub const RENDER_H: usize = 1080;
-const CHARS: usize = 100000;
-
-impl Default for Finisterra {
-    fn default() -> Self {
-        // AO 9.9z
-        let atlas = AtlasResource {
-            metadata_path: "./assets/finisterra/atlas.toml",
-            image_id: 0,
-            atlas_type: AtlasType::Yatp,
+    pub fn ao_20() -> Self {
+        let paths = ao_20::client::ClientResourcesPaths {
+            bodies: "./assets/ao_20/init/cuerpos.dat",
+            templates: "./assets/ao_20/init/moldes.ini",
+            heads: "./assets/ao_20/init/cabezas.ini",
+            weapons: "./assets/ao_20/init/armas.dat",
+            shields: "./assets/ao_20/init/escudos.dat",
+            headgears: "./assets/ao_20/init/cascos.ini",
+            fxs: "./assets/ao_20/init/fxs.ind",
+            maps: "./assets/ao_20/maps/",
+            graphics: "./assets/ao_20/init/graficos.ind",
+            atlas: None,
         };
-        let paths = ao_99z::client::ClientResourcesPaths {
-            bodies: "./assets/99z/Personajes.ind",
-            heads: "./assets/99z/Cabezas.ind",
-            weapons: "./assets/99z/Armas.dat",
-            shields: "./assets/99z/Escudos.dat",
-            headgears: "./assets/99z/Cascos.ind",
-            fxs: "./assets/99z/Fxs.ind",
-            maps: "./assets/99z/maps/",
-            graphics: "./assets/99z/Graficos.ind",
-            atlas: Some(atlas),
-        };
-
         let resources =
-            ao_99z::client::load_client_resources(paths).expect("can load client resources");
-        // -----------
-        // AO 20
-        // let paths = ao_20::client::ClientResourcesPaths {
-        //     bodies: "./assets/ao_20/init/cuerpos.dat",
-        //     templates: "./assets/ao_20/init/moldes.ini",
-        //     heads: "./assets/ao_20/init/cabezas.ini",
-        //     weapons: "./assets/ao_20/init/armas.dat",
-        //     shields: "./assets/ao_20/init/escudos.dat",
-        //     headgears: "./assets/ao_20/init/cascos.ini",
-        //     fxs: "./assets/ao_20/init/fxs.ind",
-        //     maps: "./assets/ao_20/maps/",
-        //     graphics: "./assets/ao_20/init/graficos.ind",
-        //     atlas: None,
-        // };
-        // let resources =
-        //     ao_20::client::load_client_resources(paths).expect("can load client resources");
+            ao_20::client::load_client_resources(paths).expect("can load client resources");
         let mut current_map = resources.maps.get(&1).expect("can get map").clone();
         let mut entities = vec![];
 
@@ -114,19 +81,72 @@ impl Default for Finisterra {
             tiles_h,
         }
     }
-}
+    pub fn ao_99z() -> Self {
+        let atlas = AtlasResource {
+            metadata_path: "./assets/finisterra/atlas.toml",
+            image_id: 0,
+            atlas_type: AtlasType::Yatp,
+        };
+        let paths = ao_99z::client::ClientResourcesPaths {
+            bodies: "./assets/99z/Personajes.ind",
+            heads: "./assets/99z/Cabezas.ind",
+            weapons: "./assets/99z/Armas.dat",
+            shields: "./assets/99z/Escudos.dat",
+            headgears: "./assets/99z/Cascos.ind",
+            fxs: "./assets/99z/Fxs.ind",
+            maps: "./assets/99z/maps/",
+            graphics: "./assets/99z/Graficos.ind",
+            atlas: Some(atlas),
+        };
 
-const TILE_SIZE: usize = 32;
-const HALF_TILE: usize = TILE_SIZE / 2;
+        let resources =
+            ao_99z::client::load_client_resources(paths).expect("can load client resources");
 
-impl Finisterra {
-    pub fn update_camera(&self) {
+        let mut current_map = resources.maps.get(&1).expect("can get map").clone();
+        let mut entities = vec![];
+
+        let mut name_generator = names::Generator::default();
+        for i in 0..CHARS {
+            let mut entity = Entity::random(1000000 + i * 10, &resources);
+            entity.name = SmolStr::new(name_generator.next().unwrap());
+
+            current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
+            entities.push(entity);
+        }
+
+        let tiles_w = ((RENDER_W as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() as usize + 1;
+        let tiles_h = ((RENDER_H as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() as usize + 2;
+
+        Self {
+            settings: Settings::default(),
+            resources,
+            current_map,
+            position: (50., 50.),
+            entities,
+            tiles_w,
+            tiles_h,
+        }
+    }
+
+    pub fn game_loop(&mut self) {
+        self.process_input();
+        self.update_camera();
+        self.draw_map();
+        let delta = get_delta();
+        draw_text(roma::DrawTextParams {
+            text: SmolStr::new(format!("FPS: {:.0}", 1. / delta.as_secs_f32())),
+            position: [50. * 32., 50. * 32., 1.],
+            color: [0., 1., 0., 1.],
+        });
+    }
+
+    fn update_camera(&self) {
         let x = (self.position.0 * 32. - HALF_TILE as f32) as usize;
         let y = (self.position.1 * 32.) as usize;
         set_camera_position(x, y);
     }
 
-    pub fn draw_map(&self) {
+    fn draw_map(&self) {
         let (x, y) = (self.position.0 as usize, self.position.1 as usize);
 
         let (y_start, y_end) = (y.saturating_sub(self.tiles_h), min(y + self.tiles_h, 99));
@@ -149,7 +169,6 @@ impl Finisterra {
         }
     }
 
-    const ZERO_OFFSET: &Offset = &Offset { x: 0, y: 0 };
     fn draw_entity(&self, entity: &Entity, layer: usize) {
         let [x, y] = entity.position;
         let [world_x, world_y] = entity.world_position;
@@ -160,7 +179,7 @@ impl Finisterra {
                 self.draw_animation(body.animations[0], world_x, world_y, z);
                 &body.head_offset
             } else {
-                Self::ZERO_OFFSET
+                &Offset { x: 0, y: 0 }
             };
             if entity.head != 0 {
                 if let Some(head) = self.resources.heads.get(&entity.head) {
@@ -170,7 +189,7 @@ impl Finisterra {
                 }
             }
         }
-        // draw entity name on entity position
+
         let draw_text_params = DrawTextParams {
             text: entity.name.clone(),
             position: [world_x as f32, world_y as f32 - 10., z],
