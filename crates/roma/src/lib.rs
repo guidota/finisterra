@@ -1,4 +1,5 @@
 pub use roma::*;
+pub use settings::*;
 pub use smol_str::SmolStr;
 pub use wgpu::PresentMode;
 pub use winit::{
@@ -11,6 +12,7 @@ pub use winit_input_helper::WinitInputHelper;
 mod camera;
 mod renderer;
 mod roma;
+pub mod settings;
 mod state;
 
 pub type Position = [f32; 3];

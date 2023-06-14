@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use byteorder::ReadBytesExt;
 use rustc_hash::FxHashMap;
 
@@ -232,7 +234,7 @@ pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
 }
 
 pub struct Graphics {
-    pub images: FxHashMap<usize, Image>,
+    pub images: FxHashMap<usize, Rc<Image>>,
     pub animations: FxHashMap<usize, Animation>,
 }
 
@@ -270,7 +272,7 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
                     .entry(image.file_num)
                     .or_insert_with(Vec::new)
                     .push(image.id);
-                images.insert(grh.into(), image);
+                images.insert(grh.into(), Rc::new(image));
             }
             _ => {
                 animations.insert(

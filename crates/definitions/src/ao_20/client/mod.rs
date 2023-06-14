@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use byteorder::ReadBytesExt;
 use rustc_hash::FxHashMap;
 
@@ -51,7 +53,7 @@ pub fn load_templates(path: &str) -> Result<FxHashMap<usize, Template>, Error> {
 pub fn load_bodies(
     path: &str,
     templates: &FxHashMap<usize, Template>,
-    images: &mut FxHashMap<usize, Image>,
+    images: &mut FxHashMap<usize, Rc<Image>>,
     animations: &mut FxHashMap<usize, Animation>,
 ) -> Result<FxHashMap<usize, Body>, Error> {
     let mut bodies = FxHashMap::default();
@@ -106,7 +108,7 @@ pub fn load_bodies(
                         width: rect.max.0 - rect.min.0,
                         height: rect.max.1 - rect.min.1,
                     };
-                    images.insert(latest_image_id, image);
+                    images.insert(latest_image_id, Rc::new(image));
                     body_animations[animation_number]
                         .frames
                         .push(latest_image_id);
@@ -333,14 +335,14 @@ pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
 }
 
 pub struct Graphics {
-    pub images: FxHashMap<usize, Image>,
+    pub images: FxHashMap<usize, Rc<Image>>,
     pub animations: FxHashMap<usize, Animation>,
 }
 
 /// graficos.ini or graficos.ind
 pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Result<Graphics, Error> {
     let mut reader = get_binary_reader(path)?;
-    let mut images = FxHashMap::<usize, Image>::default();
+    let mut images = FxHashMap::<usize, Rc<Image>>::default();
     let mut animations = FxHashMap::<usize, Animation>::default();
 
     reader.read_long();
@@ -363,7 +365,7 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
                     height: reader.read_integer() as usize,
                     id: grh as usize,
                 };
-                images.insert(grh as usize, image);
+                images.insert(grh as usize, Rc::new(image));
             }
             frames_len => {
                 let animation = Animation {

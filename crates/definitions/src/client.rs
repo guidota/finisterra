@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -7,7 +9,7 @@ use crate::{
 
 #[derive(Default, Clone, Debug)]
 pub struct ClientResources {
-    pub images: FxHashMap<usize, Image>,
+    pub images: FxHashMap<usize, Rc<Image>>,
     pub maps: FxHashMap<usize, Map>,
     pub animations: FxHashMap<usize, Animation>,
     pub bodies: FxHashMap<usize, Body>,

@@ -1,11 +1,8 @@
 use definitions::{
-    ao_20,
-    ao_99z,
+    ao_20, ao_99z,
     atlas::{AtlasResource, AtlasType},
-    // atlas::{AtlasResource, AtlasType},
     client::ClientResources,
     image::Image,
-    Offset,
 };
 use itertools::iproduct;
 use roma::SmolStr;
@@ -81,6 +78,7 @@ impl Finisterra {
             tiles_h,
         }
     }
+
     pub fn ao_99z() -> Self {
         let atlas = AtlasResource {
             metadata_path: "./assets/finisterra/atlas.toml",
@@ -110,10 +108,13 @@ impl Finisterra {
             let mut entity = Entity::random(1000000 + i * 10, &resources);
             entity.name = SmolStr::new(name_generator.next().unwrap());
 
-            current_map.tiles[entity.position[0]][entity.position[1]].user = Some(i);
+            let [x, y] = entity.position;
+            current_map.tiles[x][y].user = Some(i);
             entities.push(entity);
         }
 
+        // let tiles_w = (((RENDER_W as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() / 2.) as usize + 1;
+        // let tiles_h = (((RENDER_H as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() / 2.) as usize + 2;
         let tiles_w = ((RENDER_W as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() as usize + 1;
         let tiles_h = ((RENDER_H as f32 / TILE_SIZE as f32).ceil() / 2.).ceil() as usize + 2;
 
@@ -162,6 +163,7 @@ impl Finisterra {
                     self.draw_grh(tile.graphics[layer], world_x, world_y, z);
                 }
             }
+
             if let Some(user) = tile.user {
                 let entity = &self.entities[user];
                 self.draw_entity(entity, 2);
@@ -174,34 +176,22 @@ impl Finisterra {
         let [world_x, world_y] = entity.world_position;
         let z = calculate_z(layer, y, x);
 
-        if entity.body != 0 {
-            let head_offset = if let Some(body) = self.resources.bodies.get(&entity.body) {
-                self.draw_animation(body.animations[0], world_x, world_y, z);
-                &body.head_offset
-            } else {
-                &Offset { x: 0, y: 0 }
-            };
-            if entity.head != 0 {
-                if let Some(head) = self.resources.heads.get(&entity.head) {
-                    let x = (world_x as isize - head_offset.x) as usize;
-                    let y = (world_y as isize - head_offset.y) as usize;
-                    self.draw_grh(head.images[2], x, y, z);
-                }
+        if let Some((body, animation)) = &entity.body {
+            self.draw_grh(animation.frames[0], world_x, world_y, z);
+            let head_offset = &body.head_offset;
+            if let Some((_, image)) = &entity.head {
+                let x = (world_x as isize - head_offset.x) as usize;
+                let y = (world_y as isize - head_offset.y) as usize;
+                self.draw_image(image, x, y, z);
             }
         }
 
         let draw_text_params = DrawTextParams {
             text: entity.name.clone(),
-            position: [world_x as f32, world_y as f32 - 10., z],
+            position: [world_x as f32 + 16., world_y as f32 - 10., z],
             color: [1., 0., 0., 1.],
         };
         draw_text(draw_text_params);
-    }
-
-    fn draw_animation(&self, id: usize, x: usize, y: usize, z: f32) {
-        if let Some(animation) = self.resources.animations.get(&id) {
-            self.draw_grh(animation.frames[0], x, y, z);
-        }
     }
 
     fn draw_grh(&self, image_id: usize, x: usize, y: usize, z: f32) {

@@ -19,12 +19,14 @@ pub(crate) struct ImageRenderer {
     texture_bind_group_layout: wgpu::BindGroupLayout,
 
     queue: FxHashMap<usize, Vec<DrawImageParams>>,
+    priority_queue: FxHashMap<usize, Vec<DrawImageParams>>,
     sprites: Vec<Sprite>,
 }
 
 struct Instructions {
     batches: Vec<Batch>,
     sprites: usize,
+    recreate_vertex_buffer: bool,
 }
 
 #[derive(Default)]
@@ -34,8 +36,7 @@ struct Batch {
 }
 
 impl ImageRenderer {
-    // make this dynamic
-    pub const INITIAL_SPRITES: usize = 20000;
+    pub const INITIAL_SPRITES: usize = 10000;
     pub fn init(textures_folder: &str) -> Self {
         let state = get_state();
         let device = &state.device;
@@ -120,7 +121,19 @@ impl ImageRenderer {
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
-                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::SrcAlpha,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            operation: wgpu::BlendOperation::Add,
+                        },
+                        alpha: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::One,
+                            dst_factor: wgpu::BlendFactor::One,
+                            operation: wgpu::BlendOperation::Add,                 
+                        },
+                    }),
+                    // blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -168,6 +181,7 @@ impl ImageRenderer {
             textures_folder: textures_folder.to_string(),
 
             queue: FxHashMap::default(),
+            priority_queue: FxHashMap::default(),
             sprites,
         }
     }
@@ -204,10 +218,17 @@ impl ImageRenderer {
 
     pub fn queue(&mut self, params: DrawImageParams) {
         let id = params.texture_id;
-        self.queue
-            .entry(id)
-            .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
-            .push(params);
+        if params.position[2] == 0.0 {
+            self.priority_queue
+                .entry(id)
+                .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
+                .push(params);
+        } else {
+            self.queue
+                .entry(id)
+                .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
+                .push(params);
+        }
     }
 
     pub fn queue_multiple(&mut self, texture_id: usize, params: &mut Vec<DrawImageParams>) {
@@ -219,15 +240,24 @@ impl ImageRenderer {
 
     fn process_queue(&mut self) -> Instructions {
         let mut batches = vec![];
+        let mut recreate_vertex_buffer = false;
+        let mut sprite_index = 0;
 
-        let texture_ids: Vec<_> = self.queue.keys().copied().collect();
+        let texture_ids: Vec<_> = self.priority_queue.keys().copied().collect();
         texture_ids.iter().for_each(|id| self.load_texture(id));
 
-        let mut sprite_index = 0;
+        let other_texture_ids: Vec<_> = self.queue.keys().copied().collect();
+        other_texture_ids
+            .iter()
+            .for_each(|id| self.load_texture(id));
+
         for texture_id in texture_ids {
-            let Some(draws) = self.queue.get_mut(&texture_id) else {
+            let draws = if let Some(draws) = self.priority_queue.get_mut(&texture_id) {
+                draws
+            } else {
                 continue;
             };
+
             let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
                 continue;
             };
@@ -239,16 +269,42 @@ impl ImageRenderer {
             batches.push(batch);
             for draw in draws.drain(..) {
                 if self.sprites.len() <= sprite_index {
+                    recreate_vertex_buffer = true;
                     self.sprites.push(Sprite::default());
                 }
                 draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
                 sprite_index += 1;
             }
         }
+        for texture_id in other_texture_ids {
+            let draws = if let Some(draws) = self.queue.get_mut(&texture_id) {
+                draws
+            } else {
+                continue;
+            };
 
+            let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
+                continue;
+            };
+            let batch = Batch {
+                texture_id,
+                size: draws.len() as u32,
+            };
+
+            batches.push(batch);
+            for draw in draws.drain(..) {
+                if self.sprites.len() <= sprite_index {
+                    recreate_vertex_buffer = true;
+                    self.sprites.push(Sprite::default());
+                }
+                draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
+                sprite_index += 1;
+            }
+        }
         Instructions {
             batches,
             sprites: sprite_index,
+            recreate_vertex_buffer,
         }
     }
 
@@ -258,13 +314,24 @@ impl ImageRenderer {
             return;
         }
         let sprite_data = bytemuck::cast_slice(&self.sprites[..instructions.sprites]);
-        get_state()
-            .queue
-            .write_buffer(&self.vertex_buffer, 0, sprite_data);
+
+        if instructions.recreate_vertex_buffer {
+            let device = &get_state().device;
+            self.vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Sprite Batch Vertex Buffer"),
+                contents: bytemuck::cast_slice(sprite_data),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        } else {
+            get_state()
+                .queue
+                .write_buffer(&self.vertex_buffer, 0, sprite_data);
+        }
 
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
+
         let mut offset = 0;
         for Batch { texture_id, size } in instructions.batches {
             if let Some(Some((bind_group, _))) = self.textures.get(&texture_id) {
@@ -283,36 +350,15 @@ impl DrawImageParams {
         let source = self
             .source
             .unwrap_or([0., 0., texture_width, texture_height]);
-        let color = self.color;
-        let flip_y = self.flip_y;
+
         let [x, y, z] = self.position;
         let [sx, sy, sw, sh] = source;
-        let p = [
-            [x, y],
-            [x + sw, y + sh],
-            // [x + sw, y + sh, z],
-            // [x, y + sh, z],
-        ];
 
-        let mut tex_coords = [
-            [sx / texture_width, (sy + sh) / texture_height],
-            [(sx + sw) / texture_width, sy / texture_height],
-            // [(sx + sw) / texture_width, (sy + sh) / texture_height],
-            // [sx / texture_width, sy / texture_height],
-        ];
-
-        if flip_y {
-            tex_coords.swap(0, 3);
-            tex_coords.swap(1, 2);
-        }
-
-        sprite.top_left = p[0];
-        sprite.bottom_right = p[1];
-
-        sprite.tex_top_left = tex_coords[0];
-        sprite.tex_bottom_right = tex_coords[1];
-
-        sprite.color = color;
+        sprite.top_left = [x, y];
+        sprite.bottom_right = [x + sw, y + sh];
+        sprite.tex_top_left = [sx / texture_width, (sy + sh) / texture_height];
+        sprite.tex_bottom_right = [(sx + sw) / texture_width, sy / texture_height];
+        sprite.color = self.color;
         sprite.z = z;
     }
 }

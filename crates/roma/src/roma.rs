@@ -3,24 +3,17 @@ use std::{
     time::{Duration, Instant},
 };
 
-use pollster::block_on;
-use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
-};
-use winit_input_helper::WinitInputHelper;
-
 use crate::{
     camera::Camera2D,
     renderer::image::ImageRenderer,
     renderer::text::{Fonts, RESERVED_ID},
+    settings::Settings,
     state::State,
     DrawImageParams, DrawTextParams,
 };
 
 pub struct Roma {
-    input: WinitInputHelper,
+    input: winit_input_helper::WinitInputHelper,
     image_renderer: ImageRenderer,
 
     depth_texture_view: wgpu::TextureView,
@@ -35,7 +28,7 @@ impl Roma {
     pub async fn new(settings: Settings) -> Roma {
         let camera2d = Camera2D::new(settings.width, settings.height);
         let mut image_renderer = ImageRenderer::init(&settings.textures_folder);
-        let input = WinitInputHelper::new();
+        let input = winit_input_helper::WinitInputHelper::new();
 
         let depth_texture_view = Self::create_depth_texture();
         let (texture_id, font_texture) = Fonts::create_font_texture();
@@ -77,19 +70,19 @@ impl Roma {
         texture.create_view(&wgpu::TextureViewDescriptor::default())
     }
 
-    pub(crate) fn input(&mut self) -> &mut WinitInputHelper {
+    fn input(&mut self) -> &mut winit_input_helper::WinitInputHelper {
         &mut self.input
     }
 
-    pub(crate) fn get_delta(&self) -> Duration {
+    fn get_delta(&self) -> Duration {
         self.delta
     }
 
-    pub(crate) fn set_delta(&mut self, delta: Duration) {
+    fn set_delta(&mut self, delta: Duration) {
         self.delta = delta;
     }
 
-    pub(crate) fn resize(&mut self, physical_size: &winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, physical_size: &winit::dpi::PhysicalSize<u32>) {
         let state = get_state_mut();
         state.resize(*physical_size);
         self.depth_texture_view = Self::create_depth_texture();
@@ -100,7 +93,7 @@ impl Roma {
         self.image_renderer.update_projection(projection);
     }
 
-    pub(crate) fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         self.update_camera();
         let state = get_state();
         let frame = state.surface.get_current_texture()?;
@@ -147,7 +140,7 @@ impl Roma {
 static mut ROMA: Option<Roma> = None;
 static mut STATE: Option<State> = None;
 
-pub(crate) async fn init_roma(window: Window, settings: Settings) {
+pub(crate) async fn init_roma(window: winit::window::Window, settings: Settings) {
     unsafe {
         STATE = Some(State::init(window, settings.present_mode).await);
         ROMA = Some(Roma::new(settings).await);
@@ -208,7 +201,7 @@ pub fn set_camera_position(x: usize, y: usize) {
     roma.camera2d.set_position(x, y);
 }
 
-pub fn get_input() -> &'static WinitInputHelper {
+pub fn get_input() -> &'static winit_input_helper::WinitInputHelper {
     let roma = get_roma();
     roma.input()
 }
@@ -218,28 +211,14 @@ pub fn get_delta() -> Duration {
     roma.get_delta()
 }
 
-pub struct Settings {
-    pub width: usize,
-    pub height: usize,
-    pub title: String,
-    pub textures_folder: String,
-    pub present_mode: wgpu::PresentMode,
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            width: 800,
-            height: 600,
-            title: "Roma".to_string(),
-            present_mode: wgpu::PresentMode::AutoNoVsync,
-            textures_folder: "assets/textures".to_string(),
-        }
-    }
-}
-
 pub fn run_game(settings: Settings, mut game_loop: impl FnMut() + 'static) {
-    block_on(async {
+    use winit::{
+        event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        window::WindowBuilder,
+    };
+
+    pollster::block_on(async {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new()
             .with_title(settings.title.clone())
@@ -272,7 +251,6 @@ pub fn run_game(settings: Settings, mut game_loop: impl FnMut() + 'static) {
                 WindowEvent::Resized(physical_size) => {
                     get_roma().resize(physical_size);
                 }
-
                 WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                     get_roma().resize(new_inner_size);
                 }
@@ -280,28 +258,26 @@ pub fn run_game(settings: Settings, mut game_loop: impl FnMut() + 'static) {
                     get_roma().input().update(&window_event);
                 }
             },
+            Event::RedrawEventsCleared => {
+                get_state().window.request_redraw();
+            }
             Event::RedrawRequested(window_id) if window_id == this_window_id => {
                 let now = Instant::now();
                 let delta = now - last_tick;
-                get_roma().set_delta(delta);
                 last_tick = now;
 
+                get_roma().set_delta(delta);
                 game_loop();
 
                 match get_roma().render() {
-                    Ok(_) => {}
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
                         let roma = get_roma();
                         let new_size = get_state().size;
                         roma.resize(&new_size);
                     }
                     Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-
-                    Err(wgpu::SurfaceError::Timeout) => println!("Surface timeout"),
+                    _ => {}
                 }
-            }
-            Event::RedrawEventsCleared => {
-                get_state().window.request_redraw();
             }
             _ => {}
         });

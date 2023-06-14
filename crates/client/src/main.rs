@@ -4,8 +4,8 @@ use roma::{run_game, Settings};
 mod settings;
 
 fn main() {
-    let mut game = Finisterra::ao_99z();
-    let base_path = "./assets/99z/graphics/".to_string();
+    let mut game = Finisterra::ao_20();
+    let base_path = "./assets/ao_20/graphics/".to_string();
     let settings = Settings {
         width: RENDER_W,
         height: RENDER_H,

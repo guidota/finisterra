@@ -11,6 +11,8 @@ pub struct Camera2D {
 impl Camera2D {
     pub fn new(width: usize, height: usize) -> Camera2D {
         Camera2D {
+            // width: width / 2,
+            // height: height / 2,
             width,
             height,
             x: 0,

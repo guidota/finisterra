@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
@@ -121,7 +123,7 @@ impl From<TexturePackerAtlas> for Atlas {
 impl Atlas {
     pub fn update_images(
         &self,
-        images: &mut FxHashMap<usize, Image>,
+        images: &mut FxHashMap<usize, Rc<Image>>,
         images_by_file_num: &FxHashMap<usize, Vec<usize>>,
         atlas_file_num: usize,
     ) {
@@ -137,6 +139,7 @@ impl Atlas {
                 let Some(image) = images.get_mut(image_id) else {
                     continue;
                 };
+                let image = Rc::get_mut(image).unwrap();
                 image.x += atlas_item.rect.x;
                 image.y += atlas_item.rect.y;
                 // ensure image is not bigger than atlas item
