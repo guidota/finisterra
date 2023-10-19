@@ -1,6 +1,9 @@
+use std::time::Duration;
+
+use definitions::heading::Heading;
 use roma::{get_delta, get_input, VirtualKeyCode};
 
-use crate::Finisterra;
+use crate::{entity::Movement, Finisterra};
 
 impl Finisterra {
     pub fn process_input(&mut self) {
@@ -8,18 +11,22 @@ impl Finisterra {
         let input = get_input();
         let mut move_position = (0., 0.);
         if input.key_held(VirtualKeyCode::Right) {
+            self.entities[0].state.direction = Heading::East;
             move_position.0 = 1.;
         }
 
         if input.key_held(VirtualKeyCode::Left) {
+            self.entities[0].state.direction = Heading::West;
             move_position.0 = -1.;
         }
 
         if input.key_held(VirtualKeyCode::Down) {
+            self.entities[0].state.direction = Heading::South;
             move_position.1 = -1.;
         }
 
         if input.key_held(VirtualKeyCode::Up) {
+            self.entities[0].state.direction = Heading::North;
             move_position.1 = 1.;
         }
 
@@ -27,6 +34,21 @@ impl Finisterra {
             let distance = 5. * delta.as_secs_f32();
             self.position.0 += move_position.0 * distance;
             self.position.1 += move_position.1 * distance;
+
+            self.entities[0].position = [self.position.0, self.position.1];
+            let world_x = ((self.position.0 * 32.) + 16.).floor();
+            let world_y = (self.position.1 * 32.).floor();
+            self.entities[0].world_position = [world_x, world_y];
+        }
+
+        if input.key_pressed(VirtualKeyCode::Space) {
+            self.entities[0].state.movement = match self.entities[0].state.movement {
+                Movement::Idle => crate::entity::Movement::Walking {
+                    animation_time: Duration::from_millis(500),
+                    current_time: Duration::from_millis(0),
+                },
+                _ => Movement::Idle,
+            };
         }
 
         //

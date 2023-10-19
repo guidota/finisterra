@@ -1,11 +1,7 @@
-use std::collections::BTreeMap;
-
 use ini::Ini;
 use rustc_hash::FxHashMap;
 
-use crate::parse::get_ini_reader;
-
-use super::{get_count, get_number};
+use crate::parse::{get_ini_reader, ArgentumIniPropertyReadExt, ArgentumIniReadExt};
 
 // [Molde1]
 // X=0
@@ -32,23 +28,23 @@ impl Template {
         self.dirs.0 + self.dirs.1 + self.dirs.2 + self.dirs.3
     }
 }
-
-pub fn parse_templates_from_bytes(mut bytes: &[u8]) -> BTreeMap<usize, Template> {
-    let mut templates = BTreeMap::new();
-    let ini = Ini::read_from(&mut bytes).expect("File doesn't exist");
-
-    for template in 1..=get_count(&ini, "Moldes") {
-        templates.insert(template, parse_template(template, &ini));
-    }
-
-    templates
-}
+//
+// pub fn parse_templates_from_bytes(mut bytes: &[u8]) -> BTreeMap<usize, Template> {
+//     let mut templates = BTreeMap::new();
+//     let ini = Ini::read_from(&mut bytes).expect("File doesn't exist");
+//
+//     for template in 1..=ini.get_count("Moldes") {
+//         templates.insert(template, parse_template(template, &ini));
+//     }
+//
+//     templates
+// }
 
 pub fn parse_templates(path: &str) -> FxHashMap<usize, Template> {
     let mut templates = FxHashMap::default();
 
     let ini = get_ini_reader(path).unwrap();
-    for template in 1..=get_count(&ini, "Moldes") {
+    for template in 1..=ini.get_count("Moldes") {
         templates.insert(template, parse_template(template, &ini));
     }
 
@@ -60,15 +56,15 @@ fn parse_template(number: usize, ini: &Ini) -> Template {
         .section(Some(&format!("Molde{number}")))
         .expect("Molde {head_number} doesn't exist");
     Template {
-        x: get_number(template_section, "X"),
-        y: get_number(template_section, "Y"),
-        width: get_number(template_section, "Width"),
-        height: get_number(template_section, "Height"),
+        x: template_section.get_number("X"),
+        y: template_section.get_number("Y"),
+        width: template_section.get_number("Width"),
+        height: template_section.get_number("Height"),
         dirs: (
-            get_number(template_section, "Dir1"),
-            get_number(template_section, "Dir2"),
-            get_number(template_section, "Dir3"),
-            get_number(template_section, "Dir4"),
+            template_section.get_number("Dir1"),
+            template_section.get_number("Dir2"),
+            template_section.get_number("Dir3"),
+            template_section.get_number("Dir4"),
         ),
     }
 }
@@ -105,15 +101,15 @@ impl Iterator for TempalateIntoIterator {
         }
         let mut y = 0;
         let mut x = self.index;
-        if self.index > self.template.dirs.0 {
+        if self.index >= self.template.dirs.0 {
             y += 1;
             x -= self.template.dirs.0;
         }
-        if self.index > self.template.dirs.0 + self.template.dirs.1 {
+        if self.index >= self.template.dirs.0 + self.template.dirs.1 {
             y += 1;
             x -= self.template.dirs.1;
         }
-        if self.index > self.template.dirs.0 + self.template.dirs.1 + self.template.dirs.2 {
+        if self.index >= self.template.dirs.0 + self.template.dirs.1 + self.template.dirs.2 {
             y += 1;
             x -= self.template.dirs.2;
         }

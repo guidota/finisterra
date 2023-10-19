@@ -12,7 +12,7 @@ impl Default for Settings {
             width: 800,
             height: 600,
             title: "Roma".to_string(),
-            present_mode: wgpu::PresentMode::AutoNoVsync,
+            present_mode: wgpu::PresentMode::AutoVsync,
             textures_folder: "assets/textures".to_string(),
         }
     }

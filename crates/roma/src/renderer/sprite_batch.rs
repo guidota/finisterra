@@ -1,42 +1,39 @@
+use nohash_hasher::IntMap;
+use std::{collections::HashMap, ops::Range};
+
 use cgmath::ortho;
-use rustc_hash::FxHashMap;
 use wgpu::util::DeviceExt;
 
-use crate::{roma::get_state, Color, DrawImageParams};
+use crate::{get_camera_size, get_screen_size, roma::get_state, DrawImageParams};
 
-use super::texture;
+use super::{queue::SpriteQueue, texture};
 
 type Texture = (wgpu::BindGroup, (usize, usize));
 
-pub(crate) struct ImageRenderer {
+pub(crate) struct SpriteBatch {
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
+
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
 
-    textures: FxHashMap<usize, Option<Texture>>,
+    textures: IntMap<u64, Option<Texture>>,
     textures_folder: String,
     texture_bind_group_layout: wgpu::BindGroupLayout,
 
-    queue: FxHashMap<usize, Vec<DrawImageParams>>,
-    priority_queue: FxHashMap<usize, Vec<DrawImageParams>>,
-    sprites: Vec<Sprite>,
+    zero_queue: SpriteQueue,
+    queue: SpriteQueue,
+    sprites: Vec<DrawImageParams>,
 }
 
-struct Instructions {
-    batches: Vec<Batch>,
-    sprites: usize,
-    recreate_vertex_buffer: bool,
-}
-
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct Batch {
-    texture_id: usize,
-    size: u32,
+    texture_id: u64,
+    range: Range<u32>,
 }
 
-impl ImageRenderer {
-    pub const INITIAL_SPRITES: usize = 10000;
+impl SpriteBatch {
+    pub const INITIAL_SPRITES: usize = 8192;
     pub fn init(textures_folder: &str) -> Self {
         let state = get_state();
         let device = &state.device;
@@ -79,7 +76,7 @@ impl ImageRenderer {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             multisampled: false,
                             view_dimension: wgpu::TextureViewDimension::D2,
@@ -111,9 +108,9 @@ impl ImageRenderer {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[wgpu::VertexBufferLayout {
-                    array_stride: std::mem::size_of::<Sprite>() as wgpu::BufferAddress,
+                    array_stride: std::mem::size_of::<DrawImageParams>() as wgpu::BufferAddress,
                     step_mode: wgpu::VertexStepMode::Instance,
-                    attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4, 5 => Float32],
+                    attributes: &wgpu::vertex_attr_array![0 => Uint32, 1 => Float32, 2 => Unorm8x4, 3 => Uint32x2],
                 }],
             },
             fragment: Some(wgpu::FragmentState {
@@ -130,10 +127,9 @@ impl ImageRenderer {
                         alpha: wgpu::BlendComponent {
                             src_factor: wgpu::BlendFactor::One,
                             dst_factor: wgpu::BlendFactor::One,
-                            operation: wgpu::BlendOperation::Add,                 
+                            operation: wgpu::BlendOperation::Add,
                         },
                     }),
-                    // blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -154,48 +150,47 @@ impl ImageRenderer {
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState {
-                count: 1,
+                count: 4,
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
             multiview: None,
         });
 
-        let sprites = vec![Sprite::default(); Self::INITIAL_SPRITES];
+        let sprites = vec![DrawImageParams::default(); Self::INITIAL_SPRITES];
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Sprite Batch Vertex Buffer"),
             contents: bytemuck::cast_slice(&sprites),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        let textures = FxHashMap::default();
-
         Self {
             pipeline,
             vertex_buffer,
+
             camera_buffer,
             camera_bind_group,
 
             texture_bind_group_layout,
-            textures,
+            textures: HashMap::default(),
             textures_folder: textures_folder.to_string(),
 
-            queue: FxHashMap::default(),
-            priority_queue: FxHashMap::default(),
+            zero_queue: SpriteQueue::default(),
+            queue: SpriteQueue::default(),
             sprites,
         }
     }
 
-    pub(crate) fn add_texture(&mut self, id: usize, texture: &texture::Texture) {
+    pub(crate) fn add_texture(&mut self, id: u64, texture: &texture::Texture) {
         self.textures.insert(
             id,
             Some(texture.to_bind_group(&self.texture_bind_group_layout)),
         );
     }
 
-    fn load_texture(&mut self, id: &usize) {
+    fn load_texture(&mut self, id: &u64) -> bool {
         if self.textures.contains_key(id) {
-            return;
+            return true;
         }
         let state = get_state();
         let device = &state.device;
@@ -203,10 +198,16 @@ impl ImageRenderer {
         let path = format!("{}/{}.png", self.textures_folder, id);
         let texture = match texture::Texture::from_path(device, queue, &path) {
             Ok(texture) => Some(texture.to_bind_group(&self.texture_bind_group_layout)),
-            _ => None,
+            _ => {
+                println!("Texture not found on {path}");
+                None
+            }
         };
 
+        let exists = texture.is_some();
         self.textures.insert(*id, texture);
+
+        exists
     }
 
     pub fn update_projection(&mut self, projection: [[f32; 4]; 4]) {
@@ -216,162 +217,122 @@ impl ImageRenderer {
             .write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&projection));
     }
 
-    pub fn queue(&mut self, params: DrawImageParams) {
-        let id = params.texture_id;
-        if params.position[2] == 0.0 {
-            self.priority_queue
-                .entry(id)
-                .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
-                .push(params);
+    pub fn queue(&mut self, texture_id: u64, params: DrawImageParams) {
+        if params.z == 0.0 {
+            self.zero_queue.push(texture_id, params);
         } else {
-            self.queue
-                .entry(id)
-                .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
-                .push(params);
+            self.queue.push(texture_id, params);
         }
     }
 
-    pub fn queue_multiple(&mut self, texture_id: usize, params: &mut Vec<DrawImageParams>) {
-        self.queue
-            .entry(texture_id)
-            .or_insert_with(|| Vec::with_capacity(Self::INITIAL_SPRITES))
-            .append(params);
+    pub fn queue_multiple(&mut self, texture_id: u64, params: &mut [DrawImageParams]) {
+        if params.is_empty() {
+            return;
+        }
+        if params[0].z == 0.0 {
+            self.zero_queue.push_all(texture_id, params);
+        } else {
+            self.queue.push_all(texture_id, params);
+        }
     }
 
-    fn process_queue(&mut self) -> Instructions {
+    fn process_queue(&mut self) -> Vec<Batch> {
+        let queue_size = self.zero_queue.size() + self.queue.size();
+        if queue_size == 0 {
+            return vec![];
+        }
+
+        if self.sprites.len() < queue_size {
+            self.sprites.resize(queue_size, DrawImageParams::default());
+        }
+
+        let queue_size_in_bytes =
+            (std::mem::size_of::<DrawImageParams>() * queue_size) as wgpu::BufferAddress;
+        if self.vertex_buffer.size() < queue_size_in_bytes {
+            let device = &get_state().device;
+            self.vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Sprite Batch Vertex Buffer"),
+                size: (std::mem::size_of::<DrawImageParams>() * queue_size * 2) as u64
+                    as wgpu::BufferAddress,
+                mapped_at_creation: false,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        }
+
         let mut batches = vec![];
-        let mut recreate_vertex_buffer = false;
-        let mut sprite_index = 0;
 
-        let texture_ids: Vec<_> = self.priority_queue.keys().copied().collect();
-        texture_ids.iter().for_each(|id| self.load_texture(id));
+        // load textures if required
+        let mut texture_ids = self.zero_queue.texture_ids();
+        texture_ids.append(&mut self.queue.texture_ids());
 
-        let other_texture_ids: Vec<_> = self.queue.keys().copied().collect();
-        other_texture_ids
-            .iter()
-            .for_each(|id| self.load_texture(id));
+        for texture_id in &texture_ids {
+            self.load_texture(texture_id);
+        }
 
-        for texture_id in texture_ids {
-            let draws = if let Some(draws) = self.priority_queue.get_mut(&texture_id) {
-                draws
-            } else {
+        // let mut batch_offset = 0;
+        let mut offset = 0;
+
+        for (texture_id, texture_batch) in self.zero_queue.batches().chain(self.queue.batches()) {
+            if texture_batch.is_empty() {
                 continue;
-            };
+            }
 
-            let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
-                continue;
-            };
+            let batch_start = offset;
+            offset += texture_batch.len();
+            let batch_end = offset;
+
+            self.sprites[batch_start..batch_end].copy_from_slice(texture_batch.as_slice());
+
             let batch = Batch {
-                texture_id,
-                size: draws.len() as u32,
+                texture_id: *texture_id,
+                range: batch_start as u32..batch_end as u32,
             };
 
             batches.push(batch);
-            for draw in draws.drain(..) {
-                if self.sprites.len() <= sprite_index {
-                    recreate_vertex_buffer = true;
-                    self.sprites.push(Sprite::default());
-                }
-                draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
-                sprite_index += 1;
-            }
         }
-        for texture_id in other_texture_ids {
-            let draws = if let Some(draws) = self.queue.get_mut(&texture_id) {
-                draws
-            } else {
-                continue;
-            };
 
-            let Some(Some((_, dimensions))) = self.textures.get(&texture_id) else {
-                continue;
-            };
-            let batch = Batch {
-                texture_id,
-                size: draws.len() as u32,
-            };
+        self.zero_queue.reset();
+        self.queue.reset();
 
-            batches.push(batch);
-            for draw in draws.drain(..) {
-                if self.sprites.len() <= sprite_index {
-                    recreate_vertex_buffer = true;
-                    self.sprites.push(Sprite::default());
-                }
-                draw.update_sprite(&mut self.sprites[sprite_index], dimensions);
-                sprite_index += 1;
-            }
-        }
-        Instructions {
-            batches,
-            sprites: sprite_index,
-            recreate_vertex_buffer,
-        }
+        self.update_buffer(offset);
+
+        batches
+    }
+
+    fn update_buffer(&mut self, sprites: usize) {
+        let sprites_data = bytemuck::cast_slice(&self.sprites[..sprites]);
+        get_state()
+            .queue
+            .write_buffer(&self.vertex_buffer, 0, sprites_data);
     }
 
     pub fn render_pass<'pass>(&'pass mut self, render_pass: &mut wgpu::RenderPass<'pass>) {
-        let instructions = self.process_queue();
-        if instructions.batches.is_empty() {
+        let batches = self.process_queue();
+        if batches.is_empty() {
             return;
         }
-        let sprite_data = bytemuck::cast_slice(&self.sprites[..instructions.sprites]);
 
-        if instructions.recreate_vertex_buffer {
-            let device = &get_state().device;
-            self.vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Sprite Batch Vertex Buffer"),
-                contents: bytemuck::cast_slice(sprite_data),
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            });
-        } else {
-            get_state()
-                .queue
-                .write_buffer(&self.vertex_buffer, 0, sprite_data);
-        }
+        let (camera_width, camera_height) = get_camera_size();
+        let (_, screen_height) = get_screen_size();
+        let border = 10.;
 
+        render_pass.set_viewport(
+            border,
+            screen_height as f32 - camera_height - border,
+            camera_width,
+            camera_height,
+            0.,
+            1.,
+        );
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
-        let mut offset = 0;
-        for Batch { texture_id, size } in instructions.batches {
+        for Batch { texture_id, range } in batches {
             if let Some(Some((bind_group, _))) = self.textures.get(&texture_id) {
                 render_pass.set_bind_group(0, bind_group, &[]);
-                render_pass.draw(0..4, offset..(offset + size));
+                render_pass.draw(0..4, range);
             }
-            offset += size;
         }
     }
-}
-
-impl DrawImageParams {
-    fn update_sprite(self, sprite: &mut Sprite, dimensions: &(usize, usize)) {
-        let (texture_width, texture_height) = (dimensions.0 as f32, dimensions.1 as f32);
-
-        let source = self
-            .source
-            .unwrap_or([0., 0., texture_width, texture_height]);
-
-        let [x, y, z] = self.position;
-        let [sx, sy, sw, sh] = source;
-
-        sprite.top_left = [x, y];
-        sprite.bottom_right = [x + sw, y + sh];
-        sprite.tex_top_left = [sx / texture_width, (sy + sh) / texture_height];
-        sprite.tex_bottom_right = [(sx + sw) / texture_width, sy / texture_height];
-        sprite.color = self.color;
-        sprite.z = z;
-    }
-}
-
-#[derive(Default, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
-#[repr(C)]
-struct Sprite {
-    top_left: [f32; 2],
-    bottom_right: [f32; 2],
-
-    tex_top_left: [f32; 2],
-    tex_bottom_right: [f32; 2],
-
-    color: Color,
-    z: f32,
 }

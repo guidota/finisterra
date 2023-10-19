@@ -1,36 +1,56 @@
 use cgmath::ortho;
 
 #[derive(Debug)]
+pub enum Zoom {
+    None,
+    Double,
+}
+
+#[derive(Debug)]
 pub struct Camera2D {
-    width: usize,
-    height: usize,
-    x: usize,
-    y: usize,
+    pub width: f32,
+    pub height: f32,
+    x: f32,
+    y: f32,
+
+    pub zoom: Zoom,
 }
 
 impl Camera2D {
-    pub fn new(width: usize, height: usize) -> Camera2D {
+    pub fn new(width: f32, height: f32) -> Camera2D {
         Camera2D {
-            // width: width / 2,
-            // height: height / 2,
             width,
             height,
-            x: 0,
-            y: 0,
+            x: 0.,
+            y: 0.,
+            zoom: Zoom::None,
         }
     }
 
     pub fn build_view_projection_matrix(&self) -> [[f32; 4]; 4] {
-        let left = self.x as f32 - self.width as f32 / 2.;
-        let right = self.x as f32 + self.width as f32 / 2.;
-        let bottom = self.y as f32 - self.height as f32 / 2.;
-        let top = self.y as f32 + self.height as f32 / 2.;
+        let zoom = match self.zoom {
+            Zoom::None => 1.,
+            Zoom::Double => 2.,
+        };
+        let left = self.x - self.width / zoom / 2.;
+        let right = self.x + self.width / zoom / 2.;
+        let bottom = self.y - self.height / zoom / 2.;
+        let top = self.y + self.height / zoom / 2.;
 
         ortho(left, right, bottom, top, -1., 0.).into()
     }
 
-    pub fn set_position(&mut self, x: usize, y: usize) {
+    pub fn set_position(&mut self, x: f32, y: f32) {
         self.x = x;
         self.y = y;
+    }
+
+    pub fn set_size(&mut self, width: f32, height: f32) {
+        self.width = width;
+        self.height = height;
+    }
+
+    pub fn set_zoom(&mut self, zoom: Zoom) {
+        self.zoom = zoom;
     }
 }

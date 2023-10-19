@@ -1,83 +1,102 @@
-// Vertex shader
-struct CameraUniform {
-    view_proj: mat4x4<f32>,
-};
-@group(1) @binding(0)
-var<uniform> camera: CameraUniform;
+@group(0) @binding(0) var texture: texture_2d<f32>;
+@group(0) @binding(1) var texture_sampler: sampler;
+
+@group(1) @binding(0) var<uniform> camera_projection: mat4x4<f32>;
 
 struct VertexInput {
-    @builtin(vertex_index) vertex_index : u32,
-    @location(0) top_left: vec2<f32>,
-    @location(1) bottom_right: vec2<f32>,
-    @location(2) tex_top_left: vec2<f32>,
-    @location(3) tex_bottom_right: vec2<f32>,
-    @location(4) color: vec4<f32>,
-    @location(5) z: f32,
+    @builtin(vertex_index) vertex_index: u32,
+    @location(0) xy: u32,
+    @location(1) z: f32,
+    @location(2) color: vec4<f32>,
+    @location(3) source: vec2<u32>,
 }
 
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) tex_pos: vec2<f32>,
-    @location(1) color: vec4<f32>,
-}
+fn map_source(source: vec4<f32>, texture_dimensions: vec2<u32>) -> vec4<f32> {
+    if source.w == 0.0 && source.z == 0.0 {
+        return vec4<f32>(0.0, 0.0, f32(texture_dimensions.x), f32(texture_dimensions.y));
+    }
 
-/* @group(2) @binding(0) var<storage, read> vertex_data: array<VertexInput>; */
+    return source;
+}
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
+    var position: vec2<f32>;
 
-    var pos: vec2<f32>;
-    var left: f32 = input.top_left.x;
-    var right: f32 = input.bottom_right.x;
-    var top: f32 = input.top_left.y;
-    var bottom: f32 = input.bottom_right.y;
+    let texture_dimensions: vec2<u32> = textureDimensions(texture);
+
+    let unpacked_source = vec4<f32>(f32(input.source.x & 0xFFFFu), f32(input.source.x >> 16u), f32(input.source.y & 0xFFFFu), f32(input.source.y >> 16u));
+
+    let source: vec4<f32> = map_source(unpacked_source, texture_dimensions);
+
+    let y = f32(input.xy >> 16u);
+    let x = f32(input.xy & 0xFFFFu);
 
     switch (input.vertex_index) {
         case 0u: {
-            pos = vec2<f32>(left, top);
-            output.tex_pos = input.tex_top_left;
+            let left = x;
+            let top = y;
+            position = vec2<f32>(left, top);
+
+            let tex_left = source.x / f32(texture_dimensions.x);
+            let tex_top = (source.y + source.w) / f32(texture_dimensions.y);
+            output.texture_position = vec2<f32>(tex_left, tex_top);
             break;
         }
         case 1u: {
-            pos = vec2<f32>(right, top);
-            output.tex_pos = vec2<f32>(input.tex_bottom_right.x, input.tex_top_left.y);
+            let top = y;
+            let right = x + source.z;
+            position = vec2<f32>(right, top);
+
+            let tex_top = (source.y + source.w) / f32(texture_dimensions.y);
+            let tex_right = (source.x + source.z) / f32(texture_dimensions.x);
+            output.texture_position = vec2<f32>(tex_right, tex_top);
             break;
         }
         case 2u: {
-            pos = vec2<f32>(left, bottom);
-            output.tex_pos = vec2<f32>(input.tex_top_left.x, input.tex_bottom_right.y);
+            let left = x;
+            let bottom = y + source.w;
+            position = vec2<f32>(left, bottom);
+
+            let tex_bottom = source.y / f32(texture_dimensions.y);
+            let tex_left = source.x / f32(texture_dimensions.x);
+            output.texture_position = vec2<f32>(tex_left, tex_bottom);
             break;
         }
         case 3u: {
-            pos = vec2<f32>(right, bottom);
-            output.tex_pos = input.tex_bottom_right;
+            let right = x + source.z;
+            let bottom = y + source.w;
+            position = vec2<f32>(right, bottom);
+
+            let tex_bottom = source.y / f32(texture_dimensions.y);
+            let tex_right = (source.x + source.z) / f32(texture_dimensions.x);
+            output.texture_position = vec2<f32>(tex_right, tex_bottom);
             break;
         }
         default: {}
     }
 
-    output.clip_position = camera.view_proj * vec4<f32>(pos, input.z, 1.0);
-    output.clip_position.z = input.z;
+    output.position = camera_projection * vec4<f32>(position, input.z, 1.0);
+    output.position.z = input.z;
     output.color = input.color;
+
     return output;
 }
 
-// Fragment shader
-@group(0) @binding(0)
-var t_diffuse: texture_2d<f32>;
-@group(0)@binding(1)
-var s_diffuse: sampler;
-
-fn discard_if_transparent(color: vec4<f32>) {
-  if color.w < 0.001 {
-    discard;
-  }
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) texture_position: vec2<f32>,
+    @location(1) color: vec4<f32>,
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var output = textureSample(t_diffuse, s_diffuse, in.tex_pos);
-    discard_if_transparent(output);
-    return output * in.color;
+    let color = textureSample(texture, texture_sampler, in.texture_position);
+
+    if color.a < 0.001 {
+        discard;
+    }
+
+    return color * in.color;
 }

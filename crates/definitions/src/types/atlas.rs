@@ -67,7 +67,7 @@ pub struct Atlas {
 /// Describes where to find an image in the atlas
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AtlasItem {
-    pub image_id: usize,
+    pub image_id: u32,
 
     #[serde(flatten)]
     pub rect: Rect,
@@ -79,7 +79,7 @@ impl From<Dictionary> for Atlas {
 
         for item in value.items {
             images.push(AtlasItem {
-                image_id: item.name.parse::<usize>().unwrap(),
+                image_id: item.name.parse::<u32>().unwrap(),
                 rect: item.rect,
             });
         }
@@ -100,7 +100,7 @@ impl From<TexturePackerAtlas> for Atlas {
 
         for region in value.regions {
             images.push(AtlasItem {
-                image_id: region.name.parse::<usize>().unwrap(),
+                image_id: region.name.parse::<u32>().unwrap(),
                 rect: Rect {
                     x: region.x as usize,
                     y: region.y as usize,
@@ -123,9 +123,9 @@ impl From<TexturePackerAtlas> for Atlas {
 impl Atlas {
     pub fn update_images(
         &self,
-        images: &mut FxHashMap<usize, Rc<Image>>,
-        images_by_file_num: &FxHashMap<usize, Vec<usize>>,
-        atlas_file_num: usize,
+        images: &mut FxHashMap<u32, Rc<Image>>,
+        images_by_file_num: &FxHashMap<u32, Vec<u32>>,
+        atlas_file_num: u32,
     ) {
         // for each atlas region, find image and calculate coordinates in the texture
         for atlas_item in &self.images {
@@ -140,13 +140,13 @@ impl Atlas {
                     continue;
                 };
                 let image = Rc::get_mut(image).unwrap();
-                image.x += atlas_item.rect.x;
-                image.y += atlas_item.rect.y;
+                image.x += atlas_item.rect.x as u16;
+                image.y += atlas_item.rect.y as u16;
                 // ensure image is not bigger than atlas item
-                image.width = std::cmp::min(image.width, atlas_item.rect.width);
-                image.height = std::cmp::min(image.height, atlas_item.rect.height);
+                image.width = std::cmp::min(image.width, atlas_item.rect.width as u16);
+                image.height = std::cmp::min(image.height, atlas_item.rect.height as u16);
 
-                image.file_num = atlas_file_num;
+                image.file_num = atlas_file_num as u64;
             }
         }
     }
@@ -155,6 +155,6 @@ impl Atlas {
 pub struct AtlasResource<'a> {
     pub metadata_path: &'a str,
     /// Atlas image should be {image_id}.png
-    pub image_id: usize,
+    pub image_id: u32,
     pub atlas_type: AtlasType,
 }

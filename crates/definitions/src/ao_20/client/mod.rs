@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     animation::Animation,
-    atlas::{Atlas, AtlasResource, AtlasType, Dictionary, TexturePackerAtlas},
+    atlas::AtlasResource,
     body::Body,
     client::ClientResources,
     error::Error,
@@ -23,10 +23,11 @@ use crate::{
     Offset,
 };
 
-use super::{
-    init::parse::template::{parse_templates, Template},
-    maps::parse::MapsReadExt,
-};
+mod template;
+
+use self::template::{parse_templates, Template};
+
+use super::maps::parse::MapsReadExt;
 
 #[derive(Default)]
 pub struct ClientResourcesPaths<'a> {
@@ -53,7 +54,7 @@ pub fn load_templates(path: &str) -> Result<FxHashMap<usize, Template>, Error> {
 pub fn load_bodies(
     path: &str,
     templates: &FxHashMap<usize, Template>,
-    images: &mut FxHashMap<usize, Rc<Image>>,
+    images: &mut FxHashMap<u32, Rc<Image>>,
     animations: &mut FxHashMap<usize, Animation>,
 ) -> Result<FxHashMap<usize, Body>, Error> {
     let mut bodies = FxHashMap::default();
@@ -62,8 +63,7 @@ pub fn load_bodies(
     let mut latest_animation_id = *animations.keys().max().unwrap();
     let ini = get_ini_reader(path).expect("File doesn't exist");
     for body_number in 1..=ini.get_count("NumBodies") {
-        let Some(body_section) = ini
-            .section(Some(&format!("BODY{body_number}"))) else {
+        let Some(body_section) = ini.section(Some(&format!("BODY{body_number}"))) else {
             continue;
         };
 
@@ -83,7 +83,7 @@ pub fn load_bodies(
         let body = {
             let file_num = body_section
                 .get("FileNum")
-                .map(|s| s.parse::<usize>().unwrap());
+                .map(|s| s.parse::<u32>().unwrap());
             if let Some(file_num) = file_num {
                 let std = body_section.get_number("Std");
                 let template = templates.get(&std).expect("Bad template");
@@ -102,11 +102,11 @@ pub fn load_bodies(
                     latest_image_id += 1;
                     let image = Image {
                         id: latest_image_id,
-                        file_num,
-                        x: rect.min.0,
-                        y: rect.min.1,
-                        width: rect.max.0 - rect.min.0,
-                        height: rect.max.1 - rect.min.1,
+                        file_num: file_num as u64,
+                        x: rect.min.0 as u16,
+                        y: rect.min.1 as u16,
+                        width: (rect.max.0 - rect.min.0) as u16,
+                        height: (rect.max.1 - rect.min.1) as u16,
                     };
                     images.insert(latest_image_id, Rc::new(image));
                     body_animations[animation_number]
@@ -131,10 +131,10 @@ pub fn load_bodies(
             } else {
                 Body {
                     animations: [
-                        body_section.get_number("Walk1"),
-                        body_section.get_number("Walk2"),
                         body_section.get_number("Walk3"),
+                        body_section.get_number("Walk1"),
                         body_section.get_number("Walk4"),
+                        body_section.get_number("Walk2"),
                     ],
                     head_offset,
                 }
@@ -158,10 +158,10 @@ pub fn load_head(path: &str) -> Result<FxHashMap<usize, Head>, Error> {
             .expect("Head {head_number} doesn't exist");
         let head = Head {
             images: [
-                head_section.get_number("Head1"),
-                head_section.get_number("Head2"),
                 head_section.get_number("Head3"),
+                head_section.get_number("Head1"),
                 head_section.get_number("Head4"),
+                head_section.get_number("Head2"),
             ],
         };
         heads.insert(head_number, head);
@@ -181,10 +181,10 @@ pub fn load_headgears(path: &str) -> Result<FxHashMap<usize, HeadGear>, Error> {
             .expect("Head {head_number} doesn't exist");
         let headgear = HeadGear {
             images: [
-                head_section.get_number("Head1"),
-                head_section.get_number("Head2"),
                 head_section.get_number("Head3"),
+                head_section.get_number("Head1"),
                 head_section.get_number("Head4"),
+                head_section.get_number("Head2"),
             ],
         };
         headgears.insert(headgear_number, headgear);
@@ -195,31 +195,104 @@ pub fn load_headgears(path: &str) -> Result<FxHashMap<usize, HeadGear>, Error> {
 
 /// armas.dat:
 pub fn load_weapons(path: &str) -> Result<FxHashMap<usize, Weapon>, Error> {
-    Ok(FxHashMap::default())
+    let mut weapons = FxHashMap::default();
+    let reader = get_ini_reader(path)?;
+
+    let count = reader.get_count("NumArmas");
+    for number in 1..=count {
+        let Some(section) = reader.section(Some(&format!("Arma{number}"))) else {
+            continue;
+        };
+
+        weapons.insert(
+            number,
+            Weapon {
+                animations: [
+                    section.get_number("Dir3"),
+                    section.get_number("Dir1"),
+                    section.get_number("Dir4"),
+                    section.get_number("Dir2"),
+                ],
+            },
+        );
+    }
+
+    Ok(weapons)
 }
 
 /// escudos.dat
-pub fn load_shields(path: &str) -> Result<FxHashMap<usize, Shield>, Error> {
+pub fn load_shields(
+    path: &str,
+    templates: &FxHashMap<usize, Template>,
+    images: &mut FxHashMap<u32, Rc<Image>>,
+    animations: &mut FxHashMap<usize, Animation>,
+) -> Result<FxHashMap<usize, Shield>, Error> {
     let mut shields = FxHashMap::default();
+    let mut latest_image_id = *images.keys().max().unwrap();
+    let mut latest_animation_id = *animations.keys().max().unwrap();
     let reader = get_ini_reader(path)?;
 
     let count = reader.get_count("NumEscudos");
     for number in 1..=count {
-        let Some(section) = reader
-            .section(Some(&format!("ESC{number}"))) else {
+        let Some(section) = reader.section(Some(&format!("ESC{number}"))) else {
             continue;
         };
-        shields.insert(
-            number,
+
+        let file_num = section.get("FileNum").map(|s| s.parse::<u32>().unwrap());
+        let shield = if let Some(file_num) = file_num {
+            let std = section.get_number("Std");
+            let template = templates.get(&std).expect("Bad template");
+            // create images for each animation
+            let mut shield_animations = vec![];
+            for _ in 0..4 {
+                latest_animation_id += 1;
+                shield_animations.push(Animation {
+                    id: latest_animation_id,
+                    speed: 250, // TODO
+                    frames: vec![],
+                });
+            }
+
+            for (animation_number, rect) in template.clone() {
+                latest_image_id += 1;
+                let image = Image {
+                    id: latest_image_id,
+                    file_num: file_num as u64,
+                    x: rect.min.0 as u16,
+                    y: rect.min.1 as u16,
+                    width: (rect.max.0 - rect.min.0) as u16,
+                    height: (rect.max.1 - rect.min.1) as u16,
+                };
+                images.insert(latest_image_id, Rc::new(image));
+                shield_animations[animation_number]
+                    .frames
+                    .push(latest_image_id);
+            }
+
+            // create body with recent added animations
+            let shield = Shield {
+                animations: [
+                    shield_animations[0].id,
+                    shield_animations[1].id,
+                    shield_animations[2].id,
+                    shield_animations[3].id,
+                ],
+            };
+            for animation in shield_animations {
+                animations.insert(animation.id, animation);
+            }
+            shield
+        } else {
             Shield {
                 animations: [
-                    section.get_number("Dir1"),
-                    section.get_number("Dir2"),
                     section.get_number("Dir3"),
+                    section.get_number("Dir1"),
                     section.get_number("Dir4"),
+                    section.get_number("Dir2"),
                 ],
-            },
-        );
+            }
+        };
+        shields.insert(number, shield);
     }
 
     Ok(shields)
@@ -335,14 +408,14 @@ pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
 }
 
 pub struct Graphics {
-    pub images: FxHashMap<usize, Rc<Image>>,
+    pub images: FxHashMap<u32, Rc<Image>>,
     pub animations: FxHashMap<usize, Animation>,
 }
 
 /// graficos.ini or graficos.ind
-pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Result<Graphics, Error> {
+pub fn load_graphics(path: &str) -> Result<Graphics, Error> {
     let mut reader = get_binary_reader(path)?;
-    let mut images = FxHashMap::<usize, Rc<Image>>::default();
+    let mut images = FxHashMap::<u32, Rc<Image>>::default();
     let mut animations = FxHashMap::<usize, Animation>::default();
 
     reader.read_long();
@@ -358,19 +431,19 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
             }
             1 => {
                 let image = Image {
-                    file_num: reader.read_long() as usize,
-                    x: reader.read_integer() as usize,
-                    y: reader.read_integer() as usize,
-                    width: reader.read_integer() as usize,
-                    height: reader.read_integer() as usize,
-                    id: grh as usize,
+                    file_num: reader.read_long() as u64,
+                    x: reader.read_integer(),
+                    y: reader.read_integer(),
+                    width: reader.read_integer(),
+                    height: reader.read_integer(),
+                    id: grh,
                 };
-                images.insert(grh as usize, Rc::new(image));
+                images.insert(grh, Rc::new(image));
             }
             frames_len => {
                 let animation = Animation {
                     frames: (0..frames_len)
-                        .map(|_| reader.read_long() as usize)
+                        .map(|_| reader.read_long() as u32)
                         .collect::<Vec<_>>(),
                     speed: reader.read_long() as usize,
                     id: grh as usize,
@@ -384,19 +457,27 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
 
 pub fn load_client_resources(paths: ClientResourcesPaths) -> Result<ClientResources, Error> {
     let Graphics {
-        mut images,
-        mut animations,
-    } = load_graphics(paths.graphics, paths.atlas)?;
+        images: mut images_map,
+        animations: mut animations_map,
+    } = load_graphics(paths.graphics)?;
     println!(
         "Loaded {} images, {} animations",
-        images.len(),
-        animations.len()
+        images_map.len(),
+        animations_map.len()
     );
+    let templates = load_templates(paths.templates)?;
+    println!("Loaded {} templates", templates.len());
+
     let heads = load_head(paths.heads)?;
     println!("Loaded {} heads", heads.len());
     let weapons = load_weapons(paths.weapons)?;
     println!("Loaded {} weapons", weapons.len());
-    let shields = load_shields(paths.shields)?;
+    let shields = load_shields(
+        paths.shields,
+        &templates,
+        &mut images_map,
+        &mut animations_map,
+    )?;
     println!("Loaded {} shields", shields.len());
     let headgears = load_headgears(paths.headgears)?;
     println!("Loaded {} headgears", headgears.len());
@@ -405,10 +486,26 @@ pub fn load_client_resources(paths: ClientResourcesPaths) -> Result<ClientResour
     let maps = load_maps(paths.maps)?;
     println!("Loaded {} maps", maps.len());
 
-    let templates = load_templates(paths.templates)?;
-    println!("Loaded {} templates", templates.len());
-    let bodies = load_bodies(paths.bodies, &templates, &mut images, &mut animations)?;
+    let bodies = load_bodies(
+        paths.bodies,
+        &templates,
+        &mut images_map,
+        &mut animations_map,
+    )?;
     println!("Loaded {} bodies", bodies.len());
+
+    let max = images_map.iter().max_by_key(|item| item.0).unwrap();
+
+    let mut images = vec![None; (*max.0 + 1) as usize];
+    for (image_id, image) in images_map {
+        images[image_id as usize] = Some(image);
+    }
+
+    let max = animations_map.iter().max_by_key(|item| item.0).unwrap();
+    let mut animations = vec![None; max.0 + 1];
+    for (id, animation) in animations_map {
+        animations[id] = Some(Rc::new(animation));
+    }
 
     Ok(ClientResources {
         bodies,

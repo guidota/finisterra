@@ -1,8 +1,8 @@
-#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Heading {
     #[default]
-    South,
-    North,
-    East,
-    West,
+    South = 0,
+    North = 1,
+    West = 2,
+    East = 3,
 }

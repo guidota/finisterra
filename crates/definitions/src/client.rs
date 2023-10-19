@@ -9,9 +9,9 @@ use crate::{
 
 #[derive(Default, Clone, Debug)]
 pub struct ClientResources {
-    pub images: FxHashMap<usize, Rc<Image>>,
+    pub images: Vec<Option<Rc<Image>>>,
     pub maps: FxHashMap<usize, Map>,
-    pub animations: FxHashMap<usize, Animation>,
+    pub animations: Vec<Option<Rc<Animation>>>,
     pub bodies: FxHashMap<usize, Body>,
     pub heads: FxHashMap<usize, Head>,
     pub shields: FxHashMap<usize, Shield>,
