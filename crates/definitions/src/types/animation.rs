@@ -2,5 +2,5 @@
 pub struct Animation {
     pub id: usize,
     pub speed: usize,
-    pub frames: Vec<usize>,
+    pub frames: Vec<u32>,
 }

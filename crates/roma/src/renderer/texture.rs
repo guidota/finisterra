@@ -123,9 +123,7 @@ impl Texture {
             height: dimensions.1,
         }
     }
-}
 
-impl Texture {
     pub fn to_bind_group(
         &self,
         bind_group_layout: &wgpu::BindGroupLayout,

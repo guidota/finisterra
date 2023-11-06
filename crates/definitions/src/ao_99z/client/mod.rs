@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use byteorder::ReadBytesExt;
 use rustc_hash::FxHashMap;
 
@@ -54,7 +56,6 @@ pub fn load_bodies(path: &str) -> Result<FxHashMap<usize, Body>, Error> {
                     x: reader.read_signed_integer().into(),
                     y: reader.read_signed_integer().into(),
                 },
-                ..Default::default()
             },
         );
     }
@@ -138,8 +139,7 @@ pub fn load_shields(path: &str) -> Result<FxHashMap<usize, Shield>, Error> {
 
     let count = reader.get_count("NumEscudos");
     for number in 1..=count {
-        let Some(section) = reader
-            .section(Some(&format!("ESC{number}"))) else {
+        let Some(section) = reader.section(Some(&format!("ESC{number}"))) else {
             continue;
         };
         shields.insert(
@@ -233,13 +233,13 @@ pub fn load_maps(path: &str) -> Result<FxHashMap<usize, Map>, Error> {
 }
 
 pub struct Graphics {
-    pub images: FxHashMap<usize, Image>,
-    pub animations: FxHashMap<usize, Animation>,
+    pub images: Vec<Option<Rc<Image>>>,
+    pub animations: Vec<Option<Rc<Animation>>>,
 }
 
 pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Result<Graphics, Error> {
-    let mut images = FxHashMap::default();
-    let mut animations = FxHashMap::default();
+    let mut images_map = FxHashMap::default();
+    let mut animations_map = FxHashMap::default();
 
     let mut images_by_file_num = FxHashMap::default();
 
@@ -268,13 +268,13 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
                     height: reader.read_integer().into(),
                 };
                 images_by_file_num
-                    .entry(image.file_num)
+                    .entry(image.file_num as u32)
                     .or_insert_with(Vec::new)
                     .push(image.id);
-                images.insert(grh.into(), image);
+                images_map.insert(grh.into(), Rc::new(image));
             }
             _ => {
-                animations.insert(
+                animations_map.insert(
                     grh.into(),
                     Animation {
                         id: grh.into(),
@@ -304,8 +304,24 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
                 .map_err(|_| Error::Parse)?
                 .into(),
         };
-        atlas.update_images(&mut images, &images_by_file_num, atlas_resource.image_id);
+        atlas.update_images(
+            &mut images_map,
+            &images_by_file_num,
+            atlas_resource.image_id,
+        );
         println!("Atlas parsed");
+    }
+    let max = images_map.iter().max_by_key(|item| item.0).unwrap();
+
+    let mut images = vec![None; (*max.0 + 1) as usize];
+    for (image_id, image) in images_map {
+        images[image_id as usize] = Some(image);
+    }
+
+    let max = animations_map.iter().max_by_key(|item| item.0).unwrap();
+    let mut animations = vec![None; (max.0 + 1) as usize];
+    for (id, animation) in animations_map {
+        animations[id as usize] = Some(Rc::new(animation));
     }
 
     Ok(Graphics { images, animations })

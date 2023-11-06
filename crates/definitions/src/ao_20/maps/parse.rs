@@ -2,16 +2,8 @@ use std::io::Read;
 
 use crate::{
     map::{GrhIndex, Light, MapHeader, MapInfo, MapSize, Obj, Particle, Point, Trigger, RGBA},
-    parse::{ArgentumReadExt, Integer, Long},
+    parse::{ArgentumReadExt, Integer},
 };
-
-// use crate::error::Error;
-// use crate::map::{
-//     GrhIndex, Light, Map, MapHeader, MapInfo, MapSize, Obj, Particle, Point, Trigger, RGBA,
-// };
-// use crate::parse::{get_binary_reader, ArgentumReadExt, Integer, Long};
-// use std::io::{BufReader, Read};
-//
 pub trait MapsReadExt: std::io::Read {
     fn read_map_header(&mut self) -> MapHeader {
         MapHeader {
