@@ -1,11 +1,10 @@
 use client::{entity::Entity, ui::UI, Finisterra, WINDOW_HEIGHT, WINDOW_WIDTH};
-use definitions::heading::Heading;
 use roma::{add_font, add_ui_texture, run_game, ui::paint::TextureFilter, Settings};
 
 mod settings;
 
 fn main() {
-    let base_path = "./assets/ao_20/graphics/".to_string();
+    let base_path = "./assets/ao_99z/graphics/".to_string();
     let settings = Settings {
         width: WINDOW_WIDTH,
         height: WINDOW_HEIGHT,
@@ -31,7 +30,7 @@ fn main() {
                 right_panel_size: 800 - 480 - 20,
             };
 
-            let mut finisterra = Finisterra::ao_20(ui);
+            let mut finisterra = Finisterra::ao_99z(ui);
 
             // let mut entity = Entity::random(1, &finisterra.resources);
             // let position = [1., 0.];

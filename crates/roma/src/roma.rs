@@ -226,6 +226,8 @@ static mut ROMA: Option<Roma> = None;
 static mut STATE: Option<State> = None;
 
 pub(crate) async fn init_roma(window: winit::window::Window, settings: Settings) {
+    env_logger::init();
+
     unsafe {
         STATE = Some(State::init(window, settings.present_mode).await);
         ROMA = Some(Roma::new(settings).await);

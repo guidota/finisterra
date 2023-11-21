@@ -10,5 +10,3 @@ toml = "0.8"
 rand = { version = "0.8", features = ["std", "std_rng"] }
 rustc-hash = "1.1.0"
 
-[profile.release]
-debug = 1

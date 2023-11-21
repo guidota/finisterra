@@ -25,6 +25,9 @@ pollster = "0.3"
 anyhow = "1.0"
 rand = "0.8"
 
+# logging
+env_logger = "0.10"
+
 # fonts
 bmfont = { version = "0.3", default-features = false, features = [
   "serde",
@@ -42,6 +45,3 @@ nohash-hasher = "0.2"
 version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
-
-[profile.release]
-debug = 1
