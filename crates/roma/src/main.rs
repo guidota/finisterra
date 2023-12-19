@@ -8,7 +8,7 @@ use smol_str::SmolStr;
 
 fn main() {
     let settings = roma::Settings {
-        textures_folder: "art/".to_string(),
+        // textures_folder: "art/".to_string(),
         ..Default::default()
     };
     roma::run_game(

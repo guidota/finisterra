@@ -10,7 +10,7 @@ fn main() {
         height: WINDOW_HEIGHT,
         title: "Finisterra".to_string(),
         present_mode: roma::PresentMode::AutoNoVsync,
-        textures_folder: base_path,
+        // textures_folder: base_path,
     };
     run_game(
         settings,

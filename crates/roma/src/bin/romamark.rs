@@ -34,7 +34,7 @@ const HEIGHT: usize = 1080;
 
 fn main() {
     let settings = roma::Settings {
-        textures_folder: "assets".to_string(),
+        // textures_folder: "assets".to_string(),
         width: WIDTH,
         height: HEIGHT,
         present_mode: wgpu::PresentMode::AutoVsync,

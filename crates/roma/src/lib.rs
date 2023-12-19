@@ -24,14 +24,10 @@ pub type Position = [f32; 3];
 pub type Color = [u8; 4];
 pub type Source = [f32; 2];
 
-// #[repr(C)]
-// #[derive(Debug, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
-// pub struct DrawImageParams {
-//     pub position: Position,
-//     pub color: Color,
-//     pub source: Source,
-// }
-
+/// Note: there is some packing and unpacking happening here:
+/// u16 pairs will be unpacked from u32.
+///
+/// This affects to `x`, `y` and `source`
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct DrawImageParams {

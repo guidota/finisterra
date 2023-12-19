@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use smol_str::SmolStr;
 use yakui::ManagedTextureId;
@@ -34,7 +37,7 @@ pub struct Roma {
 impl Roma {
     pub async fn new(settings: Settings) -> Roma {
         let camera2d = Camera2D::new(settings.width as f32, settings.height as f32);
-        let mut sprite_batch = SpriteBatch::init(&settings.textures_folder);
+        let mut sprite_batch = SpriteBatch::init();
         let input = winit_input_helper::WinitInputHelper::new();
 
         let depth_texture_view = Self::create_depth_texture();
@@ -246,6 +249,11 @@ pub(crate) fn get_state_mut() -> &'static mut State {
     unsafe { STATE.as_mut().unwrap_or_else(|| panic!()) }
 }
 
+pub fn register_texture(path: PathBuf) -> u64 {
+    let roma = get_roma();
+    roma.sprite_batch.register_texture(path)
+}
+
 pub fn draw_image(texture_id: u64, params: DrawImageParams) {
     let roma = get_roma();
     roma.sprite_batch.queue(texture_id, params);
@@ -269,7 +277,7 @@ pub fn draw_parsed_text(
     color: Color,
 ) {
     let roma = get_roma();
-    let offset_x = (*total_width as f32 / 2.).round();
+    let offset_x = (*total_width as f32 / 2.).ceil();
     let [draw_x, draw_y, draw_z] = position;
     let draw_x = draw_x - offset_x;
 

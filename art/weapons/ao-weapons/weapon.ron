@@ -1,0 +1,64 @@
+(
+  walk: (
+    south: (
+      frames: [
+        (image: 5, priority: 10, offset: (x: 24, y: 27)),
+        (image: 6, priority: 10, offset: (x: 28, y: 29)),
+        (image: 7, priority: 10, offset: (x: 29, y: 30)),
+        (image: 8, priority: 10, offset: (x: 24, y: 28)),
+        (image: 9, priority: 10, offset: (x: 24, y: 28)),
+        (image: 10, priority: 10, offset: (x: 24, y: 29)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 22, priority: 7, offset: (x: 29, y: 26)),
+        (image: 23, priority: 8, offset: (x: 23, y: 28)),
+        (image: 24, priority: 8, offset: (x: 24, y: 27)),
+        (image: 25, priority: 8, offset: (x: 24, y: 27)),
+        (image: 26, priority: 7, offset: (x: 28, y: 27)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 17, priority: 10, offset: (x: 34, y: 24)),
+        (image: 18, priority: 10, offset: (x: 33, y: 23)),
+        (image: 19, priority: 10, offset: (x: 32, y: 23)),
+        (image: 20, priority: 10, offset: (x: 32, y: 23)),
+        (image: 21, priority: 10, offset: (x: 36, y: 26)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 11, priority: 7, offset: (x: 38, y: 28)),
+        (image: 12, priority: 6, offset: (x: 38, y: 27)),
+        (image: 13, priority: 7, offset: (x: 39, y: 29)),
+        (image: 14, priority: 7, offset: (x: 38, y: 27)),
+        (image: 15, priority: 7, offset: (x: 37, y: 28)),
+        (image: 16, priority: 7, offset: (x: 33, y: 30)),
+      ],
+    ),
+  ),
+  idle: (
+    south: (
+      frames: [
+        (image: 1, priority: 10, offset: (x: 24, y: 27)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 4, priority: 7, offset: (x: 33, y: 26)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 3, priority: 10, offset: (x: 30, y: 26)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 2, priority: 7, offset: (x: 38, y: 28)),
+      ],
+    ),
+  ),
+)

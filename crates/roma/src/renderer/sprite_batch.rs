@@ -1,4 +1,5 @@
 use nohash_hasher::IntMap;
+use std::path::PathBuf;
 use std::{collections::HashMap, ops::Range};
 
 use cgmath::ortho;
@@ -18,8 +19,9 @@ pub(crate) struct SpriteBatch {
     camera_bind_group: wgpu::BindGroup,
 
     textures: IntMap<u64, Option<Texture>>,
-    textures_folder: String,
+    // textures_folder: String,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+    texture_files: HashMap<u64, PathBuf>,
 
     zero_queue: SpriteQueue,
     queue: SpriteQueue,
@@ -34,7 +36,7 @@ struct Batch {
 
 impl SpriteBatch {
     pub const INITIAL_SPRITES: usize = 8192;
-    pub fn init(textures_folder: &str) -> Self {
+    pub fn init() -> Self {
         let state = get_state();
         let device = &state.device;
         let config = &state.config;
@@ -126,10 +128,11 @@ impl SpriteBatch {
                         },
                         alpha: wgpu::BlendComponent {
                             src_factor: wgpu::BlendFactor::One,
-                            dst_factor: wgpu::BlendFactor::One,
-                            operation: wgpu::BlendOperation::Add,
+                            dst_factor: wgpu::BlendFactor::Zero,
+                            operation: wgpu::BlendOperation::Min,
                         },
                     }),
+                    // blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -173,7 +176,8 @@ impl SpriteBatch {
 
             texture_bind_group_layout,
             textures: HashMap::default(),
-            textures_folder: textures_folder.to_string(),
+            // textures_folder: textures_folder.to_string(),
+            texture_files: HashMap::default(),
 
             zero_queue: SpriteQueue::default(),
             queue: SpriteQueue::default(),
@@ -188,15 +192,26 @@ impl SpriteBatch {
         );
     }
 
+    pub fn register_texture(&mut self, path: PathBuf) -> u64 {
+        let next_id = self.texture_files.len() as u64;
+        self.texture_files.insert(next_id, path);
+        next_id
+    }
+
     fn load_texture(&mut self, id: &u64) -> bool {
         if self.textures.contains_key(id) {
             return true;
         }
+        let Some(texture_path) = self.texture_files.get(id) else {
+            self.textures.insert(*id, None);
+            return false;
+        };
+
         let state = get_state();
         let device = &state.device;
         let queue = &state.queue;
-        let path = format!("{}/{}.png", self.textures_folder, id);
-        let texture = match texture::Texture::from_path(device, queue, &path) {
+        let path = texture_path.as_os_str().to_str().unwrap();
+        let texture = match texture::Texture::from_path(device, queue, path) {
             Ok(texture) => Some(texture.to_bind_group(&self.texture_bind_group_layout)),
             _ => {
                 println!("Texture not found on {path}");
