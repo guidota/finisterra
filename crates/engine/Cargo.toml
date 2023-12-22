@@ -1,0 +1,15 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# winit
+winit.workspace = true
+
+# runtime
+pollster = "0.3"
+
+# logging
+env_logger = "0.10"
+log = "0.4"

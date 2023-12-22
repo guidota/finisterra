@@ -1,12 +1,12 @@
 use std::{ops::Add, rc::Rc, time::Duration};
 
 use definitions::{
-    animation::Animation, body::Body, client::ClientResources, head::Head, heading::Heading,
-    image::Image, shield::Shield, weapon::Weapon,
+    animation::Animation, body::Body, client::ClientResources, gear::HeadGear, head::Head,
+    heading::Heading, image::Image, shield::Shield, weapon::Weapon,
 };
 use rand::{seq::IteratorRandom, Rng};
 use rnglib::{Language, RNG};
-use roma::{parse_text, ParsedText, SmolStr};
+// use roma::{parse_text, ParsedText, SmolStr};
 
 use crate::{HALF_TILE, TILE_SIZE};
 
@@ -34,8 +34,10 @@ pub struct Entity {
     pub head: Option<(Head, [Rc<Image>; 4])>,
     pub weapon: Option<Animated<Weapon>>,
     pub shield: Option<Animated<Shield>>,
+    pub head_gear: Option<(HeadGear, [Rc<Image>; 4])>,
     pub state: State,
-    pub name: (SmolStr, ParsedText),
+    // pub name: (SmolStr, ParsedText),
+    pub name: String,
     pub position: [f32; 2],
     pub world_position: [f32; 2],
 }
@@ -86,41 +88,65 @@ impl Entity {
             ];
             break (head.clone(), images);
         };
-        // let (random_weapon, weapon_animations) = loop {
-        //     let (_, weapon) = resources.weapons.iter().choose(&mut rng).unwrap();
-        //     let Some(animations) = get_animations(weapon.animations) else {
-        //         continue;
-        //     };
-        //     break (weapon.clone(), animations);
-        // };
-        //
-        // let (random_shield, shield_animations) = loop {
-        //     let (_, shield) = resources.shields.iter().choose(&mut rng).unwrap();
-        //     let Some(animations) = get_animations(shield.animations) else {
-        //         continue;
-        //     };
-        //     break (shield.clone(), animations);
-        // };
+        let (random_weapon, weapon_animations) = loop {
+            let (_, weapon) = resources.weapons.iter().choose(&mut rng).unwrap();
+            let Some(animations) = get_animations(weapon.animations) else {
+                continue;
+            };
+            break (weapon.clone(), animations);
+        };
+
+        let (random_shield, shield_animations) = loop {
+            let (_, shield) = resources.shields.iter().choose(&mut rng).unwrap();
+            let Some(animations) = get_animations(shield.animations) else {
+                continue;
+            };
+            break (shield.clone(), animations);
+        };
+
+        let (random_headgear, headgear_images) = loop {
+            let (_, head) = resources.headgears.iter().choose(&mut rng).unwrap();
+            if head.images[..4].iter().any(|image| image == &0) {
+                continue;
+            }
+            let default = resources.images[1].clone().unwrap();
+            let images = [
+                resources.images[head.images[0]]
+                    .clone()
+                    .unwrap_or(default.clone()),
+                resources.images[head.images[1]]
+                    .clone()
+                    .unwrap_or(default.clone()),
+                resources.images[head.images[2]]
+                    .clone()
+                    .unwrap_or(default.clone()),
+                resources.images[head.images[3]]
+                    .clone()
+                    .unwrap_or(default.clone()),
+            ];
+            break (head.clone(), images);
+        };
 
         let x = rng.gen_range(0..100) as f32;
         let y = rng.gen_range(0..100) as f32;
 
-        let name = SmolStr::new(NAME_GENERATOR.generate_name());
-        let parsed_text = parse_text(&name);
+        // let name = SmolStr::new(NAME_GENERATOR.generate_name());
+        // let parsed_text = parse_text(&name);
+        let name = NAME_GENERATOR.generate_name();
         Self {
             id,
             body: Some((random_body, (body_animations, 0))),
             head: Some((random_head, head_images)),
-            // weapon: Some((random_weapon, (weapon_animations, 0))),
-            // shield: Some((random_shield, (shield_animations, 0))),
-            weapon: None,
-            shield: None,
+            weapon: Some((random_weapon, (weapon_animations, 0))),
+            shield: Some((random_shield, (shield_animations, 0))),
+            head_gear: Some((random_headgear, headgear_images)),
             position: [x, y],
             world_position: [
                 x * TILE_SIZE as f32 + HALF_TILE as f32,
                 y * TILE_SIZE as f32,
             ],
-            name: (name, parsed_text),
+            // name: (name, parsed_text),
+            name,
             state: State {
                 movement: if rng.gen_bool(0.5) {
                     Movement::Walking {

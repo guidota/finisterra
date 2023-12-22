@@ -1,31 +1,33 @@
 use std::time::Duration;
 
 use definitions::heading::Heading;
-use roma::{get_delta, get_input, VirtualKeyCode};
+use engine::{camera::Zoom, engine::GameEngine, input::keyboard::KeyCode};
 
-use crate::{entity::Movement, Finisterra};
+use crate::{
+    entity::{Entity, Movement},
+    Finisterra,
+};
 
 impl Finisterra {
-    pub fn process_input(&mut self) {
-        let delta = get_delta();
-        let input = get_input();
+    pub fn process_input<E: GameEngine>(&mut self, engine: &mut E) {
+        let delta = engine.get_delta();
         let mut move_position = (0., 0.);
-        if input.key_held(VirtualKeyCode::Right) {
+        if engine.key_held(KeyCode::ArrowRight) {
             self.entities[0].state.direction = Heading::East;
             move_position.0 = 1.;
         }
 
-        if input.key_held(VirtualKeyCode::Left) {
+        if engine.key_held(KeyCode::ArrowLeft) {
             self.entities[0].state.direction = Heading::West;
             move_position.0 = -1.;
         }
 
-        if input.key_held(VirtualKeyCode::Down) {
+        if engine.key_held(KeyCode::ArrowDown) {
             self.entities[0].state.direction = Heading::South;
             move_position.1 = -1.;
         }
 
-        if input.key_held(VirtualKeyCode::Up) {
+        if engine.key_held(KeyCode::ArrowUp) {
             self.entities[0].state.direction = Heading::North;
             move_position.1 = 1.;
         }
@@ -41,7 +43,7 @@ impl Finisterra {
             self.entities[0].world_position = [world_x, world_y];
         }
 
-        if input.key_pressed(VirtualKeyCode::Space) {
+        if engine.key_pressed(KeyCode::Space) {
             self.entities[0].state.movement = match self.entities[0].state.movement {
                 Movement::Idle => crate::entity::Movement::Walking {
                     animation_time: Duration::from_millis(500),
@@ -49,6 +51,17 @@ impl Finisterra {
                 },
                 _ => Movement::Idle,
             };
+        }
+
+        if engine.key_released(KeyCode::KeyZ) {
+            match engine.get_world_camera_zoom() {
+                Zoom::None => engine.set_world_camera_zoom(Zoom::Double),
+                Zoom::Double => engine.set_world_camera_zoom(Zoom::None),
+            }
+        }
+
+        if engine.key_released(KeyCode::KeyN) {
+            self.render_names = !self.render_names;
         }
 
         //
@@ -91,13 +104,15 @@ impl Finisterra {
         //     // }
         // }
         //
-        // if is_key_pressed(KeyCode::Space) {
-        //     // let entities_len = self.entities.len();
-        //     // for id in 1..=100 {
-        //     //     let random = Entity::random(&self.resources);
-        //     //     let Vec2 { x, y } = random.position;
-        //     //     self.map.tiles[x as usize][y as usize].char_index = id + entities_len;
-        //     //     self.entities.insert(id + entities_len, random);
-        // }
+        if engine.key_released(KeyCode::Space) {
+            let entities_len = self.entities.len() - 1;
+            for id in 1..=100 {
+                let entity = Entity::random(1000000 + entities_len + id * 10, &self.resources);
+
+                let [x, y] = entity.position;
+                self.current_map.tiles[x as usize][y as usize].user = Some(entities_len + id);
+                self.entities.push(entity);
+            }
+        }
     }
 }

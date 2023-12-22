@@ -5,7 +5,13 @@ resolver = "2"
 [workspace.dependencies]
 definitions = { path = "crates/definitions" }
 roma = { path = "crates/roma" }
+veril = { path = "crates/veril" }
 lorenzo = { path = "crates/lorenzo" }
+engine = { path = "crates/engine" }
+
+winit = "0.29"
+# async runtime
+pollster = "0.3"
 
 # serializetion
 serde = { version = "1.0", features = ["derive"] }
@@ -14,5 +20,9 @@ toml = "0.8"
 ron = "0.8"
 
 # misc
+log = "0.4"
 rand = { version = "0.8", features = ["std", "std_rng"] }
 rustc-hash = "1.1.0"
+
+[profile.release]
+debug = true
