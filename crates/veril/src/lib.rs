@@ -1,9 +1,17 @@
-use std::time::Duration;
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+    time::Duration,
+};
 
 use camera::Camera;
-use engine::{draw::image::DrawImage, engine::GameEngine};
+use engine::{
+    draw::{image::DrawImage, Target},
+    engine::GameEngine,
+    window::Size,
+};
 use fonts::Fonts;
-use images::Images;
+use images::{Images, Texture};
 use pollster::FutureExt as _;
 use renderer::Renderer;
 use sounds::Sounds;
@@ -29,10 +37,11 @@ pub struct Veril {
     fonts: Fonts,
     _sounds: Sounds,
     images: Images,
-    renderer: Renderer,
+    pub(crate) renderer: Renderer,
     input: WinitInputHelper,
 
     depth_texture_view: wgpu::TextureView,
+    depth_textures: HashMap<engine::window::Size, wgpu::TextureView>,
 }
 
 impl GameEngine for Veril {
@@ -51,7 +60,11 @@ impl GameEngine for Veril {
         let images = Images::initialize();
         let input = WinitInputHelper::new();
 
-        let depth_texture_view = create_depth_texture(&state);
+        let size = engine::window::Size {
+            width: state.config.width,
+            height: state.config.height,
+        };
+        let depth_texture_view = create_depth_texture(&state, size);
 
         Self {
             state,
@@ -66,6 +79,7 @@ impl GameEngine for Veril {
             input,
 
             depth_texture_view,
+            depth_textures: HashMap::default(),
         }
     }
 
@@ -98,43 +112,57 @@ impl GameEngine for Veril {
     }
 
     fn add_texture(&mut self, path: &str) -> u64 {
-        self.images.add_texture(path)
+        self.images.add_file(path)
     }
 
     fn set_texture(&mut self, path: &str, id: u64) {
-        self.images.set_texture(id, path);
+        self.images.set_file(id, path);
     }
 
-    fn draw_image(&mut self, id: u64, parameters: engine::draw::image::DrawImage) {
-        self.renderer.draw_image(id, parameters);
+    fn create_texture(&mut self, dimensions: engine::draw::Dimensions) -> u64 {
+        let texture = texture::Texture::new(&self.state.device, dimensions);
+
+        let bind_group =
+            texture.create_bind_group(&self.state.device, &self.renderer.texture_bind_group_layout);
+
+        self.images.add_texture(Texture {
+            bind_group,
+            texture,
+        })
+    }
+
+    fn draw_image(
+        &mut self,
+        id: u64,
+        parameters: engine::draw::image::DrawImage,
+        target: engine::draw::Target,
+    ) {
+        self.renderer.draw_image(id, parameters, target);
     }
 
     fn add_font(&mut self, id: u64, path: &str, texture_id: u64) {
         self.fonts.add_font(id, texture_id, path);
     }
 
-    fn draw_text(&mut self, id: u64, parameters: engine::draw::text::DrawText) {
+    fn parse_text(
+        &mut self,
+        id: u64,
+        text: &str,
+        _orientation: engine::draw::text::Orientation,
+    ) -> Option<engine::draw::text::ParsedText> {
+        self.fonts.parse_text(id, text)
+    }
+
+    fn draw_text(&mut self, id: u64, parameters: engine::draw::text::DrawText, target: Target) {
         let Some(texture_id) = self.fonts.get_texture_id(id) else {
             log::error!("[draw_text] texture id for font {id} not found");
             return;
         };
-        let parsed_text = {
-            if let Some(parsed_text) = self.fonts.get_text(id, parameters.text) {
-                Some(parsed_text)
-            } else {
-                self.fonts.parse_text(id, parameters.text)
-            }
-        };
 
-        let Some((chars, total_width)) = parsed_text else {
-            log::error!("[draw_text] trying to draw text and failed");
-            return;
-        };
+        let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16;
 
-        let offset_x = (*total_width as f32 / 2.).round() as u16;
-
-        for char in chars {
-            let mut position = parameters.position.clone();
+        for char in &parameters.text.chars {
+            let mut position = parameters.position;
 
             let x = char.screen_rect.x;
             let y = char.screen_rect.y;
@@ -156,6 +184,7 @@ impl GameEngine for Veril {
                     source,
                     color: parameters.color,
                 },
+                target,
             );
         }
     }
@@ -186,14 +215,19 @@ impl GameEngine for Veril {
 
     fn set_world_camera_viewport(&mut self, viewport: engine::camera::Viewport) {
         let window_size = self.get_window_size();
-        self.world_camera.viewport.width =
-            std::cmp::min(viewport.width as u32, window_size.width - viewport.x as u32) as f32;
-        self.world_camera.viewport.height = std::cmp::min(
-            viewport.height as u32,
-            window_size.height - viewport.y as u32,
+        self.world_camera.viewport.width = max(
+            1,
+            min(viewport.width as u32, window_size.width - viewport.x as u32),
         ) as f32;
-        self.world_camera.viewport.x = viewport.x;
-        self.world_camera.viewport.y = viewport.y;
+        self.world_camera.viewport.height = max(
+            1,
+            min(
+                viewport.height as u32,
+                window_size.height - viewport.y as u32,
+            ),
+        ) as f32;
+        self.world_camera.viewport.x = max(0, viewport.x as u32) as f32;
+        self.world_camera.viewport.y = max(0, viewport.y as u32) as f32;
     }
 
     fn get_world_camera_zoom(&self) -> engine::camera::Zoom {
@@ -234,7 +268,7 @@ impl GameEngine for Veril {
 
     fn set_window_size(&mut self, size: engine::window::Size) {
         self.state.resize(size);
-        self.depth_texture_view = create_depth_texture(&self.state);
+        self.depth_texture_view = create_depth_texture(&self.state, size);
     }
 
     fn render(&mut self) {
@@ -243,9 +277,67 @@ impl GameEngine for Veril {
             return;
         };
 
-        let batches =
+        let (target_batches, world_batches, ui_batches) =
             self.renderer
                 .prepare(&self.state.device, &self.state.queue, &mut self.images);
+
+        let mut commands = vec![];
+        // Render to textures
+        let mut encoder = self
+            .state
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        for (texture_id, batches) in target_batches {
+            if let Some(Some(texture)) = self.images.textures().get(&texture_id) {
+                let view = &texture.texture.view;
+                let size = engine::window::Size {
+                    width: texture.texture.width,
+                    height: texture.texture.height,
+                };
+                let depth_texture_view = self
+                    .depth_textures
+                    .entry(size)
+                    .or_insert_with(|| create_depth_texture(&self.state, size));
+
+                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Render To Texture Pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                        view: depth_texture_view,
+                        depth_ops: Some(wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(0.0),
+                            store: wgpu::StoreOp::Store,
+                        }),
+                        stencil_ops: None,
+                    }),
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
+
+                let dimensions = Size {
+                    width: texture.texture.width,
+                    height: texture.texture.height,
+                };
+                let target_camera = Camera::initialize(dimensions);
+                self.renderer.prepare_pass(&mut render_pass);
+                self.renderer.render_batches(
+                    &mut render_pass,
+                    batches,
+                    &target_camera.viewport,
+                    target_camera.build_ui_view_projection_matrix(),
+                    self.images.textures(),
+                );
+            }
+        }
+        commands.push(encoder.finish());
 
         let view = &frame
             .texture
@@ -282,7 +374,7 @@ impl GameEngine for Veril {
             });
         }
 
-        let clear = encoder.finish();
+        commands.push(encoder.finish());
 
         let mut encoder =
             self.state
@@ -313,16 +405,25 @@ impl GameEngine for Veril {
                 occlusion_query_set: None,
             });
 
+            self.renderer.prepare_pass(&mut render_pass);
             self.renderer.render_batches(
                 &mut render_pass,
-                batches,
-                (&self.world_camera, &self.ui_camera),
+                world_batches,
+                &self.world_camera.viewport,
+                self.world_camera.build_view_projection_matrix(),
+                self.images.textures(),
+            );
+            self.renderer.render_batches(
+                &mut render_pass,
+                ui_batches,
+                &self.ui_camera.viewport,
+                self.ui_camera.build_ui_view_projection_matrix(),
                 self.images.textures(),
             );
         }
-        let game_commands = encoder.finish();
+        commands.push(encoder.finish());
 
-        self.state.queue.submit([clear, game_commands]);
+        self.state.queue.submit(commands);
         frame.present();
     }
 
@@ -331,10 +432,10 @@ impl GameEngine for Veril {
     }
 }
 
-fn create_depth_texture(state: &State) -> wgpu::TextureView {
+fn create_depth_texture(state: &State, size: engine::window::Size) -> wgpu::TextureView {
     let size = wgpu::Extent3d {
-        width: state.config.width,
-        height: state.config.height,
+        width: size.width,
+        height: size.height,
         depth_or_array_layers: 1,
     };
     let desc = wgpu::TextureDescriptor {

@@ -13,38 +13,43 @@ impl Finisterra {
         let delta = engine.get_delta();
         let mut move_position = (0., 0.);
         if engine.key_held(KeyCode::ArrowRight) {
-            self.entities[0].state.direction = Heading::East;
+            self.entities[0].direction = Heading::East;
             move_position.0 = 1.;
         }
 
         if engine.key_held(KeyCode::ArrowLeft) {
-            self.entities[0].state.direction = Heading::West;
+            self.entities[0].direction = Heading::West;
             move_position.0 = -1.;
         }
 
         if engine.key_held(KeyCode::ArrowDown) {
-            self.entities[0].state.direction = Heading::South;
+            self.entities[0].direction = Heading::South;
             move_position.1 = -1.;
         }
 
         if engine.key_held(KeyCode::ArrowUp) {
-            self.entities[0].state.direction = Heading::North;
+            self.entities[0].direction = Heading::North;
             move_position.1 = 1.;
         }
 
         if move_position.0 != 0. || move_position.1 != 0. {
+            let (x, y) = (self.position.0.floor(), self.position.1.floor());
+
             let distance = 5. * delta.as_secs_f32();
             self.position.0 += move_position.0 * distance;
             self.position.1 += move_position.1 * distance;
+            self.entities[0].set_position(self.position.0, self.position.1);
 
-            self.entities[0].position = [self.position.0, self.position.1];
-            let world_x = ((self.position.0 * 32.) + 16.).floor();
-            let world_y = (self.position.1 * 32.).floor();
-            self.entities[0].world_position = [world_x, world_y];
+            let (new_x, new_y) = (self.position.0.floor(), self.position.1.floor());
+            if new_x != x || new_y != y {
+                self.current_map.tiles[x as usize][y as usize].user = None;
+                self.current_map.tiles[new_x as usize][new_y as usize].user =
+                    Some(self.entities[0].id);
+            }
         }
 
-        if engine.key_pressed(KeyCode::Space) {
-            self.entities[0].state.movement = match self.entities[0].state.movement {
+        if engine.key_pressed(KeyCode::KeyR) {
+            self.entities[0].movement = match self.entities[0].movement {
                 Movement::Idle => crate::entity::Movement::Walking {
                     animation_time: Duration::from_millis(500),
                     current_time: Duration::from_millis(0),
@@ -61,56 +66,29 @@ impl Finisterra {
         }
 
         if engine.key_released(KeyCode::KeyN) {
-            self.render_names = !self.render_names;
+            self.draw_names = !self.draw_names;
         }
 
-        //
-        // if is_key_pressed(KeyCode::Key1) {
-        //     self.settings.draw_layer_0 = !self.settings.draw_layer_0;
-        // }
-        // if is_key_pressed(KeyCode::Key2) {
-        //     self.settings.draw_layer_1 = !self.settings.draw_layer_1;
-        // }
-        // if is_key_pressed(KeyCode::Key3) {
-        //     self.settings.draw_layer_2 = !self.settings.draw_layer_2;
-        // }
-        // if is_key_pressed(KeyCode::Key4) {
-        //     self.settings.draw_layer_3 = !self.settings.draw_layer_3;
-        // }
-        // if is_key_pressed(KeyCode::U) {
-        //     self.settings.draw_ui = !self.settings.draw_ui;
-        // }
-        // if is_key_pressed(KeyCode::M) {
-        //     self.settings.cache_static_layers = !self.settings.cache_static_layers;
-        //     self.screen_size_dirty = true;
-        // }
-        //
-        // if is_key_pressed(KeyCode::N) {
-        //     self.settings.draw_names = !self.settings.draw_names;
-        // }
-        //
-        // if is_key_pressed(KeyCode::C) {
-        //     self.settings.cache_entities = !self.settings.cache_entities;
-        // }
-        //
-        // if is_key_pressed(KeyCode::A) {
-        //     self.settings.use_atlases = !self.settings.use_atlases;
-        // }
-        //
-        // if is_key_pressed(KeyCode::Delete) {
-        //     // let mut textures = self.resources.textures.borrow_mut();
-        //     // for (_, texture) in textures.drain() {
-        //     //     texture.delete();
-        //     // }
-        // }
-        //
-        if engine.key_released(KeyCode::Space) {
+        if engine.key_released(KeyCode::KeyM) {
+            self.draw_map = !self.draw_map;
+        }
+
+        if engine.key_released(KeyCode::KeyE) {
+            self.draw_entities = !self.draw_entities;
+        }
+
+        if engine.key_released(KeyCode::KeyI) {
+            self.entities[0].invisible = !self.entities[0].invisible;
+        }
+
+        if engine.key_held(KeyCode::Space) {
             let entities_len = self.entities.len() - 1;
-            for id in 1..=100 {
-                let entity = Entity::random(1000000 + entities_len + id * 10, &self.resources);
+            for i in 1..=10 {
+                let id = entities_len + i;
+                let entity = Entity::random(engine, id, &self.resources);
 
                 let [x, y] = entity.position;
-                self.current_map.tiles[x as usize][y as usize].user = Some(entities_len + id);
+                self.current_map.tiles[x as usize][y as usize].user = Some(id);
                 self.entities.push(entity);
             }
         }

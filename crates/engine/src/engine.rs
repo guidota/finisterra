@@ -1,3 +1,5 @@
+use crate::draw::{Dimensions, Target};
+
 pub trait GameEngine {
     /// Initialize engine using the window provided by `winit`
     fn initialize(window: winit::window::Window, settings: &crate::settings::Settings) -> Self;
@@ -29,11 +31,16 @@ pub trait GameEngine {
     /// Adds a texture that be used later on draw_image by using the id
     fn set_texture(&mut self, path: &str, id: u64);
 
-    /// Draws an image in the screen
+    /// Creates a texture that can be used to draw images or text
+    /// The texture of this target can be used as any other texture
+    fn create_texture(&mut self, dimensions: Dimensions) -> u64;
+
+    /// Draws an image in the specific target
     /// `id` should be the identifier of the texture previously added or set
     /// `parameters` includes the instructions for rendering a texture or a portion of it
+    /// 'target' can be the world, the ui, or an specific texture
     /// it should be possible to render images from atlases
-    fn draw_image(&mut self, id: u64, parameters: crate::draw::image::DrawImage);
+    fn draw_image(&mut self, id: u64, parameters: crate::draw::image::DrawImage, target: Target);
 
     /// Adds a font and receives an integer to be used later on draw_text
     fn add_font(&mut self, id: u64, path: &str, texture_id: u64);
@@ -41,7 +48,16 @@ pub trait GameEngine {
     /// Draws text in the screen
     /// `id` should be the identifier of the font previously added or set
     /// `parameters` includes the instructions for rendering the text
-    fn draw_text(&mut self, id: u64, parameters: crate::draw::text::DrawText);
+    /// 'target' can be the world, the ui, or an specific texture
+    fn draw_text(&mut self, id: u64, parameters: crate::draw::text::DrawText, target: Target);
+
+    /// Parse text and get character positions and width
+    fn parse_text(
+        &mut self,
+        id: u64,
+        text: &str,
+        orientation: crate::draw::text::Orientation,
+    ) -> Option<crate::draw::text::ParsedText>;
 
     /// Adds a sound and receives an integer to be used later on play_sound or play_music
     fn add_sound(&mut self, path: &str) -> u64;

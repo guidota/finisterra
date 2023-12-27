@@ -1,10 +1,8 @@
-use std::slice;
-
-use super::DrawImageParams;
+use engine::draw::image::DrawImage;
 
 const DEFAULT_QUEUE_SIZE: usize = 1000;
 
-type Queue = Vec<(u64, Vec<DrawImageParams>)>;
+type Queue = Vec<(u64, Vec<DrawImage>)>;
 
 #[derive(Default)]
 pub struct SpriteQueue {
@@ -18,11 +16,11 @@ impl SpriteQueue {
         self.size
     }
 
-    pub fn texture_ids(&self) -> Vec<u64> {
-        self.texture_ids.to_vec()
+    pub fn texture_ids(&self) -> impl Iterator<Item = &u64> {
+        self.texture_ids.iter()
     }
 
-    pub fn push(&mut self, texture_id: u64, params: DrawImageParams) {
+    pub fn push(&mut self, texture_id: u64, params: DrawImage) {
         if let Err(index) = self.texture_ids.binary_search(&texture_id) {
             self.texture_ids.insert(index, texture_id);
         }
@@ -38,8 +36,8 @@ impl SpriteQueue {
             }
         }
     }
-    //
-    // pub fn push_all(&mut self, texture_id: u64, params: &mut [DrawImageParams]) {
+
+    // pub fn push_all(&mut self, texture_id: u64, params: &mut [DrawImage]) {
     //     if params.is_empty() {
     //         return;
     //     }
@@ -70,7 +68,7 @@ impl SpriteQueue {
         self.texture_ids.clear();
     }
 
-    pub fn batches(&mut self) -> slice::IterMut<(u64, Vec<DrawImageParams>)> {
+    pub fn batches(&mut self) -> impl Iterator<Item = &mut (u64, Vec<DrawImage>)> {
         self.queue.iter_mut()
     }
 }

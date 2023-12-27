@@ -30,6 +30,7 @@ image = { version = "0.24", default-features = false, features = [
 
 # performance
 nohash-hasher = "0.2"
+rustc-hash = "1.1"
 
 [profile.release]
 debug = true

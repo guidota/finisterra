@@ -309,7 +309,6 @@ pub fn load_graphics(path: &str, atlas_resource: Option<AtlasResource>) -> Resul
             &images_by_file_num,
             atlas_resource.image_id,
         );
-        println!("Atlas parsed");
     }
     let max = images_map.iter().max_by_key(|item| item.0).unwrap();
 

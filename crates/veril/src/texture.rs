@@ -1,3 +1,4 @@
+use engine::draw::Dimensions;
 use image::GenericImageView;
 use wgpu::Device;
 
@@ -12,6 +13,44 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn new(device: &wgpu::Device, dimensions: Dimensions) -> Self {
+        let size = wgpu::Extent3d {
+            width: dimensions.width as u32,
+            height: dimensions.height as u32,
+            depth_or_array_layers: 1,
+        };
+        let format = wgpu::TextureFormat::Bgra8UnormSrgb;
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[format],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        Self {
+            texture,
+            view,
+            sampler,
+            width: size.width,
+            height: size.height,
+        }
+    }
     pub fn from_path(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -98,11 +137,11 @@ impl Texture {
         }
     }
 
-    pub fn to_bind_group(
+    pub fn create_bind_group(
         &self,
         device: &Device,
         bind_group_layout: &wgpu::BindGroupLayout,
-    ) -> (wgpu::BindGroup, (usize, usize)) {
+    ) -> wgpu::BindGroup {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: bind_group_layout,
             entries: &[
@@ -118,7 +157,6 @@ impl Texture {
             label: Some("diffuse_bind_group"),
         });
 
-        let dimensions = (self.width as usize, self.height as usize);
-        (bind_group, dimensions)
+        bind_group
     }
 }

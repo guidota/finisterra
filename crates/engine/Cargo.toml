@@ -9,7 +9,14 @@ winit.workspace = true
 
 # runtime
 pollster = "0.3"
+bytemuck = { version = "1.12", features = ["derive"] }
 
 # logging
 env_logger = "0.10"
 log = "0.4"
+
+# text
+bmfont = { version = "0.3", default-features = false, features = [
+  "serde",
+  "serde_json",
+] }

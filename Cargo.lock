@@ -794,6 +794,8 @@ checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 name = "engine"
 version = "0.1.0"
 dependencies = [
+ "bmfont",
+ "bytemuck",
  "env_logger",
  "log",
  "pollster",
@@ -2365,6 +2367,7 @@ dependencies = [
  "log",
  "nohash-hasher",
  "pollster",
+ "rustc-hash",
  "wgpu",
  "winit",
  "winit_input_helper",
