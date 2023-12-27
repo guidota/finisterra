@@ -1,5 +1,7 @@
-@group(0) @binding(0) var texture: texture_2d<f32>;
-@group(0) @binding(1) var texture_sampler: sampler;
+// @group(0) @binding(0) var texture: texture_2d<f32>;
+@group(0) @binding(0) var texture_array: binding_array<texture_2d<f32>>;
+// @group(0) @binding(1) var texture_sampler: sampler;
+@group(0) @binding(1) var texture_sampler_array: binding_array<sampler>;
 
 var<push_constant> camera_projection: mat4x4<f32>;
 
@@ -9,6 +11,7 @@ struct VertexInput {
     @location(1) z: f32,
     @location(2) color: vec4<f32>,
     @location(3) source: vec2<u32>,
+    @location(4) index: i32,
 }
 
 fn map_source(source: vec4<f32>, texture_dimensions: vec2<u32>) -> vec4<f32> {
@@ -24,7 +27,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     var position: vec2<f32>;
 
-    let texture_dimensions: vec2<u32> = textureDimensions(texture);
+    let texture_dimensions: vec2<u32> = textureDimensions(texture_array[input.index]);
 
     let unpacked_source = vec4<f32>(f32(input.source.x & 0xFFFFu), f32(input.source.x >> 16u), f32(input.source.y & 0xFFFFu), f32(input.source.y >> 16u));
 
@@ -80,6 +83,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     output.position = camera_projection * vec4<f32>(position, input.z, 1.0);
     output.position.z = input.z;
     output.color = input.color;
+    output.index = input.index;
 
     return output;
 }
@@ -88,11 +92,12 @@ struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) texture_position: vec2<f32>,
     @location(1) color: vec4<f32>,
+    @location(2) index: i32,
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let color = textureSample(texture, texture_sampler, in.texture_position);
+    let color = textureSample(texture_array[in.index], texture_sampler_array[in.index], in.texture_position);
 
     if color.r == 0.0 && color.g == 0.0 && color.b == 0.0 {
         discard;

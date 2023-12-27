@@ -83,7 +83,7 @@ impl Finisterra {
 
         if engine.key_held(KeyCode::Space) {
             let entities_len = self.entities.len() - 1;
-            for i in 1..=10 {
+            for i in 1..=2 {
                 let id = entities_len + i;
                 let entity = Entity::random(engine, id, &self.resources);
 

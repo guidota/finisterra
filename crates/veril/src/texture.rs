@@ -1,13 +1,14 @@
+use std::rc::Rc;
+
 use engine::draw::Dimensions;
 use image::GenericImageView;
-use wgpu::Device;
 
 use crate::files::read_file;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
+    pub view: Rc<wgpu::TextureView>,
+    pub sampler: Rc<wgpu::Sampler>,
     pub height: u32,
     pub width: u32,
 }
@@ -27,13 +28,11 @@ impl Texture {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[format],
         });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        let view = Rc::new(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        let sampler = Rc::new(device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
@@ -41,7 +40,7 @@ impl Texture {
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
-        });
+        }));
 
         Self {
             texture,
@@ -117,8 +116,8 @@ impl Texture {
             size,
         );
 
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        let view = Rc::new(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        let sampler = Rc::new(device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
@@ -126,7 +125,7 @@ impl Texture {
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
-        });
+        }));
 
         Self {
             texture,
@@ -135,28 +134,5 @@ impl Texture {
             width: dimensions.0,
             height: dimensions.1,
         }
-    }
-
-    pub fn create_bind_group(
-        &self,
-        device: &Device,
-        bind_group_layout: &wgpu::BindGroupLayout,
-    ) -> wgpu::BindGroup {
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&self.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.sampler),
-                },
-            ],
-            label: Some("diffuse_bind_group"),
-        });
-
-        bind_group
     }
 }

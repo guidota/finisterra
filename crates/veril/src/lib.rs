@@ -11,9 +11,9 @@ use engine::{
     window::Size,
 };
 use fonts::Fonts;
-use images::{Images, Texture};
+use images::Images;
 use pollster::FutureExt as _;
-use renderer::Renderer;
+use renderer::{Instructions, Renderer};
 use sounds::Sounds;
 use state::State;
 use wgpu::PresentMode;
@@ -122,22 +122,48 @@ impl GameEngine for Veril {
     fn create_texture(&mut self, dimensions: engine::draw::Dimensions) -> u64 {
         let texture = texture::Texture::new(&self.state.device, dimensions);
 
-        let bind_group =
-            texture.create_bind_group(&self.state.device, &self.renderer.texture_bind_group_layout);
-
-        self.images.add_texture(Texture {
-            bind_group,
-            texture,
-        })
+        self.images.add_texture(texture)
     }
 
     fn draw_image(
         &mut self,
-        id: u64,
+        _id: u64,
         parameters: engine::draw::image::DrawImage,
         target: engine::draw::Target,
     ) {
-        self.renderer.draw_image(id, parameters, target);
+        if self.images.load_texture(
+            &self.state.device,
+            &self.state.queue,
+            parameters.index as u64,
+        ) {
+            let texture = self
+                .images
+                .get(parameters.index as u64)
+                .unwrap()
+                .as_ref()
+                .unwrap();
+            let view = texture.view.clone();
+            let sampler = texture.sampler.clone();
+
+            match target {
+                Target::World | Target::UI => {
+                    self.renderer
+                        .texture_array
+                        .push(parameters.index as u64, view, sampler);
+                }
+                _ => {
+                    self.renderer.pre_render_texture_array.push(
+                        parameters.index as u64,
+                        view,
+                        sampler,
+                    );
+                }
+            }
+
+            self.renderer.draw_image(parameters, target);
+        } else {
+            log::error!("[draw_image] with invalid texture");
+        }
     }
 
     fn add_font(&mut self, id: u64, path: &str, texture_id: u64) {
@@ -158,6 +184,25 @@ impl GameEngine for Veril {
             log::error!("[draw_text] texture id for font {id} not found");
             return;
         };
+        if self
+            .images
+            .load_texture(&self.state.device, &self.state.queue, texture_id)
+        {
+            let texture = self.images.get(texture_id).unwrap().as_ref().unwrap();
+            let view = texture.view.clone();
+            let sampler = texture.sampler.clone();
+
+            match target {
+                Target::World | Target::UI => {
+                    self.renderer.texture_array.push(texture_id, view, sampler);
+                }
+                _ => {
+                    self.renderer
+                        .pre_render_texture_array
+                        .push(texture_id, view, sampler);
+                }
+            }
+        }
 
         let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16;
 
@@ -178,11 +223,11 @@ impl GameEngine for Veril {
             position.y += y as u16;
 
             self.renderer.draw_image(
-                texture_id,
                 DrawImage {
                     position,
                     source,
                     color: parameters.color,
+                    index: texture_id as u32,
                 },
                 target,
             );
@@ -277,31 +322,88 @@ impl GameEngine for Veril {
             return;
         };
 
-        let (target_batches, world_batches, ui_batches) =
-            self.renderer
-                .prepare(&self.state.device, &self.state.queue, &mut self.images);
+        let Instructions {
+            world_range,
+            ui_range,
+            to_textures_ranges,
+        } = self.renderer.prepare(&self.state.device, &self.state.queue);
 
-        let mut commands = vec![];
-        // Render to textures
-        let mut encoder = self
-            .state
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut commands = vec![];
+            // Render to textures
+            let mut encoder = self
+                .state
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        for (texture_id, batches) in target_batches {
-            if let Some(Some(texture)) = self.images.textures().get(&texture_id) {
-                let view = &texture.texture.view;
-                let size = engine::window::Size {
-                    width: texture.texture.width,
-                    height: texture.texture.height,
-                };
-                let depth_texture_view = self
-                    .depth_textures
-                    .entry(size)
-                    .or_insert_with(|| create_depth_texture(&self.state, size));
+            if let Some(bind_group) = self.renderer.pre_render_texture_array.get_bind_group() {
+                for (texture_id, range) in to_textures_ranges {
+                    if let Some(Some(texture)) = self.images.get(texture_id) {
+                        let size = engine::window::Size {
+                            width: texture.width,
+                            height: texture.height,
+                        };
+                        let depth_texture_view = self
+                            .depth_textures
+                            .entry(size)
+                            .or_insert_with(|| create_depth_texture(&self.state, size));
 
-                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Render To Texture Pass"),
+                        let mut render_pass =
+                            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                label: Some("Render To Texture Pass"),
+                                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                    view: &texture.view,
+                                    resolve_target: None,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                                        store: wgpu::StoreOp::Store,
+                                    },
+                                })],
+                                depth_stencil_attachment: Some(
+                                    wgpu::RenderPassDepthStencilAttachment {
+                                        view: depth_texture_view,
+                                        depth_ops: Some(wgpu::Operations {
+                                            load: wgpu::LoadOp::Clear(0.0),
+                                            store: wgpu::StoreOp::Store,
+                                        }),
+                                        stencil_ops: None,
+                                    },
+                                ),
+                                timestamp_writes: None,
+                                occlusion_query_set: None,
+                            });
+
+                        let dimensions = Size {
+                            width: size.width,
+                            height: size.height,
+                        };
+                        let target_camera = Camera::initialize(dimensions);
+                        self.renderer.prepare_pass(&mut render_pass, bind_group);
+                        self.renderer.render_range(
+                            &mut render_pass,
+                            range,
+                            &target_camera.viewport,
+                            target_camera.build_ui_view_projection_matrix(),
+                        );
+                    }
+                }
+            }
+            commands.push(encoder.finish());
+
+            let view = &frame
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
+
+            // Clear render pass
+            let mut encoder =
+                self.state
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("Render Encoder"),
+                    });
+            {
+                let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Clear Render Pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view,
                         resolve_target: None,
@@ -311,7 +413,7 @@ impl GameEngine for Veril {
                         },
                     })],
                     depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: depth_texture_view,
+                        view: &self.depth_texture_view,
                         depth_ops: Some(wgpu::Operations {
                             load: wgpu::LoadOp::Clear(0.0),
                             store: wgpu::StoreOp::Store,
@@ -321,110 +423,60 @@ impl GameEngine for Veril {
                     timestamp_writes: None,
                     occlusion_query_set: None,
                 });
-
-                let dimensions = Size {
-                    width: texture.texture.width,
-                    height: texture.texture.height,
-                };
-                let target_camera = Camera::initialize(dimensions);
-                self.renderer.prepare_pass(&mut render_pass);
-                self.renderer.render_batches(
-                    &mut render_pass,
-                    batches,
-                    &target_camera.viewport,
-                    target_camera.build_ui_view_projection_matrix(),
-                    self.images.textures(),
-                );
             }
+
+            commands.push(encoder.finish());
+
+            let mut encoder =
+                self.state
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("Render Encoder"),
+                    });
+            if let Some(bind_group) = self.renderer.texture_array.get_bind_group() {
+                {
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some("Render Pass"),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
+                        })],
+                        depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
+                            depth_ops: Some(wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            }),
+                            stencil_ops: None,
+                        }),
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                    });
+
+                    self.renderer.prepare_pass(&mut render_pass, bind_group);
+                    self.renderer.render_range(
+                        &mut render_pass,
+                        world_range,
+                        &self.world_camera.viewport,
+                        self.world_camera.build_view_projection_matrix(),
+                    );
+                    self.renderer.render_range(
+                        &mut render_pass,
+                        ui_range,
+                        &self.ui_camera.viewport,
+                        self.ui_camera.build_ui_view_projection_matrix(),
+                    );
+                }
+            }
+            commands.push(encoder.finish());
+
+            self.state.queue.submit(commands);
+            frame.present();
         }
-        commands.push(encoder.finish());
-
-        let view = &frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
-        // Clear render pass
-        let mut encoder =
-            self.state
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Render Encoder"),
-                });
-        {
-            let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Clear Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_texture_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(0.0),
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
-        }
-
-        commands.push(encoder.finish());
-
-        let mut encoder =
-            self.state
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Render Encoder"),
-                });
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_texture_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
-
-            self.renderer.prepare_pass(&mut render_pass);
-            self.renderer.render_batches(
-                &mut render_pass,
-                world_batches,
-                &self.world_camera.viewport,
-                self.world_camera.build_view_projection_matrix(),
-                self.images.textures(),
-            );
-            self.renderer.render_batches(
-                &mut render_pass,
-                ui_batches,
-                &self.ui_camera.viewport,
-                self.ui_camera.build_ui_view_projection_matrix(),
-                self.images.textures(),
-            );
-        }
-        commands.push(encoder.finish());
-
-        self.state.queue.submit(commands);
-        frame.present();
     }
 
     fn finish(&self) {

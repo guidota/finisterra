@@ -25,6 +25,7 @@ pub mod image {
         pub position: Position,
         pub color: Color,
         pub source: Source,
+        pub index: u32,
     }
 }
 

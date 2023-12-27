@@ -317,6 +317,7 @@ impl Entity {
                                 position,
                                 color,
                                 source: [image.x, image.y, image.width, image.height],
+                                index: image_num as u32,
                             },
                             Target::Texture { id: texture_id },
                         );
@@ -338,6 +339,7 @@ impl Entity {
                                 position,
                                 color,
                                 source: [image.x, image.y, image.width, image.height],
+                                index: image_num as u32,
                             },
                             Target::Texture { id: texture_id },
                         );
@@ -359,6 +361,7 @@ impl Entity {
                                 position,
                                 color,
                                 source: [image.x, image.y, image.width, image.height],
+                                index: image_num as u32,
                             },
                             Target::Texture { id: texture_id },
                         );
@@ -380,6 +383,7 @@ impl Entity {
                                         position,
                                         color,
                                         source: [image.x, image.y, image.width, image.height],
+                                        index: image_num as u32,
                                     },
                                     Target::Texture { id: texture_id },
                                 );
@@ -404,6 +408,7 @@ impl Entity {
                                         position,
                                         color,
                                         source: [image.x, image.y, image.width, image.height],
+                                        index: image_num as u32,
                                     },
                                     Target::Texture { id: texture_id },
                                 );
@@ -445,6 +450,7 @@ impl Entity {
                     ),
                     color,
                     source: [image_x, image_y, frame_width, frame_height],
+                    index: texture_id as u32,
                 },
                 Target::World,
             );

@@ -148,7 +148,7 @@ impl Finisterra {
         };
         let resources =
             ao_20::client::load_client_resources(paths).expect("can load client resources");
-        let current_map = resources.maps.get(&2).expect("can get map").clone();
+        let current_map = resources.maps.get(&1).expect("can get map").clone();
 
         // register textures
         for image in resources.images.iter().flatten() {
@@ -478,6 +478,7 @@ impl Finisterra {
                     position: Position::new(x as u16, y as u16, calculate_z(i, 0, 0)),
                     color,
                     source,
+                    index: texture_id as u32,
                 },
                 Target::World,
             );
@@ -512,6 +513,7 @@ impl Finisterra {
                 position,
                 color: [255, 255, 255, 255],
                 source: [image.x, image.y, image.width, image.height],
+                index: image_num as u32,
             },
             target,
         );

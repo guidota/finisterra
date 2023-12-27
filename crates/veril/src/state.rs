@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use wgpu::{Limits, PresentMode};
+use wgpu::PresentMode;
 
 pub(crate) struct State {
     pub(crate) window: Arc<winit::window::Window>,
@@ -26,16 +26,19 @@ impl State {
             .expect("[renderer] couldn't request adapter");
 
         let optional_features = wgpu::Features::DEPTH_CLIP_CONTROL;
-        let required_features = wgpu::Features::PUSH_CONSTANTS;
+        let required_features = wgpu::Features::PUSH_CONSTANTS
+            .union(wgpu::Features::TEXTURE_BINDING_ARRAY)
+            .union(wgpu::Features::PARTIALLY_BOUND_BINDING_ARRAY)
+            .union(wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING);
         let adapter_features = adapter.features();
-        let mut required_limits = Limits::default().using_resolution(adapter.limits());
+        let mut required_limits = adapter.limits();
         required_limits.max_push_constant_size = 64;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
                     required_features: (optional_features & adapter_features) | required_features,
-                    required_limits: required_limits.using_resolution(adapter.limits()),
+                    required_limits,
                 },
                 None,
             )

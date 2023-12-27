@@ -1,36 +1,35 @@
-use std::ops::Range;
+use std::{ops::Range, num::NonZeroU32};
 
 use engine::{
     camera::Viewport,
     draw::{image::DrawImage, Target},
 };
 use nohash_hasher::IntMap;
-use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration};
+use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration, BindGroup};
 
-use crate::images::{self, Images};
+use self::texture_array::TextureArray;
 
-use self::queue::SpriteQueue;
-
-mod queue;
+mod texture_array;
 
 pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
 
-    pub(crate) texture_bind_group_layout: wgpu::BindGroupLayout,
+    pub(crate) bind_group_layout: wgpu::BindGroupLayout,
 
-    zero_queue: SpriteQueue,
-    queue: SpriteQueue,
-    ui_queue: SpriteQueue,
-    queue_to_textures: IntMap<u64, SpriteQueue>,
-    sprites: Vec<DrawImage>,
+    draws_to_textures: IntMap<u64, Vec<DrawImage>>,
+    draws_to_world: Vec<DrawImage>,
+    draws_to_ui: Vec<DrawImage>,
+
+    pub(crate) pre_render_texture_array: TextureArray,
+    pub(crate) texture_array: TextureArray,
 }
 
 impl Renderer {
     pub fn initialize(device: &Device, config: &SurfaceConfiguration) -> Self {
         let shader = device.create_shader_module(wgpu::include_wgsl!("renderer/shader.wgsl"));
 
-        let texture_bind_group_layout =
+        let bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
@@ -41,22 +40,37 @@ impl Renderer {
                             view_dimension: wgpu::TextureViewDimension::D2,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
-                        count: None,
+                        count: NonZeroU32::new(10000),
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
+                        count: NonZeroU32::new(10000),
                     },
                 ],
                 label: Some("texture_bind_group_layout"),
             });
 
+        // let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        //     entries: &[
+        //         wgpu::BindGroupEntry {
+        //             binding: 0,
+        //             resource: wgpu::BindingResource::TextureViewArray(&[]),
+        //         },
+        //         wgpu::BindGroupEntry {
+        //             binding: 1,
+        //             resource: wgpu::BindingResource::SamplerArray(&[]),
+        //         },
+        //     ],
+        //     layout: &bind_group_layout,
+        //     label: Some("bind group"),
+        // });
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout],
+                bind_group_layouts: &[&bind_group_layout],
                 push_constant_ranges: &[PushConstantRange {
                     stages: ShaderStages::VERTEX,
                     range: 0..64,
@@ -72,7 +86,7 @@ impl Renderer {
                 buffers: &[wgpu::VertexBufferLayout {
                     array_stride: std::mem::size_of::<DrawImage>() as wgpu::BufferAddress,
                     step_mode: wgpu::VertexStepMode::Instance,
-                    attributes: &wgpu::vertex_attr_array![0 => Uint32, 1 => Float32, 2 => Unorm8x4, 3 => Uint32x2],
+                    attributes: &wgpu::vertex_attr_array![0 => Uint32, 1 => Float32, 2 => Unorm8x4, 3 => Uint32x2, 4 => Sint32],
                 }],
             },
             fragment: Some(wgpu::FragmentState {
@@ -123,72 +137,47 @@ impl Renderer {
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
+        let pre_render_texture_array = TextureArray::new();
+        let texture_array = TextureArray::new();
         Self {
             pipeline,
             vertex_buffer,
 
-            texture_bind_group_layout,
+            bind_group_layout,
 
-            zero_queue: SpriteQueue::default(),
-            queue: SpriteQueue::default(),
-            ui_queue: SpriteQueue::default(),
-            queue_to_textures: IntMap::default(),
-            sprites,
+            draws_to_textures: IntMap::default(),
+            draws_to_world: vec![],
+            draws_to_ui: vec![],
+
+            pre_render_texture_array,
+            texture_array,
         }
     }
 
-    pub fn draw_image(&mut self, id: u64, parameters: DrawImage, target: Target) {
+    pub fn draw_image(&mut self, parameters: DrawImage, target: Target) {
         match target {
             Target::World => {
-                if parameters.position.z == 0. {
-                    self.zero_queue.push(id, parameters);
-                } else {
-                    self.queue.push(id, parameters);
-                }
-            }
+                self.draws_to_world.push(parameters);
+                            }
             Target::UI => {
-                self.ui_queue.push(id, parameters);
+                self.draws_to_ui.push(parameters);
             }
             Target::Texture {
                 id: target_texture_id,
             } => {
-                self.queue_to_textures
+                self.draws_to_textures
                     .entry(target_texture_id)
                     .or_default()
-                    .push(id, parameters);
+                    .push(parameters);
             }
         }
     }
 
-    fn update_buffer(&mut self, queue: &Queue, sprites: usize) {
-        let sprites_data = bytemuck::cast_slice(&self.sprites[..sprites]);
-        queue.write_buffer(&self.vertex_buffer, 0, sprites_data);
-    }
-
-    pub fn prepare(
-        &mut self,
-        device: &Device,
-        queue: &Queue,
-        images: &mut Images,
-    ) -> (Vec<(u64, Vec<Batch>)>, Vec<Batch>, Vec<Batch>) {
-        let queue_size = self.zero_queue.size()
-            + self.queue.size()
-            + self.ui_queue.size()
-            + self
-                .queue_to_textures
-                .iter()
-                .fold(0, |mut size, (_, queue)| {
-                    size += queue.size();
-                    size
-                });
-        if queue_size == 0 {
-            return (vec![], vec![], vec![]);
-        }
-
-        if self.sprites.len() < queue_size {
-            self.sprites.resize(queue_size, DrawImage::default());
-        }
-
+    pub fn prepare(&mut self, device: &Device, queue: &Queue) -> Instructions {
+        // ensure space in vertex buffer
+        let queue_size = self.draws_to_world.len() + self.draws_to_ui.len() + self.draws_to_textures.iter().fold(0, |size, (_, draws)| {
+            size + draws.len()
+        });
         let queue_size_in_bytes =
             (std::mem::size_of::<DrawImage>() * queue_size) as wgpu::BufferAddress;
         if self.vertex_buffer.size() < queue_size_in_bytes {
@@ -201,114 +190,77 @@ impl Renderer {
             });
         }
 
-        let mut to_texture_batches = vec![];
-        let mut world_batches = vec![];
-        let mut ui_batches = vec![];
+        let mut to_textures_ranges = vec![];
 
-        // load textures if required
-        let texture_ids = self
-            .zero_queue
-            .texture_ids()
-            .chain(self.queue.texture_ids())
-            .chain(self.ui_queue.texture_ids());
-
-        for texture_id in texture_ids {
-            images.load_texture(device, queue, &self.texture_bind_group_layout, *texture_id);
-        }
-        for texture_ids in self
-            .queue_to_textures
-            .values()
-            .map(|queue| queue.texture_ids())
-        {
-            for texture_id in texture_ids {
-                images.load_texture(device, queue, &self.texture_bind_group_layout, *texture_id);
-            }
-        }
 
         let mut offset = 0;
-
-        for (target_texture_id, queue) in self.queue_to_textures.iter_mut() {
-            let mut target_batches = vec![];
-            for (texture_id, texture_batch) in queue.batches() {
-                if texture_batch.is_empty() {
-                    continue;
+        for (texture_id, draws) in &mut self.draws_to_textures {
+            for draw in draws.iter_mut() {
+                if let Some(index) = self.pre_render_texture_array.indices.get(&(draw.index as u64)) {
+                    draw.index = *index;
+                } else {
+                    log::error!("trying to render to_texture bad indexed texture {}", draw.index);
                 }
-
-                let batch_start = offset;
-                offset += texture_batch.len();
-                let batch_end = offset;
-
-                self.sprites[batch_start..batch_end].copy_from_slice(texture_batch.as_slice());
-
-                let batch = Batch {
-                    texture_id: *texture_id,
-                    range: batch_start as u32..batch_end as u32,
-                };
-                target_batches.push(batch);
-            }
-            to_texture_batches.push((*target_texture_id, target_batches));
-        }
-
-        for (texture_id, texture_batch) in self.zero_queue.batches().chain(self.queue.batches()) {
-            if texture_batch.is_empty() {
-                continue;
             }
 
-            let batch_start = offset;
-            offset += texture_batch.len();
-            let batch_end = offset;
+            let data = bytemuck::cast_slice(&draws[..]);
+            let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
+            queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
 
-            self.sprites[batch_start..batch_end].copy_from_slice(texture_batch.as_slice());
+            to_textures_ranges.push((*texture_id, offset..(offset + draws.len())));
 
-            let batch = Batch {
-                texture_id: *texture_id,
-                range: batch_start as u32..batch_end as u32,
-            };
-
-            world_batches.push(batch);
+            offset += draws.len();
+            draws.clear();
         }
+        self.draws_to_textures.clear();
 
-        for (texture_id, texture_batch) in self.ui_queue.batches() {
-            if texture_batch.is_empty() {
-                continue;
+        let world_range = offset..(offset + self.draws_to_world.len());
+        for draw in self.draws_to_world.iter_mut() {
+            if let Some(index) = self.texture_array.indices.get(&(draw.index as u64)) {
+                draw.index = *index;
+            } else {
+                log::error!("trying to render bad indexed texture {}", draw.index);
             }
-
-            let batch_start = offset;
-            offset += texture_batch.len();
-            let batch_end = offset;
-
-            self.sprites[batch_start..batch_end].copy_from_slice(texture_batch.as_slice());
-
-            let batch = Batch {
-                texture_id: *texture_id,
-                range: batch_start as u32..batch_end as u32,
-            };
-
-            ui_batches.push(batch);
         }
+        let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
+        let data = bytemuck::cast_slice(&self.draws_to_world[..]);
+        queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
+        offset += self.draws_to_world.len();
+        self.draws_to_world.clear();
 
-        self.queue_to_textures.clear();
-        self.ui_queue.reset();
-        self.zero_queue.reset();
-        self.queue.reset();
+        let ui_range = offset..(offset + self.draws_to_ui.len());
+        for draw in self.draws_to_ui.iter_mut() {
+            if let Some(index) = self.texture_array.indices.get(&(draw.index as u64)) {
+                draw.index = *index;
+            } else {
+                log::error!("trying to render bad indexed texture {}", draw.index);
+            }
+        }
+        let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
+        let data = bytemuck::cast_slice(&self.draws_to_ui[..]);
+        queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
+        self.draws_to_ui.clear();
 
-        self.update_buffer(queue, offset);
+        self.texture_array.prepare(device, &self.bind_group_layout);
+        self.pre_render_texture_array.prepare(device, &self.bind_group_layout);
 
-        (to_texture_batches, world_batches, ui_batches)
+        Instructions { world_range, ui_range, to_textures_ranges }
     }
 
-    pub fn prepare_pass<'pass>(&'pass self, render_pass: &mut wgpu::RenderPass<'pass>) {
+    
+
+    pub fn prepare_pass<'pass>(&'pass self, render_pass: &mut wgpu::RenderPass<'pass>, bind_group: &'pass BindGroup) {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_bind_group(0, bind_group, &[]);
     }
 
-    pub fn render_batches<'pass>(
+    pub fn render_range<'pass>(
         &'pass self,
         render_pass: &mut wgpu::RenderPass<'pass>,
-        batches: Vec<Batch>,
+        range: Range<usize>,
         viewport: &Viewport,
         projection: [[f32; 4]; 4],
-        textures: &'pass IntMap<u64, Option<images::Texture>>,
     ) {
         render_pass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&projection));
         render_pass.set_viewport(
@@ -319,17 +271,14 @@ impl Renderer {
             0.,
             1.,
         );
-        for Batch { texture_id, range } in batches {
-            if let Some(Some(texture)) = textures.get(&texture_id) {
-                render_pass.set_bind_group(0, &texture.bind_group, &[]);
-                render_pass.draw(0..4, range);
-            }
-        }
+        render_pass.draw(0..4, range.start as u32..range.end as u32);
     }
 }
 
-#[derive(Default, Debug)]
-pub struct Batch {
-    texture_id: u64,
-    range: Range<u32>,
+#[derive(Debug)]
+pub struct Instructions {
+    pub world_range: Range<usize>,
+    pub ui_range: Range<usize>,
+    pub to_textures_ranges: Vec<(u64, Range<usize>)>,
 }
+
