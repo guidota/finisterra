@@ -7,6 +7,8 @@ use engine::{
 use nohash_hasher::IntMap;
 use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration, BindGroup};
 
+use crate::images::Images;
+
 use self::texture_array::TextureArray;
 
 mod texture_array;
@@ -40,32 +42,17 @@ impl Renderer {
                             view_dimension: wgpu::TextureViewDimension::D2,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
-                        count: NonZeroU32::new(10000),
+                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: NonZeroU32::new(10000),
+                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
                     },
                 ],
                 label: Some("texture_bind_group_layout"),
             });
-
-        // let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        //     entries: &[
-        //         wgpu::BindGroupEntry {
-        //             binding: 0,
-        //             resource: wgpu::BindingResource::TextureViewArray(&[]),
-        //         },
-        //         wgpu::BindGroupEntry {
-        //             binding: 1,
-        //             resource: wgpu::BindingResource::SamplerArray(&[]),
-        //         },
-        //     ],
-        //     layout: &bind_group_layout,
-        //     label: Some("bind group"),
-        // });
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -158,7 +145,7 @@ impl Renderer {
         match target {
             Target::World => {
                 self.draws_to_world.push(parameters);
-                            }
+            }
             Target::UI => {
                 self.draws_to_ui.push(parameters);
             }
@@ -190,19 +177,21 @@ impl Renderer {
             });
         }
 
-        let mut to_textures_ranges = vec![];
+        for draw in self.draws_to_world.iter_mut().chain(self.draws_to_ui.iter_mut()) {
+            if let Some(index) = self.texture_array.get_index(draw.index as u64) {
+                draw.index = index;
+            }
+        }
 
+        let mut to_textures_ranges = vec![];
 
         let mut offset = 0;
         for (texture_id, draws) in &mut self.draws_to_textures {
             for draw in draws.iter_mut() {
-                if let Some(index) = self.pre_render_texture_array.indices.get(&(draw.index as u64)) {
-                    draw.index = *index;
-                } else {
-                    log::error!("trying to render to_texture bad indexed texture {}", draw.index);
+                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as u64) {
+                    draw.index = index;
                 }
             }
-
             let data = bytemuck::cast_slice(&draws[..]);
             let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
             queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
@@ -215,13 +204,6 @@ impl Renderer {
         self.draws_to_textures.clear();
 
         let world_range = offset..(offset + self.draws_to_world.len());
-        for draw in self.draws_to_world.iter_mut() {
-            if let Some(index) = self.texture_array.indices.get(&(draw.index as u64)) {
-                draw.index = *index;
-            } else {
-                log::error!("trying to render bad indexed texture {}", draw.index);
-            }
-        }
         let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
         let data = bytemuck::cast_slice(&self.draws_to_world[..]);
         queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
@@ -229,13 +211,6 @@ impl Renderer {
         self.draws_to_world.clear();
 
         let ui_range = offset..(offset + self.draws_to_ui.len());
-        for draw in self.draws_to_ui.iter_mut() {
-            if let Some(index) = self.texture_array.indices.get(&(draw.index as u64)) {
-                draw.index = *index;
-            } else {
-                log::error!("trying to render bad indexed texture {}", draw.index);
-            }
-        }
         let buffer_offset = (std::mem::size_of::<DrawImage>() * offset) as u64;
         let data = bytemuck::cast_slice(&self.draws_to_ui[..]);
         queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
@@ -246,8 +221,6 @@ impl Renderer {
 
         Instructions { world_range, ui_range, to_textures_ranges }
     }
-
-    
 
     pub fn prepare_pass<'pass>(&'pass self, render_pass: &mut wgpu::RenderPass<'pass>, bind_group: &'pass BindGroup) {
         render_pass.set_pipeline(&self.pipeline);

@@ -482,10 +482,10 @@ dependencies = [
  "lazy_static",
  "rand",
  "random_name_generator",
+ "roma",
  "rustc-hash",
  "serde",
  "toml",
- "veril",
 ]
 
 [[package]]
@@ -1161,9 +1161,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.11.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
 dependencies = [
  "either",
 ]
@@ -1846,6 +1846,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "216080ab382b992234dda86873c18d4c48358f5cfcb70fd693d7f6f2131b628b"
 
 [[package]]
+name = "roma"
+version = "0.1.0"
+dependencies = [
+ "bmfont",
+ "bytemuck",
+ "cgmath",
+ "engine",
+ "image",
+ "log",
+ "nohash-hasher",
+ "pollster",
+ "rustc-hash",
+ "wgpu",
+ "winit",
+ "winit_input_helper",
+]
+
+[[package]]
 name = "ron"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2354,24 +2372,6 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
-
-[[package]]
-name = "veril"
-version = "0.1.0"
-dependencies = [
- "bmfont",
- "bytemuck",
- "cgmath",
- "engine",
- "image",
- "log",
- "nohash-hasher",
- "pollster",
- "rustc-hash",
- "wgpu",
- "winit",
- "winit_input_helper",
-]
 
 [[package]]
 name = "version_check"

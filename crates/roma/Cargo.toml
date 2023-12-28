@@ -1,5 +1,5 @@
 [package]
-name = "veril"
+name = "roma"
 version = "0.1.0"
 edition = "2021"
 
@@ -31,6 +31,3 @@ image = { version = "0.24", default-features = false, features = [
 # performance
 nohash-hasher = "0.2"
 rustc-hash = "1.1"
-
-[profile.release]
-debug = true

@@ -5,7 +5,6 @@ resolver = "2"
 [workspace.dependencies]
 definitions = { path = "crates/definitions" }
 roma = { path = "crates/roma" }
-veril = { path = "crates/veril" }
 lorenzo = { path = "crates/lorenzo" }
 engine = { path = "crates/engine" }
 
@@ -24,5 +23,5 @@ log = "0.4"
 rand = { version = "0.8", features = ["std", "std_rng"] }
 rustc-hash = "1.1.0"
 
-[profile.release]
-debug = true
+# [profile.release]
+# debug = true

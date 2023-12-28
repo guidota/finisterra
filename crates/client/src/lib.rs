@@ -226,6 +226,7 @@ impl Finisterra {
 
         // register textures
         for image in resources.images.iter().flatten() {
+            println!("registering texture num {}", image.file_num);
             engine.set_texture(
                 format!("./assets/ao_99z/graphics/{}.png", image.file_num).as_str(),
                 image.file_num,
@@ -306,16 +307,26 @@ impl Finisterra {
 
     fn update_camera<E: GameEngine>(&mut self, engine: &mut E) {
         let window_size = engine.get_window_size();
-        let height = 32. * 14. * 2.;
-        let width = 32. * 19. * 2.;
+        // let height = 32. * 14. * 2.;
+        // let width = 32. * 19. * 2.;
+        // engine.set_world_camera_viewport(engine::camera::Viewport {
+        //     x: 10.,
+        //     y: window_size.height as f32 - 10. - height,
+        //     width,
+        //     height,
+        // });
+        //
+        // self.render_size = (width as usize, height as usize);
+        let height = window_size.height as f32;
+        let width = window_size.width as f32;
         engine.set_world_camera_viewport(engine::camera::Viewport {
-            x: 10.,
-            y: window_size.height as f32 - 10. - height,
+            x: 0.,
+            y: 0.,
             width,
             height,
         });
-
         self.render_size = (width as usize, height as usize);
+
         engine.set_ui_camera_viewport(engine::camera::Viewport {
             x: 0.,
             y: 0.,
@@ -338,6 +349,7 @@ impl Finisterra {
                     todo!()
                 }
                 RenderTarget::Dirty { texture_id } => {
+                    println!("map layer {i} texture_id {texture_id}");
                     for (y, x) in iproduct!(0..100, 0..100) {
                         let tile = &self.current_map.tiles[x][y];
                         let world_x = (x * TILE_SIZE) as u16;

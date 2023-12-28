@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use nohash_hasher::IntMap;
+use crate::images::Images;
 
 pub struct TextureArray {
-    pub indices: IntMap<u64, u32>,
+    indices: Vec<Option<u32>>,
     textures: Vec<Rc<wgpu::TextureView>>,
     samplers: Vec<Rc<wgpu::Sampler>>,
     bind_group: Option<wgpu::BindGroup>,
@@ -11,21 +11,33 @@ pub struct TextureArray {
 
 impl TextureArray {
     pub fn new() -> Self {
+        let mut indices = Vec::with_capacity(Images::MAX_IMAGES as usize);
+        for _ in 0..Images::MAX_IMAGES {
+            indices.push(None);
+        }
         Self {
-            indices: IntMap::default(),
+            indices,
             textures: vec![],
             samplers: vec![],
             bind_group: None,
         }
     }
 
+    pub fn has_texture(&self, id: u64) -> bool {
+        self.indices[id as usize].is_some()
+    }
+
+    pub fn get_index(&self, id: u64) -> Option<u32> {
+        self.indices[id as usize]
+    }
+
     pub fn push(&mut self, id: u64, texture: Rc<wgpu::TextureView>, sampler: Rc<wgpu::Sampler>) {
-        if self.indices.contains_key(&id) {
+        if self.indices[id as usize].is_some() {
             return;
         }
         let index = self.textures.len() as u32;
 
-        self.indices.insert(id, index);
+        self.indices[id as usize] = Some(index);
         self.textures.push(texture);
         self.samplers.push(sampler);
         self.bind_group = None;
@@ -36,7 +48,10 @@ impl TextureArray {
             return;
         }
         if self.bind_group.is_none() {
-            log::info!("recreating texture array bind group");
+            log::info!(
+                "recreating texture array bind group: {} textures",
+                self.textures.len()
+            );
             let texture_view_array = self
                 .textures
                 .iter()

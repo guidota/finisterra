@@ -29,12 +29,6 @@ pub enum Movement {
     },
 }
 
-#[derive(Debug)]
-pub struct State {
-    pub movement: Movement,
-    pub direction: Heading,
-}
-
 type Animated<T> = (T, ([Rc<Animation>; 4], usize));
 
 #[derive(Debug)]
@@ -60,7 +54,7 @@ pub struct Entity {
 }
 
 lazy_static::lazy_static! {
-    static ref NAME_GENERATOR: RNG = RNG::try_from(&Language::Fantasy).unwrap();
+    static ref NAME_GENERATOR: RNG = RNG::from(&Language::Fantasy);
 }
 
 impl Entity {
@@ -279,10 +273,14 @@ impl Entity {
     }
 
     /// Draws every frame to the render target textrue
-    pub fn prepare_texture<E: GameEngine>(&mut self, engine: &mut E, resources: &ClientResources) {
+    fn prepare_texture<E: GameEngine>(
+        &mut self,
+        engine: &mut E,
+        resources: &ClientResources,
+    ) -> u64 {
         let texture_id = match self.render_target {
-            RenderTarget::Ready { .. } => {
-                return;
+            RenderTarget::Ready { texture_id } => {
+                return texture_id;
             }
             RenderTarget::Uninitialized => {
                 let texture_id = engine.create_texture(self.texture_dimensions);
@@ -422,12 +420,12 @@ impl Entity {
             }
         }
         self.render_target = RenderTarget::Ready { texture_id };
+        texture_id
     }
 
     pub fn draw<E: GameEngine>(&mut self, engine: &mut E, resources: &ClientResources) {
-        self.prepare_texture(engine, resources);
-
-        if let RenderTarget::Ready { texture_id } = self.render_target {
+        if self.should_draw_to_texture() {
+            let texture_id = self.prepare_texture(engine, resources);
             let [x, y] = self.position;
             let [world_x, world_y] = self.world_position;
             let z = Z_ORDERING[2][x as usize][y as usize];
@@ -435,11 +433,7 @@ impl Entity {
             let frame_height = self.texture_dimensions.height / 4;
 
             let (image_x, image_y) = self.get_current_frame_offsets(frame_width, frame_height);
-            let color = if self.invisible {
-                [200, 200, 200, 120]
-            } else {
-                [255, 255, 255, 255]
-            };
+            let color = self.body_color();
             engine.draw_image(
                 texture_id,
                 DrawImage {
@@ -454,15 +448,108 @@ impl Entity {
                 },
                 Target::World,
             );
+        } else {
+            // draw current frame to world
+            let [x, y] = self.position;
+            let [world_x, world_y] = self.world_position;
+            let world_x = world_x as u16 - (TILE_SIZE / 2) as u16;
+            let world_y = world_y as u16;
+            let z = Z_ORDERING[2][x as usize][y as usize];
+
+            let heading = self.direction as usize;
+            if let Some((body, (animations, frame))) = &self.body {
+                self.draw_animation(
+                    engine,
+                    resources,
+                    &animations[heading],
+                    *frame,
+                    Position::new(world_x, world_y, z),
+                );
+                let head_offset = &body.head_offset;
+                if let Some((_, images)) = &self.head {
+                    let x = (world_x as isize - head_offset.x) as u16;
+                    let y = (world_y as isize - head_offset.y) as u16;
+                    let image = &images[heading];
+                    self.draw_image(engine, image, Position::new(x, y, z));
+                }
+
+                if let Some((_, images)) = &self.head_gear {
+                    let x = (world_x as isize - head_offset.x) as u16;
+                    let y = (world_y as isize - head_offset.y) as u16;
+                    let image = &images[heading];
+                    self.draw_image(
+                        engine,
+                        image,
+                        Position::new(x, y, get_headgear_z(z, self.direction)),
+                    );
+                }
+
+                if let Some((_, (animations, frame))) = &self.weapon {
+                    self.draw_animation(
+                        engine,
+                        resources,
+                        &animations[heading],
+                        *frame,
+                        Position::new(world_x, world_y, get_weapon_z(z, self.direction)),
+                    );
+                }
+                if let Some((_, (animations, frame))) = &self.shield {
+                    self.draw_animation(
+                        engine,
+                        resources,
+                        &animations[heading],
+                        *frame,
+                        Position::new(world_x, world_y, get_shield_z(z, self.direction)),
+                    );
+                }
+            }
         }
     }
 
+    fn draw_grh<E: GameEngine>(
+        &self,
+        engine: &mut E,
+        resources: &ClientResources,
+        image_id: u32,
+        position: Position,
+    ) {
+        if let Some(image) = &resources.images[image_id as usize] {
+            self.draw_image(engine, image, position);
+        }
+    }
+
+    fn draw_image<E: GameEngine>(&self, engine: &mut E, image: &Image, mut position: Position) {
+        let image_num = image.file_num;
+        position.x -= (image.width as f32 / 2.) as u16;
+
+        engine.draw_image(
+            image_num,
+            DrawImage {
+                position,
+                color: self.body_color(),
+                source: [image.x, image.y, image.width, image.height],
+                index: image_num as u32,
+            },
+            Target::World,
+        );
+    }
+
+    fn draw_animation<E: GameEngine>(
+        &self,
+        engine: &mut E,
+        resources: &ClientResources,
+        animation: &Animation,
+        frame: usize,
+        position: Position,
+    ) {
+        if animation.frames.is_empty() {
+            return;
+        }
+        self.draw_grh(engine, resources, animation.frames[frame], position);
+    }
+
     pub fn draw_name<E: GameEngine>(&self, engine: &mut E) {
-        let color = if self.invisible {
-            [171, 139, 98, 150]
-        } else {
-            [0, 128, 255, 255]
-        };
+        let color = self.name_color();
         let [x, y] = self.position;
         let [world_x, world_y] = self.world_position;
         let z = Z_ORDERING[2][x as usize][y as usize];
@@ -480,6 +567,26 @@ impl Entity {
             },
             Target::World,
         );
+    }
+
+    pub fn should_draw_to_texture(&self) -> bool {
+        self.invisible
+    }
+
+    fn name_color(&self) -> engine::draw::Color {
+        if self.invisible {
+            [171, 139, 98, 150]
+        } else {
+            [0, 128, 255, 255]
+        }
+    }
+
+    fn body_color(&self) -> engine::draw::Color {
+        if self.invisible {
+            [200, 200, 200, 120]
+        } else {
+            [255, 255, 255, 255]
+        }
     }
 
     fn get_current_frame_offsets(&self, frame_width: u16, frame_height: u16) -> (u16, u16) {

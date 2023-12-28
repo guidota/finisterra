@@ -1,6 +1,6 @@
 use client::{Finisterra, WINDOW_HEIGHT, WINDOW_WIDTH};
 use engine::game::run_game;
-use veril::Veril;
+use roma::Roma;
 
 mod settings;
 
@@ -11,5 +11,5 @@ fn main() {
         title: "Finisterra".to_string(),
         vsync: true,
     };
-    run_game::<Finisterra, Veril>(settings);
+    run_game::<Finisterra, Roma>(settings);
 }

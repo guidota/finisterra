@@ -28,7 +28,7 @@ mod sounds;
 mod state;
 mod texture;
 
-pub struct Veril {
+pub struct Roma {
     state: State,
     delta: std::time::Duration,
 
@@ -44,7 +44,7 @@ pub struct Veril {
     depth_textures: HashMap<engine::window::Size, wgpu::TextureView>,
 }
 
-impl GameEngine for Veril {
+impl GameEngine for Roma {
     fn initialize(window: winit::window::Window, settings: &engine::settings::Settings) -> Self {
         let present_mode = if settings.vsync {
             PresentMode::AutoVsync
@@ -136,28 +136,16 @@ impl GameEngine for Veril {
             &self.state.queue,
             parameters.index as u64,
         ) {
-            let texture = self
-                .images
-                .get(parameters.index as u64)
-                .unwrap()
-                .as_ref()
-                .unwrap();
-            let view = texture.view.clone();
-            let sampler = texture.sampler.clone();
+            let texture_array = match target {
+                Target::World | Target::UI => &mut self.renderer.texture_array,
+                _ => &mut self.renderer.pre_render_texture_array,
+            };
+            if !texture_array.has_texture(parameters.index as u64) {
+                let texture = self.images.get(parameters.index as u64).unwrap().unwrap();
+                let view = texture.view.clone();
+                let sampler = texture.sampler.clone();
 
-            match target {
-                Target::World | Target::UI => {
-                    self.renderer
-                        .texture_array
-                        .push(parameters.index as u64, view, sampler);
-                }
-                _ => {
-                    self.renderer.pre_render_texture_array.push(
-                        parameters.index as u64,
-                        view,
-                        sampler,
-                    );
-                }
+                texture_array.push(parameters.index as u64, view, sampler);
             }
 
             self.renderer.draw_image(parameters, target);
@@ -188,19 +176,16 @@ impl GameEngine for Veril {
             .images
             .load_texture(&self.state.device, &self.state.queue, texture_id)
         {
-            let texture = self.images.get(texture_id).unwrap().as_ref().unwrap();
-            let view = texture.view.clone();
-            let sampler = texture.sampler.clone();
+            let texture_array = match target {
+                Target::World | Target::UI => &mut self.renderer.texture_array,
+                _ => &mut self.renderer.pre_render_texture_array,
+            };
+            if !texture_array.has_texture(texture_id) {
+                let texture = self.images.get(texture_id).unwrap().unwrap();
+                let view = texture.view.clone();
+                let sampler = texture.sampler.clone();
 
-            match target {
-                Target::World | Target::UI => {
-                    self.renderer.texture_array.push(texture_id, view, sampler);
-                }
-                _ => {
-                    self.renderer
-                        .pre_render_texture_array
-                        .push(texture_id, view, sampler);
-                }
+                texture_array.push(texture_id, view, sampler);
             }
         }
 
