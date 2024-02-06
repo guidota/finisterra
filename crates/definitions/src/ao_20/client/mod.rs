@@ -187,6 +187,7 @@ pub fn load_headgears(path: &str) -> Result<FxHashMap<usize, HeadGear>, Error> {
                 head_section.get_number("Head2"),
             ],
         };
+        println!("Helmet: {headgear:#?}");
         headgears.insert(headgear_number, headgear);
     }
 

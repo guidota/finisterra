@@ -16,14 +16,14 @@ impl UI {
     pub fn resize(&mut self, (width, height): (usize, usize)) {
         self.border = match (width, height) {
             (WINDOW_WIDTH, WINDOW_HEIGHT) => 10,
-            (1920, 1080) => 15,
+            // (1920, 1080) => 15,
             _ => 15,
         };
         self.right_panel_size = (width as f32 / 2.5) as usize - self.border * 2;
         self.top_panel_size = height / 6;
     }
 
-    pub fn draw(&mut self, window_size: (usize, usize), render_size: (usize, usize)) {
+    pub fn draw(&mut self, _window_size: (usize, usize), _render_size: (usize, usize)) {
         let delta = get_delta();
         ui::align(ui::Alignment::TOP_RIGHT, || {
             let mut textbox =

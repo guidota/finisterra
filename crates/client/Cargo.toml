@@ -3,18 +3,14 @@ name = "client"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 definitions.workspace = true
 roma.workspace = true
+engine.workspace = true
 serde.workspace = true
 toml.workspace = true
 rand.workspace = true
 rustc-hash.workspace = true
 lazy_static = "1.4"
-itertools = "0.11"
+itertools = "0.12"
 random_name_generator = "0.3.6"
-
-[profile.release]
-debug = 1

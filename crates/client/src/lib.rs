@@ -1,15 +1,21 @@
 use definitions::{
-    animation::Animation,
     ao_20, ao_99z,
     atlas::{AtlasResource, AtlasType},
     client::ClientResources,
     image::Image,
 };
+use engine::{
+    camera::Zoom,
+    draw::{
+        image::DrawImage,
+        text::{DrawText, Orientation},
+        Color, Position, Target,
+    },
+    engine::GameEngine,
+    game::Game,
+};
 use itertools::iproduct;
-use roma::*;
 use std::cmp::min;
-use ui::UI;
-use z_ordering::{get_shield_z, get_weapon_z};
 
 use definitions::map::Map;
 use entity::Entity;
@@ -18,7 +24,6 @@ use settings::Settings;
 pub mod entity;
 pub mod input;
 pub mod settings;
-pub mod ui;
 
 mod z_ordering;
 
@@ -35,7 +40,7 @@ const MAP_WIDTH: usize = 100;
 const MAP_HEIGHT: usize = 100;
 
 lazy_static::lazy_static! {
-    static ref Z_ORDERING: Vec<Vec<Vec<f32>>> = {
+    pub static ref Z_ORDERING: Vec<Vec<Vec<f32>>> = {
         let mut z_ordering = vec![vec![vec![0.; MAP_HEIGHT]; MAP_WIDTH]; LAYERS];
 
         for (layer, layer_ordering) in z_ordering.iter_mut().enumerate().take(LAYERS) {
@@ -50,6 +55,19 @@ lazy_static::lazy_static! {
     };
 }
 
+#[derive(Debug)]
+pub enum RenderTarget {
+    Uninitialized,
+    Dirty { texture_id: u64 },
+    Ready { texture_id: u64 },
+}
+
+#[derive(Debug)]
+pub enum TextureState {
+    Dirty,
+    Ready,
+}
+
 pub struct Finisterra {
     pub settings: Settings,
     pub resources: ClientResources,
@@ -57,14 +75,65 @@ pub struct Finisterra {
     pub position: (f32, f32),
     pub entities: Vec<Entity>,
 
-    pub ui: UI,
-
     pub window_size: (usize, usize),
     pub render_size: (usize, usize),
+
+    pub map_layer_textures: [RenderTarget; 4],
+
+    pub draw_entities: bool,
+    pub draw_names: bool,
+    pub draw_map: bool,
+}
+
+impl Game for Finisterra {
+    fn initialize<E: engine::engine::GameEngine>(engine: &mut E) -> Self {
+        let mut finisterra = Self::ao_20(engine);
+
+        const CHARS: usize = 1;
+        for i in 0..CHARS {
+            let entity = Entity::random(engine, i, &finisterra.resources);
+
+            let [x, y] = entity.position;
+            finisterra.current_map.tiles[x as usize][y as usize].user = Some(i);
+            finisterra.entities.push(entity);
+        }
+
+        let position = &finisterra.entities[0].position.clone();
+        finisterra.position = (position[0], position[1]);
+
+        let mut i = finisterra.entities.len();
+        let ratio = 1;
+        for x in -ratio..=ratio {
+            for y in -ratio..=ratio {
+                if x == 0 && y == 0 {
+                    continue;
+                }
+                let id = i;
+                let mut entity = Entity::random(engine, id, &finisterra.resources);
+
+                entity.set_position(position[0] + x as f32, position[1] + y as f32);
+
+                finisterra.current_map.tiles[entity.position[0] as usize]
+                    [entity.position[1] as usize]
+                    .user = Some(id);
+                finisterra.entities.push(entity);
+
+                i += 1;
+            }
+        }
+
+        finisterra
+    }
+
+    fn tick<E: engine::engine::GameEngine>(&mut self, engine: &mut E) {
+        self.game_loop(engine)
+    }
 }
 
 impl Finisterra {
-    pub fn ao_20(ui: UI) -> Self {
+    pub const TAHOMA_ID: u64 = 1;
+
+    pub fn ao_20<E: engine::engine::GameEngine>(engine: &mut E) -> Self {
         let paths = ao_20::client::ClientResourcesPaths {
             bodies: "./assets/ao_20/init/cuerpos.dat",
             templates: "./assets/ao_20/init/moldes.ini",
@@ -81,7 +150,37 @@ impl Finisterra {
             ao_20::client::load_client_resources(paths).expect("can load client resources");
         let current_map = resources.maps.get(&1).expect("can get map").clone();
 
+        // register textures
+        for image in resources.images.iter().flatten() {
+            engine.set_texture(
+                format!("./assets/ao_20/graphics/{}.png", image.file_num).as_str(),
+                image.file_num,
+            );
+        }
+
+        let texture_id = engine.add_texture("./assets/fonts/shadowed-font.png");
+        engine.add_font(Self::TAHOMA_ID, "./assets/fonts/font.fnt", texture_id);
+
         let entities = vec![];
+
+        let dimensions = engine::draw::Dimensions {
+            width: (TILE_SIZE * MAP_WIDTH) as u16,
+            height: (TILE_SIZE * MAP_HEIGHT) as u16,
+        };
+        let map_layer_textures = [
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+        ];
 
         Self {
             settings: Settings::default(),
@@ -89,13 +188,19 @@ impl Finisterra {
             current_map,
             position: (0., 0.),
             entities,
-            ui,
+
             window_size: (WINDOW_WIDTH, WINDOW_HEIGHT),
             render_size: (WINDOW_WIDTH, WINDOW_HEIGHT),
+
+            map_layer_textures,
+
+            draw_entities: true,
+            draw_names: true,
+            draw_map: true,
         }
     }
 
-    pub fn ao_99z(ui: UI) -> Self {
+    pub fn ao_99z<E: engine::engine::GameEngine>(engine: &mut E) -> Self {
         let atlas = AtlasResource {
             metadata_path: "./assets/finisterra/atlas.toml",
             image_id: 0,
@@ -119,66 +224,76 @@ impl Finisterra {
         let current_map = resources.maps.get(&1).expect("can get map").clone();
         let entities = vec![];
 
+        // register textures
+        for image in resources.images.iter().flatten() {
+            println!("registering texture num {}", image.file_num);
+            engine.set_texture(
+                format!("./assets/ao_99z/graphics/{}.png", image.file_num).as_str(),
+                image.file_num,
+            );
+        }
+
+        let texture_id = engine.add_texture("./assets/fonts/shadowed-font.png");
+        engine.add_font(Self::TAHOMA_ID, "./assets/fonts/font.fnt", texture_id);
+
+        let dimensions = engine::draw::Dimensions {
+            width: (TILE_SIZE * MAP_WIDTH) as u16,
+            height: (TILE_SIZE * MAP_HEIGHT) as u16,
+        };
+        let map_layer_textures = [
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+            RenderTarget::Uninitialized,
+            RenderTarget::Uninitialized,
+            RenderTarget::Dirty {
+                texture_id: engine.create_texture(dimensions),
+            },
+        ];
+
         Self {
             settings: Settings::default(),
             resources,
             current_map,
             position: (50., 50.),
             entities,
-            ui,
+
             window_size: (WINDOW_WIDTH, WINDOW_HEIGHT),
             render_size: (WINDOW_WIDTH, WINDOW_HEIGHT),
+
+            map_layer_textures,
+            draw_entities: true,
+            draw_names: true,
+            draw_map: true,
         }
     }
 
-    pub fn game_loop(&mut self) {
-        self.process_input();
-        self.update_camera();
-        self.update_entities();
-        self.draw_map();
-        self.draw_ui();
+    pub fn game_loop<E: GameEngine>(&mut self, engine: &mut E) {
+        self.process_input(engine);
+        self.update_camera(engine);
+        self.update_entities(engine);
+        self.draw_map(engine);
+        self.draw_ui(engine);
     }
 
-    pub fn resize(&mut self, window_size: (usize, usize)) {
-        self.ui.resize(window_size);
-        println!("new window size {}-{}", window_size.0, window_size.1);
-        let render_width = window_size.0 - self.ui.border * 2 - self.ui.right_panel_size;
-        let render_height = window_size.1 - self.ui.border * 2 - self.ui.top_panel_size;
-
-        self.render_size = (render_width, render_height);
-        self.window_size = window_size;
-
-        // set_camera_size(self.render_size.0 as f32, self.render_size.1 as f32);
-        set_camera_size(
-            self.window_size.0 as f32 - 40.,
-            self.window_size.1 as f32 - 40.,
-        );
-
-        if render_width > TILES * TILE_SIZE * 2 {
-            set_camera_zoom(Zoom::Double);
-        } else {
-            set_camera_zoom(Zoom::None);
-        }
-    }
-
-    fn get_render_tiles(&self, extra: usize) -> (usize, usize) {
+    fn get_render_tiles(&self, extra: usize, zoom: Zoom) -> (usize, usize) {
         let (render_width, render_height) = self.render_size;
-        let zoom = match get_camera_zoom() {
+        let zoom = match zoom {
             Zoom::None => 1.,
             Zoom::Double => 2.,
         };
 
         (
-            (render_width as f32 / TILE_SIZE as f32 / zoom).ceil() as usize + extra,
-            (render_height as f32 / TILE_SIZE as f32 / zoom).ceil() as usize + extra,
+            ((render_width as f32 / 2. / TILE_SIZE as f32 / zoom).ceil() as usize) + extra,
+            ((render_height as f32 / 2. / TILE_SIZE as f32 / zoom).ceil() as usize) + extra,
         )
     }
 
-    fn update_entities(&mut self) {
-        let delta = get_delta();
+    fn update_entities<E: GameEngine>(&mut self, engine: &mut E) {
+        let delta = engine.get_delta();
 
         let (x, y) = (self.position.0 as usize, self.position.1 as usize);
-        let (w_range, h_range) = self.get_render_tiles(0);
+        let (w_range, h_range) = self.get_render_tiles(1, engine.get_world_camera_zoom());
         let (y_start, y_end) = (y.saturating_sub(h_range), min(y + h_range, MAP_HEIGHT));
         let (x_start, x_end) = (x.saturating_sub(w_range), min(x + w_range, MAP_WIDTH));
         for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
@@ -190,111 +305,254 @@ impl Finisterra {
         }
     }
 
-    fn update_camera(&self) {
+    fn update_camera<E: GameEngine>(&mut self, engine: &mut E) {
+        let window_size = engine.get_window_size();
+        // let height = 32. * 14. * 2.;
+        // let width = 32. * 19. * 2.;
+        // engine.set_world_camera_viewport(engine::camera::Viewport {
+        //     x: 10.,
+        //     y: window_size.height as f32 - 10. - height,
+        //     width,
+        //     height,
+        // });
+        //
+        // self.render_size = (width as usize, height as usize);
+        let height = window_size.height as f32;
+        let width = window_size.width as f32;
+        engine.set_world_camera_viewport(engine::camera::Viewport {
+            x: 0.,
+            y: 0.,
+            width,
+            height,
+        });
+        self.render_size = (width as usize, height as usize);
+
+        engine.set_ui_camera_viewport(engine::camera::Viewport {
+            x: 0.,
+            y: 0.,
+            width: window_size.width as f32,
+            height: window_size.height as f32,
+        });
+
         let x = self.position.0 * TILE_SIZE as f32 - HALF_TILE as f32;
         let y = self.position.1 * TILE_SIZE as f32;
-        set_camera_position(x.floor(), y.floor());
+        engine.set_world_camera_position(engine::camera::Position {
+            x: x.floor(),
+            y: y.floor(),
+        });
     }
 
-    fn draw_map(&self) {
-        let (x, y) = (self.position.0 as usize, self.position.1 as usize);
+    fn draw_map<E: GameEngine>(&mut self, engine: &mut E) {
+        for i in [0, 3].iter() {
+            match self.map_layer_textures[*i] {
+                RenderTarget::Uninitialized => {
+                    todo!()
+                }
+                RenderTarget::Dirty { texture_id } => {
+                    println!("map layer {i} texture_id {texture_id}");
+                    for (y, x) in iproduct!(0..100, 0..100) {
+                        let tile = &self.current_map.tiles[x][y];
+                        let world_x = (x * TILE_SIZE) as u16;
+                        let world_y = ((y * TILE_SIZE) - TILE_SIZE) as u16;
+                        let position = Position::new(world_x, world_y, calculate_z(*i, x, y));
 
-        let (w_range, h_range) = self.get_render_tiles(3);
+                        if tile.graphics[*i] != 0 {
+                            self.draw_grh(
+                                engine,
+                                tile.graphics[*i] as u32,
+                                position,
+                                Target::Texture { id: texture_id },
+                            );
+                        }
+                    }
+                    self.map_layer_textures[*i] = RenderTarget::Ready { texture_id };
+                }
+                RenderTarget::Ready { .. } => {}
+            }
+        }
+        self.draw_map_layer(engine, 0, [255, 255, 255, 255]);
+
+        let (x, y) = (
+            self.position.0.round() as usize,
+            self.position.1.round() as usize,
+        );
+        let (w_range, h_range) = self.get_render_tiles(5, engine.get_world_camera_zoom());
         let (y_start, y_end) = (y.saturating_sub(h_range), min(y + h_range, MAP_HEIGHT));
         let (x_start, x_end) = (x.saturating_sub(w_range), min(x + w_range, MAP_WIDTH));
         for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
             let tile = &self.current_map.tiles[x][y];
-            let world_x = (x * TILE_SIZE) as f32;
-            let world_y = ((y * TILE_SIZE) - TILE_SIZE) as f32;
+            let world_x = (x * TILE_SIZE) as u16;
+            let world_y = ((y * TILE_SIZE) - TILE_SIZE) as u16;
 
-            for layer in 0..LAYERS {
-                if tile.graphics[layer] != 0 {
-                    let z = Z_ORDERING[layer][x][y];
-                    self.draw_grh(tile.graphics[layer] as u32, world_x, world_y, z);
+            for layer in [1, 2].iter() {
+                if tile.graphics[*layer] != 0 {
+                    let z = Z_ORDERING[*layer][x][y];
+                    if self.draw_map {
+                        let position = Position::new(world_x, world_y, z);
+                        self.draw_grh(
+                            engine,
+                            tile.graphics[*layer] as u32,
+                            position,
+                            Target::World,
+                        );
+                    };
                 }
             }
+        }
+
+        let mut visible_entities = 0;
+        let (w_range, h_range) = self.get_render_tiles(1, engine.get_world_camera_zoom());
+        let (y_start, y_end) = (y.saturating_sub(h_range), min(y + h_range, MAP_HEIGHT));
+        let (x_start, x_end) = (x.saturating_sub(w_range), min(x + w_range, MAP_WIDTH));
+
+        for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
+            let tile = &self.current_map.tiles[x][y];
 
             if let Some(user) = tile.user {
-                let entity = &self.entities[user];
-                self.draw_entity(entity, 2);
+                visible_entities += 1;
+                let entity = &mut self.entities[user];
+                if self.draw_entities {
+                    entity.draw(engine, &self.resources);
+                }
+                if self.draw_names {
+                    entity.draw_name(engine);
+                }
             }
         }
+
+        let text = engine.parse_text(
+            Self::TAHOMA_ID,
+            &format!("visible entities: {visible_entities}"),
+            Orientation::Center,
+        );
+        engine.draw_text(
+            Self::TAHOMA_ID,
+            DrawText {
+                text: &text.unwrap(),
+                position: Position {
+                    x: 50,
+                    y: 30,
+                    z: 1.,
+                },
+                color: [255, 255, 255, 255],
+            },
+            Target::UI,
+        );
+
+        let trigger = self.current_map.tiles[x][y].trigger;
+        let text = engine.parse_text(
+            Self::TAHOMA_ID,
+            &format!("trigger: {trigger}"),
+            Orientation::Center,
+        );
+        engine.draw_text(
+            Self::TAHOMA_ID,
+            DrawText {
+                text: &text.unwrap(),
+                position: Position {
+                    x: 50,
+                    y: 45,
+                    z: 1.,
+                },
+                color: [255, 255, 255, 255],
+            },
+            Target::UI,
+        );
+
+        let trigger = self.current_map.tiles[x][y].trigger;
+        let under_roof = trigger == 1 || trigger >= 20;
+        let color = if under_roof {
+            [255, 255, 255, 100]
+        } else {
+            [255, 255, 255, 255]
+        };
+        self.draw_map_layer(engine, 3, color);
     }
 
-    fn draw_entity(&self, entity: &Entity, layer: usize) {
-        let [x, y] = entity.position;
-        let [world_x, world_y] = entity.world_position;
-        let z = Z_ORDERING[layer][x as usize][y as usize];
+    fn draw_map_layer<E: GameEngine>(&mut self, engine: &mut E, i: usize, color: Color) {
+        if let RenderTarget::Ready { texture_id } = self.map_layer_textures[i] {
+            let viewport = engine.get_world_camera_viewport();
+            let position = engine.get_world_camera_position();
+            let x = position.x - viewport.width / 2.;
+            let y = position.y - viewport.height / 2.;
+            let inverted_y = ((100. - self.position.1) * TILE_SIZE as f32) - viewport.height / 2.;
 
-        if let Some((body, (animations, frame))) = &entity.body {
-            self.draw_animation(
-                &animations[entity.state.direction as usize],
-                *frame,
-                world_x,
-                world_y,
-                z,
+            let source = [
+                x as u16,
+                inverted_y as u16,
+                viewport.width as u16,
+                viewport.height as u16,
+            ];
+
+            engine.draw_image(
+                texture_id,
+                DrawImage {
+                    position: Position::new(x as u16, y as u16, calculate_z(i, 0, 0)),
+                    color,
+                    source,
+                    index: texture_id as u32,
+                },
+                Target::World,
             );
-            let head_offset = &body.head_offset;
-            if let Some((_, images)) = &entity.head {
-                let x = (world_x as isize - head_offset.x) as f32;
-                let y = (world_y as isize - head_offset.y) as f32;
-                let image = &images[entity.state.direction as usize];
-                self.draw_image(image, x, y, z);
-            }
-            if let Some((_, (animations, frame))) = &entity.weapon {
-                self.draw_animation(
-                    &animations[entity.state.direction as usize],
-                    *frame,
-                    world_x,
-                    world_y,
-                    get_weapon_z(z, entity.state.direction),
-                );
-            }
-            if let Some((_, (animations, frame))) = &entity.shield {
-                self.draw_animation(
-                    &animations[entity.state.direction as usize],
-                    *frame,
-                    world_x,
-                    world_y,
-                    get_shield_z(z, entity.state.direction),
-                );
-            }
         }
-
-        let position = [world_x, world_y - 10., z];
-        let color = [0, 128, 255, 255];
-        draw_parsed_text(&entity.name.1, &position, color);
     }
 
-    fn draw_animation(&self, animation: &Animation, frame: usize, x: f32, y: f32, z: f32) {
-        if animation.frames.is_empty() {
-            return;
-        }
-        self.draw_grh(animation.frames[frame], x, y, z);
-    }
-
-    fn draw_grh(&self, image_id: u32, x: f32, y: f32, z: f32) {
+    fn draw_grh<E: GameEngine>(
+        &self,
+        engine: &mut E,
+        image_id: u32,
+        position: engine::draw::Position,
+        target: Target,
+    ) {
         if let Some(image) = &self.resources.images[image_id as usize] {
-            self.draw_image(image, x, y, z);
+            self.draw_image(engine, image, position, target);
         }
     }
 
-    fn draw_image(&self, image: &Image, x: f32, y: f32, z: f32) {
+    fn draw_image<E: GameEngine>(
+        &self,
+        engine: &mut E,
+        image: &Image,
+        mut position: engine::draw::Position,
+        target: Target,
+    ) {
         let image_num = image.file_num;
-        let x = x - (image.width as f32 / 2.);
+        position.x -= (image.width as f32 / 2.) as u16;
 
-        draw_image(
+        engine.draw_image(
             image_num,
-            DrawImageParams::new(
-                &[x, y, z],
-                [255, 255, 255, 255],
-                [image.x, image.y, image.width, image.height],
-            ),
+            DrawImage {
+                position,
+                color: [255, 255, 255, 255],
+                source: [image.x, image.y, image.width, image.height],
+                index: image_num as u32,
+            },
+            target,
         );
     }
 
-    fn draw_ui(&mut self) {
-        self.ui.draw(self.window_size, self.render_size);
+    fn draw_ui<E: GameEngine>(&mut self, engine: &mut E) {
+        let delta = engine.get_delta();
+
+        let text = engine.parse_text(
+            Self::TAHOMA_ID,
+            &format!("FPS: {:.2}", 1. / delta.as_secs_f32()),
+            Orientation::Center,
+        );
+
+        engine.draw_text(
+            Self::TAHOMA_ID,
+            DrawText {
+                text: &text.unwrap(),
+                position: Position {
+                    x: 50,
+                    y: 15,
+                    z: 1.,
+                },
+                color: [255, 255, 255, 255],
+            },
+            Target::UI,
+        );
     }
 }
 
@@ -302,7 +560,7 @@ fn calculate_z(layer: usize, x: usize, y: usize) -> f32 {
     match layer {
         0 => 0.,
         3 => 1.,
-        _ => (2000. + (100. - y as f32) * 10. - x as f32) / 4000.,
+        i => (i as f32 * 1000. + (100. - y as f32) * 10. - x as f32) / 4000.,
     }
 }
 

@@ -4,26 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+engine.workspace = true
+pollster.workspace = true
+log.workspace = true
+
 # WGPU
-wgpu = "0.17.1"
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "56d9d32a072fd9d6bfc5bcb6c0fa0d5091fbd9c9" }
 cgmath = "0.18"
 bytemuck = { version = "1.12", features = ["derive"] }
 
 # winit
-winit = "0.28.1"
-winit_input_helper = "0.14"
-
-# ui
-yakui = { git = "https://github.com/SecondHalfGames/yakui.git", rev = "6ebe4e5" }
-yakui-wgpu = { git = "https://github.com/SecondHalfGames/yakui.git", rev = "6ebe4e5" }
-yakui-winit = { git = "https://github.com/SecondHalfGames/yakui.git", rev = "6ebe4e5" }
-
-# runtime
-pollster = "0.3"
-
-# misc
-anyhow = "1.0"
-rand = "0.8"
+winit.workspace = true
+winit_input_helper = "0.15"
 
 # fonts
 bmfont = { version = "0.3", default-features = false, features = [
@@ -31,17 +23,11 @@ bmfont = { version = "0.3", default-features = false, features = [
   "serde_json",
 ] }
 
+image = { version = "0.24", default-features = false, features = [
+  "png",
+  "jpeg",
+] }
+
 # performance
-smol_str = "0.2"
-smallvec = "1.10"
-lru = "0.12"
 nohash-hasher = "0.2"
-# rustc-hash.workspace = true
-
-[dependencies.image]
-version = "0.24"
-default-features = false
-features = ["png", "jpeg"]
-
-[profile.release]
-debug = 1
+rustc-hash = "1.1"

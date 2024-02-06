@@ -1,29 +1,23 @@
 use cgmath::ortho;
+use engine::camera::{Position, Viewport, Zoom};
 
-#[derive(Debug)]
-pub enum Zoom {
-    None,
-    Double,
-}
-
-#[derive(Debug)]
-pub struct Camera2D {
-    pub width: f32,
-    pub height: f32,
-    x: f32,
-    y: f32,
-
+pub struct Camera {
+    pub viewport: Viewport,
+    pub position: Position,
     pub zoom: Zoom,
 }
 
-impl Camera2D {
-    pub fn new(width: f32, height: f32) -> Camera2D {
-        Camera2D {
-            width,
-            height,
-            x: 0.,
-            y: 0.,
+impl Camera {
+    pub fn initialize(size: engine::window::Size) -> Self {
+        Self {
+            viewport: Viewport {
+                x: 0.,
+                y: 0.,
+                width: size.width as f32,
+                height: size.height as f32,
+            },
             zoom: Zoom::None,
+            position: Position { x: 0., y: 0. },
         }
     }
 
@@ -32,25 +26,20 @@ impl Camera2D {
             Zoom::None => 1.,
             Zoom::Double => 2.,
         };
-        let left = self.x - self.width / zoom / 2.;
-        let right = self.x + self.width / zoom / 2.;
-        let bottom = self.y - self.height / zoom / 2.;
-        let top = self.y + self.height / zoom / 2.;
+        let left = self.position.x - self.viewport.width / zoom / 2.;
+        let right = self.position.x + self.viewport.width / zoom / 2.;
+        let bottom = self.position.y - self.viewport.height / zoom / 2.;
+        let top = self.position.y + self.viewport.height / zoom / 2.;
 
         ortho(left, right, bottom, top, -1., 0.).into()
     }
 
-    pub fn set_position(&mut self, x: f32, y: f32) {
-        self.x = x;
-        self.y = y;
-    }
+    pub fn build_ui_view_projection_matrix(&self) -> [[f32; 4]; 4] {
+        let left = self.position.x + self.viewport.x;
+        let right = self.position.x + self.viewport.x + self.viewport.width;
+        let bottom = self.position.y + self.viewport.y;
+        let top = self.position.y + self.viewport.y + self.viewport.height;
 
-    pub fn set_size(&mut self, width: f32, height: f32) {
-        self.width = width;
-        self.height = height;
-    }
-
-    pub fn set_zoom(&mut self, zoom: Zoom) {
-        self.zoom = zoom;
+        ortho(left, right, bottom, top, -1., 0.).into()
     }
 }
