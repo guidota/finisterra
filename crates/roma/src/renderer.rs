@@ -2,12 +2,11 @@ use std::{ops::Range, num::NonZeroU32};
 
 use engine::{
     camera::Viewport,
-    draw::{image::DrawImage, Target},
+    draw::{image::DrawImage, Target}, engine::TextureID,
 };
+use log::info;
 use nohash_hasher::IntMap;
 use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration, BindGroup};
-
-use crate::images::Images;
 
 use self::texture_array::TextureArray;
 
@@ -18,8 +17,9 @@ pub struct Renderer {
     vertex_buffer: wgpu::Buffer,
 
     pub(crate) bind_group_layout: wgpu::BindGroupLayout,
+    bind_group_layout_count: u32,
 
-    draws_to_textures: IntMap<u64, Vec<DrawImage>>,
+    draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_world: Vec<DrawImage>,
     draws_to_ui: Vec<DrawImage>,
 
@@ -29,93 +29,9 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn initialize(device: &Device, config: &SurfaceConfiguration) -> Self {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("renderer/shader.wgsl"));
-
-        let bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
-
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&bind_group_layout],
-                push_constant_ranges: &[PushConstantRange {
-                    stages: ShaderStages::VERTEX,
-                    range: 0..64,
-                }],
-            });
-
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[wgpu::VertexBufferLayout {
-                    array_stride: std::mem::size_of::<DrawImage>() as wgpu::BufferAddress,
-                    step_mode: wgpu::VertexStepMode::Instance,
-                    attributes: &wgpu::vertex_attr_array![0 => Uint32, 1 => Float32, 2 => Unorm8x4, 3 => Uint32x2, 4 => Sint32],
-                }],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent {
-                            src_factor: wgpu::BlendFactor::SrcAlpha,
-                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                            operation: wgpu::BlendOperation::Add,
-                        },
-                        alpha: wgpu::BlendComponent {
-                            src_factor: wgpu::BlendFactor::One,
-                            dst_factor: wgpu::BlendFactor::One,
-                            operation: wgpu::BlendOperation::Add,
-                        },
-                    }),
-                    write_mask: wgpu::ColorWrites::COLOR,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleStrip,
-                strip_index_format: Some(wgpu::IndexFormat::Uint16),
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: true,
-                conservative: false,
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: wgpu::TextureFormat::Depth24PlusStencil8,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::GreaterEqual,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        });
+        let bind_group_layout_count = 1;
+        let bind_group_layout = create_bind_group_layout(device, bind_group_layout_count);
+        let pipeline = create_pipeline(device, &bind_group_layout, config);
 
         let sprites = vec![DrawImage::default(); 8912];
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -131,6 +47,7 @@ impl Renderer {
             vertex_buffer,
 
             bind_group_layout,
+            bind_group_layout_count,
 
             draws_to_textures: IntMap::default(),
             draws_to_world: vec![],
@@ -160,7 +77,16 @@ impl Renderer {
         }
     }
 
-    pub fn prepare(&mut self, device: &Device, queue: &Queue) -> Instructions {
+    pub fn prepare_pipeline(&mut self, device: &Device, config: &SurfaceConfiguration, count: u32) {
+        if count > self.bind_group_layout_count {
+            info!("recreating pipeline for {count}");
+            self.bind_group_layout = create_bind_group_layout(device, count);
+            self.bind_group_layout_count = count;
+            self.pipeline = create_pipeline(device, &self.bind_group_layout, config);
+        }
+    }
+
+    pub fn prepare(&mut self, device: &Device, queue: &Queue, config: &SurfaceConfiguration) -> Instructions {
         // ensure space in vertex buffer
         let queue_size = self.draws_to_world.len() + self.draws_to_ui.len() + self.draws_to_textures.iter().fold(0, |size, (_, draws)| {
             size + draws.len()
@@ -178,7 +104,7 @@ impl Renderer {
         }
 
         for draw in self.draws_to_world.iter_mut().chain(self.draws_to_ui.iter_mut()) {
-            if let Some(index) = self.texture_array.get_index(draw.index as u64) {
+            if let Some(index) = self.texture_array.get_index(draw.index) {
                 draw.index = index;
             }
         }
@@ -188,7 +114,7 @@ impl Renderer {
         let mut offset = 0;
         for (texture_id, draws) in &mut self.draws_to_textures {
             for draw in draws.iter_mut() {
-                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as u64) {
+                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as TextureID) {
                     draw.index = index;
                 }
             }
@@ -215,6 +141,9 @@ impl Renderer {
         let data = bytemuck::cast_slice(&self.draws_to_ui[..]);
         queue.write_buffer(&self.vertex_buffer, buffer_offset, data);
         self.draws_to_ui.clear();
+
+        let max_textures = std::cmp::max(self.texture_array.size(), self.pre_render_texture_array.size());
+        self.prepare_pipeline(device, config, max_textures);
 
         self.texture_array.prepare(device, &self.bind_group_layout);
         self.pre_render_texture_array.prepare(device, &self.bind_group_layout);
@@ -248,10 +177,102 @@ impl Renderer {
     }
 }
 
+fn create_pipeline(device: &Device, bind_group_layout: &wgpu::BindGroupLayout, config: &SurfaceConfiguration) -> wgpu::RenderPipeline {
+let shader = device.create_shader_module(wgpu::include_wgsl!("renderer/shader.wgsl"));
+let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[&bind_group_layout],
+                push_constant_ranges: &[PushConstantRange {
+                    stages: ShaderStages::VERTEX,
+                    range: 0..64,
+                }],
+            });
+
+    
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("Render Pipeline"),
+        layout: Some(&render_pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: "vs_main",
+            buffers: &[wgpu::VertexBufferLayout {
+                array_stride: std::mem::size_of::<DrawImage>() as wgpu::BufferAddress,
+                step_mode: wgpu::VertexStepMode::Instance,
+                attributes: &wgpu::vertex_attr_array![0 => Uint32, 1 => Float32, 2 => Unorm8x4, 3 => Uint32x2, 4 => Sint32],
+            }],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: "fs_main",
+            targets: &[Some(wgpu::ColorTargetState {
+                format: config.format,
+            
+                blend: Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::SrcAlpha,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::One,
+                        dst_factor: wgpu::BlendFactor::One,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                }),
+
+                write_mask: wgpu::ColorWrites::COLOR,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            strip_index_format: Some(wgpu::IndexFormat::Uint16),
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: Some(wgpu::Face::Back),
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: true,
+            conservative: false,
+        },
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: wgpu::TextureFormat::Depth24PlusStencil8,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::GreaterEqual,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState::default(),
+        multiview: None,
+    })
+}
+
+fn create_bind_group_layout(device: &Device, count: u32) -> wgpu::BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    },
+                    count: NonZeroU32::new(count),
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: NonZeroU32::new(count),
+                },
+            ],
+            label: Some("texture_bind_group_layout"),
+        })
+}
+
 #[derive(Debug)]
 pub struct Instructions {
     pub world_range: Range<usize>,
     pub ui_range: Range<usize>,
-    pub to_textures_ranges: Vec<(u64, Range<usize>)>,
+    pub to_textures_ranges: Vec<(TextureID, Range<usize>)>,
 }
 

@@ -3,14 +3,16 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
+protocol = { path = "crates/protocol" }
 definitions = { path = "crates/definitions" }
 roma = { path = "crates/roma" }
 lorenzo = { path = "crates/lorenzo" }
 engine = { path = "crates/engine" }
+database = { path = "crates/database" }
 
 winit = "0.29"
 # async runtime
-pollster = "0.3"
+tokio = { version = "1", features = ["full"] }
 
 # serializetion
 serde = { version = "1.0", features = ["derive"] }
@@ -22,6 +24,12 @@ ron = "0.8"
 log = "0.4"
 rand = { version = "0.8", features = ["std", "std_rng"] }
 rustc-hash = "1.1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# networking
+webtransport = "0"
+wtransport = { version = "0.1", features = ["dangerous-configuration"] }
 
 # [profile.release]
 # debug = true

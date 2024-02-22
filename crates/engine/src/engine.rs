@@ -1,5 +1,9 @@
 use crate::draw::{Dimensions, Target};
 
+pub type TextureID = u32;
+pub type FontID = u32;
+pub type SoundID = u32;
+
 pub trait GameEngine {
     /// Initialize engine using the window provided by `winit`
     fn initialize(window: winit::window::Window, settings: &crate::settings::Settings) -> Self;
@@ -16,60 +20,67 @@ pub trait GameEngine {
     /// Check if a key is held
     fn key_held(&self, key: crate::input::keyboard::KeyCode) -> bool;
 
+    fn held_keys(&self) -> Vec<crate::input::keyboard::Key>;
+    fn pressed_keys(&self) -> Vec<crate::input::keyboard::Key>;
+    fn released_keys(&self) -> Vec<crate::input::keyboard::Key>;
+
     /// Get mouse position in screen
-    fn get_mouse_position(&self) -> crate::input::mouse::Position;
+    fn mouse_position(&self) -> crate::input::mouse::Position;
 
     /// Check mouse primary click
     fn mouse_clicked(&self) -> bool;
+
+    /// Check mouse primary held  
+    fn mouse_held(&self) -> bool;
+
+    /// Check mouse primary released
+    fn mouse_released(&self) -> bool;
 
     /// Check mouse secondary click
     fn mouse_secondary_clicked(&self) -> bool;
 
     /// Adds a texture and receives an integer to be used later on draw_image
-    fn add_texture(&mut self, path: &str) -> u64;
+    fn add_texture(&mut self, path: &str) -> TextureID;
 
     /// Adds a texture that be used later on draw_image by using the id
-    fn set_texture(&mut self, path: &str, id: u64);
+    fn set_texture(&mut self, path: &str, id: TextureID);
+
+    fn texture_dimensions(&mut self, texture_id: TextureID) -> Option<(u16, u16)>;
 
     /// Creates a texture that can be used to draw images or text
     /// The texture of this target can be used as any other texture
-    fn create_texture(&mut self, dimensions: Dimensions) -> u64;
+    fn create_texture(&mut self, dimensions: Dimensions) -> TextureID;
 
     /// Draws an image in the specific target
     /// `id` should be the identifier of the texture previously added or set
     /// `parameters` includes the instructions for rendering a texture or a portion of it
     /// 'target' can be the world, the ui, or an specific texture
     /// it should be possible to render images from atlases
-    fn draw_image(&mut self, id: u64, parameters: crate::draw::image::DrawImage, target: Target);
+    fn draw_image(&mut self, parameters: crate::draw::image::DrawImage, target: Target);
 
     /// Adds a font and receives an integer to be used later on draw_text
-    fn add_font(&mut self, id: u64, path: &str, texture_id: u64);
+    fn add_font(&mut self, id: FontID, path: &str, texture_id: TextureID);
 
     /// Draws text in the screen
     /// `id` should be the identifier of the font previously added or set
     /// `parameters` includes the instructions for rendering the text
     /// 'target' can be the world, the ui, or an specific texture
-    fn draw_text(&mut self, id: u64, parameters: crate::draw::text::DrawText, target: Target);
+    fn draw_text(&mut self, id: FontID, parameters: crate::draw::text::DrawText, target: Target);
 
     /// Parse text and get character positions and width
-    fn parse_text(
-        &mut self,
-        id: u64,
-        text: &str,
-        orientation: crate::draw::text::Orientation,
-    ) -> Option<crate::draw::text::ParsedText>;
+    fn parse_text(&mut self, id: FontID, text: &str) -> Option<crate::draw::text::ParsedText>;
 
     /// Adds a sound and receives an integer to be used later on play_sound or play_music
-    fn add_sound(&mut self, path: &str) -> u64;
+    fn add_sound(&mut self, path: &str) -> SoundID;
 
     /// Adds a sound that can be used later on play_sound or play_music by using the id
-    fn set_sound(&mut self, path: &str, id: u64);
+    fn set_sound(&mut self, path: &str, id: SoundID);
 
     /// Plays a sound
-    fn play_sound(&mut self, id: u64, parameters: crate::sound::PlaySound);
+    fn play_sound(&mut self, id: SoundID, parameters: crate::sound::PlaySound);
 
     /// Plays the music until stop_music or play_music is called
-    fn play_music(&mut self, id: u64, parameters: crate::sound::PlayMusic);
+    fn play_music(&mut self, id: SoundID, parameters: crate::sound::PlayMusic);
 
     /// Stops music
     fn stop_music(&mut self);
@@ -82,12 +93,12 @@ pub trait GameEngine {
     fn set_world_camera_viewport(&mut self, viewport: crate::camera::Viewport);
 
     /// Get camera zoom
-    fn get_world_camera_zoom(&self) -> crate::camera::Zoom;
+    fn get_camera_zoom(&self) -> crate::camera::Zoom;
 
     /// Set camera zoom
     /// Using `None` means no scaling
     /// Using `Double` means scaling 2x
-    fn set_world_camera_zoom(&mut self, zoom: crate::camera::Zoom);
+    fn set_camera_zoom(&mut self, zoom: crate::camera::Zoom);
 
     /// Get camera world position
     fn get_world_camera_position(&self) -> crate::camera::Position;

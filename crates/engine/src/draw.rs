@@ -1,3 +1,5 @@
+use crate::engine::TextureID;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct Position {
@@ -20,12 +22,23 @@ pub mod image {
     pub type Source = [u16; 4];
 
     #[repr(C)]
-    #[derive(Debug, Copy, Clone, Default, bytemuck::Zeroable, bytemuck::Pod)]
+    #[derive(Debug, Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
     pub struct DrawImage {
         pub position: Position,
         pub color: Color,
         pub source: Source,
         pub index: u32,
+    }
+
+    impl Default for DrawImage {
+        fn default() -> Self {
+            Self {
+                position: Default::default(),
+                color: [255, 255, 255, 255],
+                source: [0, 0, 0, 0],
+                index: Default::default(),
+            }
+        }
     }
 }
 
@@ -41,7 +54,8 @@ pub mod text {
     #[derive(Debug)]
     pub struct ParsedText {
         pub chars: Vec<bmfont::CharPosition>,
-        pub total_width: u32,
+        pub total_width: u16,
+        pub height: u16,
     }
 
     pub struct DrawText<'s> {
@@ -61,5 +75,5 @@ pub struct Dimensions {
 pub enum Target {
     World,
     UI,
-    Texture { id: u64 },
+    Texture { id: TextureID },
 }

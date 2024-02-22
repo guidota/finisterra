@@ -21,18 +21,18 @@ impl Camera {
         }
     }
 
-    pub fn build_view_projection_matrix(&self) -> [[f32; 4]; 4] {
-        let zoom = match self.zoom {
-            Zoom::None => 1.,
-            Zoom::Double => 2.,
-        };
-        let left = self.position.x - self.viewport.width / zoom / 2.;
-        let right = self.position.x + self.viewport.width / zoom / 2.;
-        let bottom = self.position.y - self.viewport.height / zoom / 2.;
-        let top = self.position.y + self.viewport.height / zoom / 2.;
-
-        ortho(left, right, bottom, top, -1., 0.).into()
-    }
+    // pub fn build_view_projection_matrix(&self) -> [[f32; 4]; 4] {
+    //     let zoom = match self.zoom {
+    //         Zoom::None => 1.,
+    //         Zoom::Double => 2.,
+    //     };
+    // let left = self.position.x - self.viewport.width / zoom / 2.;
+    // let right = self.position.x + self.viewport.width / zoom / 2.;
+    // let bottom = self.position.y - self.viewport.height / zoom / 2.;
+    // let top = self.position.y + self.viewport.height / zoom / 2.;
+    //
+    // ortho(left, right, bottom, top, -1., 0.).into()
+    // }
 
     pub fn build_ui_view_projection_matrix(&self) -> [[f32; 4]; 4] {
         let left = self.position.x + self.viewport.x;
@@ -41,5 +41,30 @@ impl Camera {
         let top = self.position.y + self.viewport.y + self.viewport.height;
 
         ortho(left, right, bottom, top, -1., 0.).into()
+    }
+
+    pub fn build_view_projection_matrix(&self, centered: bool) -> [[f32; 4]; 4] {
+        let zoom = match self.zoom {
+            Zoom::None => 1.,
+            Zoom::Double => 2.,
+        };
+        if centered {
+            let left = self.position.x - self.viewport.width / zoom / 2.;
+            let right = self.position.x + self.viewport.width / zoom / 2.;
+            let bottom = self.position.y - self.viewport.height / zoom / 2.;
+            let top = self.position.y + self.viewport.height / zoom / 2.;
+
+            ortho(left, right, bottom, top, -1., 0.).into()
+        } else {
+            let left = self.position.x + self.viewport.x;
+            // let right = self.position.x + self.viewport.x + self.viewport.width / zoom;
+            let bottom = self.position.y + self.viewport.y;
+            // let top = self.position.y + self.viewport.y + self.viewport.height / zoom;
+            // let left = self.position.x - self.viewport.width / zoom;
+            let right = self.position.x + self.viewport.width / zoom;
+            // let bottom = self.position.y - self.viewport.height / zoom;
+            let top = self.position.y + self.viewport.height / zoom;
+            ortho(left, right, bottom, top, -1., 0.).into()
+        }
     }
 }

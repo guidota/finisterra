@@ -1,10 +1,16 @@
 mod admin;
 mod bincode;
-mod client;
-mod server;
-mod transport;
+pub mod client;
+pub mod server;
 
-pub use self::admin::*;
-pub use self::client::*;
-pub use self::server::*;
-pub use self::transport::*;
+pub const CONFIG: Configuration = standard();
+
+use ::bincode::config::standard;
+use ::bincode::config::Configuration;
+
+pub trait ProtocolMessage {
+    fn encode(self) -> Option<Vec<u8>>;
+    fn decode(bytes: &[u8]) -> Option<Self>
+    where
+        Self: Sized;
+}

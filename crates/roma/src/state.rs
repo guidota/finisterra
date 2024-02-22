@@ -28,7 +28,7 @@ impl State {
         let optional_features = wgpu::Features::DEPTH_CLIP_CONTROL;
         let required_features = wgpu::Features::PUSH_CONSTANTS
             .union(wgpu::Features::TEXTURE_BINDING_ARRAY)
-            .union(wgpu::Features::PARTIALLY_BOUND_BINDING_ARRAY)
+            // .union(wgpu::Features::PARTIALLY_BOUND_BINDING_ARRAY)
             .union(wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING);
         let adapter_features = adapter.features();
         let mut required_limits = adapter.limits();
@@ -50,7 +50,7 @@ impl State {
             .formats
             .iter()
             .copied()
-            .find(|f| f.is_srgb())
+            .find(|f| !f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
 
         let present_mode = if surface_caps.present_modes.contains(&present_mode) {
@@ -74,8 +74,8 @@ impl State {
         Self {
             window,
             size: engine::window::Size {
-                width: size.width,
-                height: size.height,
+                width: size.width as u16,
+                height: size.height as u16,
             },
             config,
             surface,
@@ -85,8 +85,8 @@ impl State {
     }
 
     pub fn resize(&mut self, size: engine::window::Size) {
-        self.config.width = size.width;
-        self.config.height = size.height;
+        self.config.width = size.width as u32;
+        self.config.height = size.height as u32;
         self.size = size;
         self.surface.configure(&self.device, &self.config);
     }

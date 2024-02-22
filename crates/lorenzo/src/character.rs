@@ -28,7 +28,7 @@ pub type Body = CharacterAnimations<BodyFrameMetadata>;
 pub struct BodyFrameMetadata {
     pub base: Offset,
 
-    /// Useful to know where to draw eyes or hair
+    /// Useful to know where to draw face, eyes or hair
     pub head: Offset,
 
     /// Useful to know where to draw weapons or shields
@@ -98,12 +98,7 @@ impl Character {
         } = self.animator;
 
         let animation = &self.skin[animation][direction];
-        // println!("getting skin frame for animation : {animation:?}, and direction {direction:?}");
-        // println!(
-        //     "current frame is: {current_frame} of {}",
-        //     animation.frames.len(),
-        // );
-        //
+
         if animation.frames.len() == 1 {
             return &animation[0];
         }
