@@ -9,8 +9,8 @@ pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: Rc<wgpu::TextureView>,
     pub sampler: Rc<wgpu::Sampler>,
-    pub height: u32,
-    pub width: u32,
+    pub height: u16,
+    pub width: u16,
 }
 
 impl Texture {
@@ -20,7 +20,7 @@ impl Texture {
             height: dimensions.height as u32,
             depth_or_array_layers: 1,
         };
-        let format = wgpu::TextureFormat::Bgra8UnormSrgb;
+        let format = wgpu::TextureFormat::Bgra8Unorm;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size,
@@ -46,8 +46,8 @@ impl Texture {
             texture,
             view,
             sampler,
-            width: size.width,
-            height: size.height,
+            width: size.width as u16,
+            height: size.height as u16,
         }
     }
     pub fn from_path(
@@ -88,7 +88,7 @@ impl Texture {
             height: dimensions.1,
             depth_or_array_layers: 1,
         };
-        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        let format = wgpu::TextureFormat::Rgba8Unorm;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label,
             size,
@@ -131,8 +131,8 @@ impl Texture {
             texture,
             view,
             sampler,
-            width: dimensions.0,
-            height: dimensions.1,
+            width: dimensions.0 as u16,
+            height: dimensions.1 as u16,
         }
     }
 }

@@ -1,11 +1,11 @@
-use crate::networking::{bincode::CONFIG, ClientPacket};
+use crate::{networking::bincode::CONFIG, ProtocolMessage};
 use bincode::{Decode, Encode};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum ServerPacket {
     Intervals,
     Connection(Connection),
-    Account(AccountCharacter),
+    Account(Account),
     CharacterUpdate(CharacterUpdate),
     UserUpdate(UserUpdate),
     Event(Event),
@@ -20,10 +20,15 @@ pub enum Connection {
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]
-pub enum AccountCharacter {
-    List,
-    Created,
-    Logged,
+pub enum Account {
+    Created { id: i64 },
+    CreateFailed { reason: String },
+    LoginOk { characters: Vec<String> },
+    LoginFailed,
+    CreateCharacterOk { character: String },
+    CreateCharacterFailed { reason: String },
+    LoginCharacterOk { character: String },
+    LoginCharacterFailed { reason: String },
 }
 
 /// Users and NPCs
@@ -91,18 +96,14 @@ pub enum Message {
     ConsoleMessage,
 }
 
-pub struct ClientConnection {}
-
-impl ClientConnection {
-    pub fn send(&self, packet: ServerPacket) -> Result<(), bincode::error::EncodeError> {
-        let _bytes = bincode::encode_to_vec(packet, CONFIG)?;
-        Ok(())
+impl ProtocolMessage for ServerPacket {
+    fn decode(bytes: &[u8]) -> Option<Self> {
+        bincode::decode_from_slice(bytes, CONFIG)
+            .ok()
+            .map(|(result, _)| result)
     }
 
-    pub fn receive(&self) -> Result<ClientPacket, bincode::error::DecodeError> {
-        let payload: Vec<u8> = vec![];
-        let (packet, _) = bincode::decode_from_slice(&payload, CONFIG)?;
-
-        Ok(packet)
+    fn encode(self) -> Option<Vec<u8>> {
+        bincode::encode_to_vec(self, CONFIG).ok()
     }
 }

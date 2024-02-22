@@ -1,5 +1,7 @@
 use bincode::{Decode, Encode};
 
+use crate::{ProtocolMessage, CONFIG};
+
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum ClientPacket {
     Account(Account),
@@ -12,11 +14,11 @@ pub enum ClientPacket {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Account {
-    Create,
-    Login,
-    CharacterLogin,
-    CharacterDelete,
-    CharacterCreate,
+    CreateAccount { mail: String, password: String },
+    LoginAccount { mail: String, password: String },
+    LoginCharacter { character: String },
+    DeleteCharacter { character: String },
+    CreateCharacter { name: String },
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]
@@ -70,4 +72,16 @@ pub enum Request {
     Help,
     Online,
     Quit,
+}
+
+impl ProtocolMessage for ClientPacket {
+    fn decode(bytes: &[u8]) -> Option<Self> {
+        bincode::decode_from_slice(bytes, CONFIG)
+            .ok()
+            .map(|(result, _)| result)
+    }
+
+    fn encode(self) -> Option<Vec<u8>> {
+        bincode::encode_to_vec(self, CONFIG).ok()
+    }
 }

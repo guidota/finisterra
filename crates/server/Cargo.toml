@@ -1,0 +1,13 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wtransport.workspace = true
+database.workspace = true
+protocol.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow = "1.0"

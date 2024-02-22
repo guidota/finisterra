@@ -2,7 +2,7 @@ use std::{ops::Range, num::NonZeroU32};
 
 use engine::{
     camera::Viewport,
-    draw::{image::DrawImage, Target},
+    draw::{image::DrawImage, Target}, engine::TextureID,
 };
 use nohash_hasher::IntMap;
 use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration, BindGroup};
@@ -19,7 +19,7 @@ pub struct Renderer {
 
     pub(crate) bind_group_layout: wgpu::BindGroupLayout,
 
-    draws_to_textures: IntMap<u64, Vec<DrawImage>>,
+    draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_world: Vec<DrawImage>,
     draws_to_ui: Vec<DrawImage>,
 
@@ -42,13 +42,13 @@ impl Renderer {
                             view_dimension: wgpu::TextureViewDimension::D2,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
-                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
+                        count: NonZeroU32::new(Images::MAX_IMAGES),
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: NonZeroU32::new(Images::MAX_IMAGES as u32),
+                        count: NonZeroU32::new(Images::MAX_IMAGES),
                     },
                 ],
                 label: Some("texture_bind_group_layout"),
@@ -94,6 +94,7 @@ impl Renderer {
                             operation: wgpu::BlendOperation::Add,
                         },
                     }),
+
                     write_mask: wgpu::ColorWrites::COLOR,
                 })],
             }),
@@ -178,7 +179,7 @@ impl Renderer {
         }
 
         for draw in self.draws_to_world.iter_mut().chain(self.draws_to_ui.iter_mut()) {
-            if let Some(index) = self.texture_array.get_index(draw.index as u64) {
+            if let Some(index) = self.texture_array.get_index(draw.index) {
                 draw.index = index;
             }
         }
@@ -188,7 +189,7 @@ impl Renderer {
         let mut offset = 0;
         for (texture_id, draws) in &mut self.draws_to_textures {
             for draw in draws.iter_mut() {
-                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as u64) {
+                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as TextureID) {
                     draw.index = index;
                 }
             }
@@ -252,6 +253,6 @@ impl Renderer {
 pub struct Instructions {
     pub world_range: Range<usize>,
     pub ui_range: Range<usize>,
-    pub to_textures_ranges: Vec<(u64, Range<usize>)>,
+    pub to_textures_ranges: Vec<(TextureID, Range<usize>)>,
 }
 

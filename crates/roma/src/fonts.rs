@@ -1,4 +1,7 @@
-use engine::draw::text::ParsedText;
+use engine::{
+    draw::text::ParsedText,
+    engine::{FontID, TextureID},
+};
 use std::io::Cursor;
 
 use bmfont::{BMFont, OrdinateOrientation};
@@ -7,12 +10,12 @@ use nohash_hasher::IntMap;
 use crate::files::read_file;
 
 pub struct Font {
-    texture_id: u64,
+    texture_id: TextureID,
     bmfont: bmfont::BMFont,
 }
 
 pub struct Fonts {
-    fonts: IntMap<u64, Font>,
+    fonts: IntMap<FontID, Font>,
 }
 
 impl Fonts {
@@ -22,7 +25,7 @@ impl Fonts {
         }
     }
 
-    pub fn add_font(&mut self, id: u64, texture_id: u64, path: &str) {
+    pub fn add_font(&mut self, id: FontID, texture_id: TextureID, path: &str) {
         let Ok(file) = read_file(path) else {
             log::error!("couldn't load font file: {}", path);
             return;
@@ -37,7 +40,7 @@ impl Fonts {
         );
     }
 
-    pub fn parse_text(&mut self, id: u64, text: &str) -> Option<ParsedText> {
+    pub fn parse_text(&mut self, id: FontID, text: &str) -> Option<ParsedText> {
         let Some(font) = self.fonts.get_mut(&id) else {
             return None;
         };
@@ -53,7 +56,7 @@ impl Fonts {
                  mut total_width,
              },
              char| {
-                let max_x = (char.screen_rect.x + char.screen_rect.width as i32) as u32;
+                let max_x = (char.screen_rect.x + char.screen_rect.width as i32) as u16;
                 if total_width < max_x {
                     total_width = max_x;
                 }
@@ -63,7 +66,7 @@ impl Fonts {
         ))
     }
 
-    pub fn get_texture_id(&self, id: u64) -> Option<u64> {
+    pub fn get_texture_id(&self, id: FontID) -> Option<TextureID> {
         self.fonts.get(&id).map(|font| font.texture_id)
     }
 }

@@ -1,15 +1,36 @@
-use client::{Finisterra, WINDOW_HEIGHT, WINDOW_WIDTH};
 use engine::game::run_game;
+use game::Finisterra;
 use roma::Roma;
+use tracing_subscriber::{filter::LevelFilter, EnvFilter};
 
-mod settings;
+mod game;
+pub mod networking;
+pub mod resources;
+pub mod screens;
+pub mod ui;
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    init_logging();
+
     let settings = engine::settings::Settings {
-        width: WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
+        width: 1920 / 2,
+        height: 1080 / 2,
         title: "Finisterra".to_string(),
         vsync: true,
     };
-    run_game::<Finisterra, Roma>(settings);
+
+    run_game::<Finisterra, Roma>(settings).await;
+}
+
+pub fn init_logging() {
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env_lossy();
+
+    tracing_subscriber::fmt()
+        .with_target(true)
+        .with_level(true)
+        .with_env_filter(env_filter)
+        .init();
 }

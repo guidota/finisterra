@@ -7,22 +7,23 @@ use std::{
 use camera::Camera;
 use engine::{
     draw::{image::DrawImage, Target},
-    engine::GameEngine,
+    engine::{FontID, GameEngine, SoundID, TextureID},
     window::Size,
 };
 use fonts::Fonts;
 use images::Images;
-use pollster::FutureExt as _;
+use input::WinitInputHelper;
 use renderer::{Instructions, Renderer};
 use sounds::Sounds;
 use state::State;
+use tokio::runtime::Handle;
 use wgpu::PresentMode;
-use winit_input_helper::WinitInputHelper;
 
 mod camera;
 mod files;
 mod fonts;
 mod images;
+mod input;
 mod renderer;
 mod sounds;
 mod state;
@@ -51,7 +52,10 @@ impl GameEngine for Roma {
         } else {
             PresentMode::AutoNoVsync
         };
-        let state = State::initialize(window, present_mode).block_on();
+        let state = tokio::task::block_in_place(|| {
+            Handle::current().block_on(State::initialize(window, present_mode))
+        });
+
         let renderer = Renderer::initialize(&state.device, &state.config);
         let world_camera = Camera::initialize(state.size);
         let ui_camera = Camera::initialize(state.size);
@@ -61,8 +65,8 @@ impl GameEngine for Roma {
         let input = WinitInputHelper::new();
 
         let size = engine::window::Size {
-            width: state.config.width,
-            height: state.config.height,
+            width: state.config.width as u16,
+            height: state.config.height as u16,
         };
         let depth_texture_view = create_depth_texture(&state, size);
 
@@ -99,27 +103,52 @@ impl GameEngine for Roma {
         self.input.key_held(key)
     }
 
-    fn get_mouse_position(&self) -> engine::input::mouse::Position {
-        todo!()
+    fn held_keys(&self) -> Vec<engine::input::keyboard::Key> {
+        self.input.held_keys()
+    }
+
+    fn pressed_keys(&self) -> Vec<engine::input::keyboard::Key> {
+        self.input.pressed_keys()
+    }
+
+    fn released_keys(&self) -> Vec<engine::input::keyboard::Key> {
+        self.input.released_keys()
+    }
+
+    fn mouse_position(&self) -> engine::input::mouse::Position {
+        if let Some((x, y)) = self.input.cursor() {
+            let height = self.get_window_size().height as f32;
+            engine::input::mouse::Position { x, y: height - y }
+        } else {
+            engine::input::mouse::Position { x: 0., y: 0. }
+        }
     }
 
     fn mouse_clicked(&self) -> bool {
-        self.input.mouse_pressed(0)
+        self.input.mouse_pressed(winit::event::MouseButton::Left)
+    }
+
+    fn mouse_held(&self) -> bool {
+        self.input.mouse_held(winit::event::MouseButton::Left)
+    }
+
+    fn mouse_released(&self) -> bool {
+        self.input.mouse_released(winit::event::MouseButton::Left)
     }
 
     fn mouse_secondary_clicked(&self) -> bool {
-        self.input.mouse_pressed(1)
+        self.input.mouse_pressed(winit::event::MouseButton::Right)
     }
 
-    fn add_texture(&mut self, path: &str) -> u64 {
+    fn add_texture(&mut self, path: &str) -> TextureID {
         self.images.add_file(path)
     }
 
-    fn set_texture(&mut self, path: &str, id: u64) {
+    fn set_texture(&mut self, path: &str, id: TextureID) {
         self.images.set_file(id, path);
     }
 
-    fn create_texture(&mut self, dimensions: engine::draw::Dimensions) -> u64 {
+    fn create_texture(&mut self, dimensions: engine::draw::Dimensions) -> TextureID {
         let texture = texture::Texture::new(&self.state.device, dimensions);
 
         self.images.add_texture(texture)
@@ -127,25 +156,23 @@ impl GameEngine for Roma {
 
     fn draw_image(
         &mut self,
-        _id: u64,
         parameters: engine::draw::image::DrawImage,
         target: engine::draw::Target,
     ) {
-        if self.images.load_texture(
-            &self.state.device,
-            &self.state.queue,
-            parameters.index as u64,
-        ) {
+        if self
+            .images
+            .load_texture(&self.state.device, &self.state.queue, parameters.index)
+        {
             let texture_array = match target {
                 Target::World | Target::UI => &mut self.renderer.texture_array,
                 _ => &mut self.renderer.pre_render_texture_array,
             };
-            if !texture_array.has_texture(parameters.index as u64) {
-                let texture = self.images.get(parameters.index as u64).unwrap().unwrap();
+            if !texture_array.has_texture(parameters.index) {
+                let texture = self.images.get(parameters.index).unwrap().unwrap();
                 let view = texture.view.clone();
                 let sampler = texture.sampler.clone();
 
-                texture_array.push(parameters.index as u64, view, sampler);
+                texture_array.push(parameters.index, view, sampler);
             }
 
             self.renderer.draw_image(parameters, target);
@@ -154,20 +181,15 @@ impl GameEngine for Roma {
         }
     }
 
-    fn add_font(&mut self, id: u64, path: &str, texture_id: u64) {
+    fn add_font(&mut self, id: FontID, path: &str, texture_id: TextureID) {
         self.fonts.add_font(id, texture_id, path);
     }
 
-    fn parse_text(
-        &mut self,
-        id: u64,
-        text: &str,
-        _orientation: engine::draw::text::Orientation,
-    ) -> Option<engine::draw::text::ParsedText> {
+    fn parse_text(&mut self, id: FontID, text: &str) -> Option<engine::draw::text::ParsedText> {
         self.fonts.parse_text(id, text)
     }
 
-    fn draw_text(&mut self, id: u64, parameters: engine::draw::text::DrawText, target: Target) {
+    fn draw_text(&mut self, id: FontID, parameters: engine::draw::text::DrawText, target: Target) {
         let Some(texture_id) = self.fonts.get_texture_id(id) else {
             log::error!("[draw_text] texture id for font {id} not found");
             return;
@@ -212,26 +234,26 @@ impl GameEngine for Roma {
                     position,
                     source,
                     color: parameters.color,
-                    index: texture_id as u32,
+                    index: texture_id,
                 },
                 target,
             );
         }
     }
 
-    fn add_sound(&mut self, _path: &str) -> u64 {
+    fn add_sound(&mut self, _path: &str) -> SoundID {
         todo!()
     }
 
-    fn set_sound(&mut self, _path: &str, _id: u64) {
+    fn set_sound(&mut self, _path: &str, _id: SoundID) {
         todo!()
     }
 
-    fn play_sound(&mut self, _id: u64, _parameters: engine::sound::PlaySound) {
+    fn play_sound(&mut self, _id: SoundID, _parameters: engine::sound::PlaySound) {
         todo!()
     }
 
-    fn play_music(&mut self, _id: u64, _parameters: engine::sound::PlayMusic) {
+    fn play_music(&mut self, _id: SoundID, _parameters: engine::sound::PlayMusic) {
         todo!()
     }
 
@@ -247,25 +269,26 @@ impl GameEngine for Roma {
         let window_size = self.get_window_size();
         self.world_camera.viewport.width = max(
             1,
-            min(viewport.width as u32, window_size.width - viewport.x as u32),
+            min(viewport.width as u16, window_size.width - viewport.x as u16),
         ) as f32;
         self.world_camera.viewport.height = max(
             1,
             min(
-                viewport.height as u32,
-                window_size.height - viewport.y as u32,
+                viewport.height as u16,
+                window_size.height - viewport.y as u16,
             ),
         ) as f32;
         self.world_camera.viewport.x = max(0, viewport.x as u32) as f32;
         self.world_camera.viewport.y = max(0, viewport.y as u32) as f32;
     }
 
-    fn get_world_camera_zoom(&self) -> engine::camera::Zoom {
+    fn get_camera_zoom(&self) -> engine::camera::Zoom {
         self.world_camera.zoom
     }
 
-    fn set_world_camera_zoom(&mut self, zoom: engine::camera::Zoom) {
+    fn set_camera_zoom(&mut self, zoom: engine::camera::Zoom) {
         self.world_camera.zoom = zoom;
+        self.ui_camera.zoom = zoom;
     }
 
     fn get_world_camera_position(&self) -> engine::camera::Position {
@@ -447,13 +470,13 @@ impl GameEngine for Roma {
                         &mut render_pass,
                         world_range,
                         &self.world_camera.viewport,
-                        self.world_camera.build_view_projection_matrix(),
+                        self.world_camera.build_view_projection_matrix(true),
                     );
                     self.renderer.render_range(
                         &mut render_pass,
                         ui_range,
                         &self.ui_camera.viewport,
-                        self.ui_camera.build_ui_view_projection_matrix(),
+                        self.ui_camera.build_view_projection_matrix(false),
                     );
                 }
             }
@@ -471,8 +494,8 @@ impl GameEngine for Roma {
 
 fn create_depth_texture(state: &State, size: engine::window::Size) -> wgpu::TextureView {
     let size = wgpu::Extent3d {
-        width: size.width,
-        height: size.height,
+        width: size.width as u32,
+        height: size.height as u32,
         depth_or_array_layers: 1,
     };
     let desc = wgpu::TextureDescriptor {

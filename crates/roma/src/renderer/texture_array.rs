@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use engine::engine::TextureID;
+
 use crate::images::Images;
 
 pub struct TextureArray {
@@ -23,15 +25,20 @@ impl TextureArray {
         }
     }
 
-    pub fn has_texture(&self, id: u64) -> bool {
+    pub fn has_texture(&self, id: TextureID) -> bool {
         self.indices[id as usize].is_some()
     }
 
-    pub fn get_index(&self, id: u64) -> Option<u32> {
+    pub fn get_index(&self, id: TextureID) -> Option<u32> {
         self.indices[id as usize]
     }
 
-    pub fn push(&mut self, id: u64, texture: Rc<wgpu::TextureView>, sampler: Rc<wgpu::Sampler>) {
+    pub fn push(
+        &mut self,
+        id: TextureID,
+        texture: Rc<wgpu::TextureView>,
+        sampler: Rc<wgpu::Sampler>,
+    ) {
         if self.indices[id as usize].is_some() {
             return;
         }

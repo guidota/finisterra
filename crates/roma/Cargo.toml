@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 engine.workspace = true
-pollster.workspace = true
 log.workspace = true
+tokio.workspace = true
 
 # WGPU
 wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "56d9d32a072fd9d6bfc5bcb6c0fa0d5091fbd9c9" }
@@ -15,7 +15,6 @@ bytemuck = { version = "1.12", features = ["derive"] }
 
 # winit
 winit.workspace = true
-winit_input_helper = "0.15"
 
 # fonts
 bmfont = { version = "0.3", default-features = false, features = [
