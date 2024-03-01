@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use database::{Account, AccountCharacter, Database};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::info;
+
+use database::{Account, Character, Database};
 
 pub struct Accounts {
     database: Arc<Database>,
@@ -23,15 +24,15 @@ pub enum AccountEvent {
     },
     LoginAccountOk {
         connection_id: u32,
-        account_id: i64,
-        characters: Vec<AccountCharacter>,
+        account_name: String,
+        characters: Vec<Character>,
     },
     LoginAccountFailed {
         connection_id: u32,
     },
     CreateCharacterOk {
         connection_id: u32,
-        character: AccountCharacter,
+        character: Character,
     },
     CreateCharacterFailed {
         connection_id: u32,
@@ -80,25 +81,25 @@ impl Accounts {
         });
     }
 
-    pub async fn login(&self, connection_id: u32, mail: &str, password: &str) {
+    pub async fn login(&self, connection_id: u32, account_name: &str, password: &str) {
         tokio::spawn({
             let database = self.database.clone();
-            let mail = mail.to_string();
+            let account_name = account_name.to_string();
             let login_password = password.to_string();
 
             let account_events_sender = self.account_events_sender.clone();
 
             async move {
-                let account = database.account(&mail).await;
+                let account = database.account_by_name(&account_name).await;
 
                 let result = match account {
-                    Ok(Account { id, password, .. }) if password == login_password => {
-                        let result = database.account_characters(id).await;
+                    Ok(Account { name, password, .. }) if password == login_password => {
+                        let result = database.account_characters(&name).await;
                         let characters = result.ok().unwrap_or_else(std::vec::Vec::new);
 
                         AccountEvent::LoginAccountOk {
                             connection_id,
-                            account_id: id,
+                            account_name: name,
                             characters,
                         }
                     }
@@ -122,8 +123,8 @@ impl Accounts {
                     account_events_sender
                         .send(AccountEvent::CreateCharacterOk {
                             connection_id,
-                            character: AccountCharacter {
-                                account_id,
+                            character: Character {
+                                account_name,
                                 name: character,
                             },
                         })
@@ -142,7 +143,7 @@ impl Accounts {
         });
     }
 
-    pub async fn enter(&self, connection_id: u32, account_id: i64, character: &str) {
+    pub async fn enter(&self, connection_id: u32, account_name: &str, character: &str) {
         tokio::spawn({
             let database = self.database.clone();
             let character = character.to_string();
@@ -150,7 +151,7 @@ impl Accounts {
             let account_events_sender = self.account_events_sender.clone();
 
             async move {
-                if let Ok(account_characters) = database.account_characters(account_id).await {
+                if let Ok(account_characters) = database.account_characters(account_name).await {
                     for account_character in account_characters {
                         if account_character.name.to_lowercase() == character.to_lowercase() {
                             account_events_sender

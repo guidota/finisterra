@@ -1,12 +1,13 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
+use tokio::sync::mpsc::{channel, Sender};
+
 use database::Database;
 use protocol::{
     client::{self, ClientPacket},
     server::{self, ServerPacket},
 };
-use tokio::sync::mpsc::{channel, Sender};
 
 use crate::{
     accounts::{AccountEvent, Accounts},
@@ -30,7 +31,7 @@ pub struct User {
 
 pub enum UserState {
     Connected,
-    InAccount { account_id: i64 },
+    InAccount { account_name: String },
     InWorld { character: String },
 }
 
@@ -218,23 +219,23 @@ impl Finisterra {
                     client::Account::CreateAccount { mail, password } => {
                         self.accounts.create(connection_id, &mail, &password).await
                     }
-                    client::Account::LoginAccount { mail, password } => {
+                    client::Account::LoginAccount { name, password } => {
                         self.accounts.login(connection_id, &mail, &password).await
                     }
                     client::Account::LoginCharacter { character } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_id } = user.state {
+                            if let UserState::InAccount { account_name } = user.state {
                                 self.accounts
-                                    .enter(connection_id, account_id, &character)
+                                    .enter(connection_id, account_name, &character)
                                     .await
                             }
                         }
                     }
                     client::Account::CreateCharacter { name } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_id } = user.state {
+                            if let UserState::InAccount { account_name } = user.state {
                                 self.accounts
-                                    .create_character(connection_id, account_id, &name)
+                                    .create_character(connection_id, account_name, &name)
                                     .await
                             }
                         }

@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-use crate::{ProtocolMessage, CONFIG};
+use crate::{CONFIG, ProtocolMessage};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum ClientPacket {
@@ -14,11 +14,24 @@ pub enum ClientPacket {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Account {
-    CreateAccount { mail: String, password: String },
-    LoginAccount { mail: String, password: String },
-    LoginCharacter { character: String },
-    DeleteCharacter { character: String },
-    CreateCharacter { name: String },
+    CreateAccount {
+        name: String,
+        mail: String,
+        password: String,
+    },
+    LoginAccount {
+        name: String,
+        password: String,
+    },
+    LoginCharacter {
+        character: String,
+    },
+    DeleteCharacter {
+        character: String,
+    },
+    CreateCharacter {
+        name: String,
+    },
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]

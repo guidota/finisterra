@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/crates/client/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/database/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/definitions/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/engine/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/lorenzo/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/lorenzo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/luna/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/protocol/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/roma/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/server/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
