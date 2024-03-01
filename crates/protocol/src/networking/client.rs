@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-use crate::{CONFIG, ProtocolMessage};
+use crate::{ProtocolMessage, CONFIG};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum ClientPacket {

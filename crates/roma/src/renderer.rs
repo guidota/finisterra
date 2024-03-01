@@ -1,11 +1,15 @@
-use std::{ops::Range, num::NonZeroU32};
+use std::{num::NonZeroU32, ops::Range};
 
 use engine::{
     camera::Viewport,
-    draw::{image::DrawImage, Target}, engine::TextureID,
+    draw::{image::DrawImage, Target},
+    engine::TextureID,
 };
 use nohash_hasher::IntMap;
-use wgpu::{util::DeviceExt, Device, PushConstantRange, Queue, ShaderStages, SurfaceConfiguration, BindGroup};
+use wgpu::{
+    util::DeviceExt, BindGroup, Device, PushConstantRange, Queue, ShaderStages,
+    SurfaceConfiguration,
+};
 
 use crate::images::Images;
 
@@ -31,28 +35,27 @@ impl Renderer {
     pub fn initialize(device: &Device, config: &SurfaceConfiguration) -> Self {
         let shader = device.create_shader_module(wgpu::include_wgsl!("renderer/shader.wgsl"));
 
-        let bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: NonZeroU32::new(Images::MAX_IMAGES),
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: NonZeroU32::new(Images::MAX_IMAGES),
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
+                    count: NonZeroU32::new(Images::MAX_IMAGES),
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: NonZeroU32::new(Images::MAX_IMAGES),
+                },
+            ],
+            label: Some("texture_bind_group_layout"),
+        });
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -163,9 +166,12 @@ impl Renderer {
 
     pub fn prepare(&mut self, device: &Device, queue: &Queue) -> Instructions {
         // ensure space in vertex buffer
-        let queue_size = self.draws_to_world.len() + self.draws_to_ui.len() + self.draws_to_textures.iter().fold(0, |size, (_, draws)| {
-            size + draws.len()
-        });
+        let queue_size = self.draws_to_world.len()
+            + self.draws_to_ui.len()
+            + self
+                .draws_to_textures
+                .iter()
+                .fold(0, |size, (_, draws)| size + draws.len());
         let queue_size_in_bytes =
             (std::mem::size_of::<DrawImage>() * queue_size) as wgpu::BufferAddress;
         if self.vertex_buffer.size() < queue_size_in_bytes {
@@ -178,7 +184,11 @@ impl Renderer {
             });
         }
 
-        for draw in self.draws_to_world.iter_mut().chain(self.draws_to_ui.iter_mut()) {
+        for draw in self
+            .draws_to_world
+            .iter_mut()
+            .chain(self.draws_to_ui.iter_mut())
+        {
             if let Some(index) = self.texture_array.get_index(draw.index) {
                 draw.index = index;
             }
@@ -189,7 +199,10 @@ impl Renderer {
         let mut offset = 0;
         for (texture_id, draws) in &mut self.draws_to_textures {
             for draw in draws.iter_mut() {
-                if let Some(index) = self.pre_render_texture_array.get_index(draw.index as TextureID) {
+                if let Some(index) = self
+                    .pre_render_texture_array
+                    .get_index(draw.index as TextureID)
+                {
                     draw.index = index;
                 }
             }
@@ -218,12 +231,21 @@ impl Renderer {
         self.draws_to_ui.clear();
 
         self.texture_array.prepare(device, &self.bind_group_layout);
-        self.pre_render_texture_array.prepare(device, &self.bind_group_layout);
+        self.pre_render_texture_array
+            .prepare(device, &self.bind_group_layout);
 
-        Instructions { world_range, ui_range, to_textures_ranges }
+        Instructions {
+            world_range,
+            ui_range,
+            to_textures_ranges,
+        }
     }
 
-    pub fn prepare_pass<'pass>(&'pass self, render_pass: &mut wgpu::RenderPass<'pass>, bind_group: &'pass BindGroup) {
+    pub fn prepare_pass<'pass>(
+        &'pass self,
+        render_pass: &mut wgpu::RenderPass<'pass>,
+        bind_group: &'pass BindGroup,
+    ) {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_bind_group(0, bind_group, &[]);
@@ -255,4 +277,3 @@ pub struct Instructions {
     pub ui_range: Range<usize>,
     pub to_textures_ranges: Vec<(TextureID, Range<usize>)>,
 }
-

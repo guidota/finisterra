@@ -1,12 +1,9 @@
 use std::env;
 
 use anyhow::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use sqlx::{Error, FromRow, migrate::MigrateDatabase, SqlitePool};
-
-pub struct Database {
-    pool: SqlitePool,
-}
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 pub struct Account {
@@ -19,6 +16,37 @@ pub struct Account {
 pub struct Character {
     pub name: String,
     pub account_name: String,
+    pub race: String,
+    pub price: i64,
+    pub is_for_sale: bool,
+}
+
+#[async_trait]
+pub trait MarketRepository {
+    // Get all characters
+    async fn accounts(&self) -> Result<Vec<Account>>;
+
+    // Get Account by account name
+    async fn account_by_name(&self, mail: &str) -> Result<Option<Account>>;
+
+    // Get characters from account by account name
+    async fn account_characters(&self, account_name: &str) -> Result<Option<Vec<Character>>>;
+
+    // Get all characters
+    async fn characters(&self) -> Result<Vec<Character>>;
+
+    // Get character by character name
+    async fn character_by_name(&self, mail: &str) -> Result<Option<Character>>;
+
+    // Get all characters for sale
+    async fn characters_for_sale(&self) -> Result<Vec<Character>>;
+
+    // Put character on sale or remove from sale
+    async fn character_sell(&self, account_name: &str, character_name: &str, price: i64, for_sale: bool) -> Result<bool>;
+}
+
+pub struct Database {
+    pool: SqlitePool,
 }
 
 impl Database {
@@ -33,16 +61,17 @@ impl Database {
 
         Ok(Self { pool })
     }
-    pub async fn create_account(&self, mail: &str, password: &str) -> Result<i64> {
+    pub async fn create_account(&self, name: &str, mail: &str, password: &str) -> Result<i64> {
         let mut conn = self.pool.acquire().await?;
 
         // Insert the task, then obtain the ID of this row
         let id = sqlx::query(
             "
-                INSERT INTO accounts ( mail, password )
-                VALUES ( $1, $2 )
+                INSERT INTO accounts (name, mail, password)
+                VALUES ( $1, $2, $3 )
             ",
         )
+            .bind(name)
         .bind(mail)
         .bind(password)
         .execute(&mut *conn)
@@ -50,16 +79,6 @@ impl Database {
         .last_insert_rowid();
 
         Ok(id)
-    }
-
-    pub async fn accounts(&self) -> Result<Vec<Account>> {
-        let mut conn = self.pool.acquire().await?;
-
-        let accounts = sqlx::query_as::<_, Account>("SELECT * FROM accounts")
-            .fetch_all(&mut *conn)
-            .await?;
-
-        Ok(accounts)
     }
 
     pub async fn account_by_name(&self, mail: &str) -> Result<Option<Account>> {
@@ -76,33 +95,93 @@ impl Database {
         }
     }
 
-    pub async fn account_characters(&self, account_name: &str) -> Result<Vec<Character>> {
+    pub async fn account_characters(&self, account_name: &str) -> Result<Option<Vec<Character>>> {
         let mut conn = self.pool.acquire().await?;
         let characters = sqlx::query_as::<_, Character>(
-            "SELECT account_name, name FROM characters WHERE account_name = $1",
+            "SELECT name, account_name, race, price, is_for_sale FROM characters WHERE account_name = $1",
         )
         .bind(account_name)
         .fetch_all(&mut *conn)
-        .await?;
+            .await;
 
-        Ok(characters)
+        match characters {
+            Ok(characters) => Ok(Some(characters)),
+            Err(Error::RowNotFound) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("{}", e)),
+        }
     }
 
-    pub async fn characters(&self) -> Result<Vec<Character>> {
+    pub async fn insert_character(&self, account_name: &str, character: &str) -> Result<i64> {
         let mut conn = self.pool.acquire().await?;
+        let id = sqlx::query(
+            "
+                INSERT INTO characters ( name, account_name, race, price, is_for_sale )
+                VALUES ( $1, $2, $3, $4, $5 )
+            ",
+        )
+        .bind(character)
+            .bind(account_name)
+            .bind("gnomo")
+            .bind(10)
+            .bind(false)
+        .execute(&mut *conn)
+        .await?
+        .last_insert_rowid();
 
+        Ok(id)
+    }
+}
+
+#[async_trait]
+impl MarketRepository for Database {
+    async fn accounts(&self) -> Result<Vec<Account>> {
+        let accounts = sqlx::query_as::<_, Account>("SELECT * FROM accounts")
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(accounts)
+    }
+
+    async fn account_by_name(&self, mail: &str) -> Result<Option<Account>> {
+        let account = sqlx::query_as::<_, Account>("SELECT * FROM accounts WHERE name = $1")
+            .bind(mail)
+            .fetch_one(&self.pool)
+            .await;
+
+        match account {
+            Ok(account) => Ok(Some(account)),
+            Err(Error::RowNotFound) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("{}", e)),
+        }
+    }
+
+    async fn account_characters(&self, account_name: &str) -> Result<Option<Vec<Character>>> {
+        let characters = sqlx::query_as::<_, Character>(
+            "SELECT name, account_name, race, price, is_for_sale FROM characters WHERE account_name = $1",
+        )
+            .bind(account_name)
+            .fetch_all(&self.pool)
+            .await;
+
+        match characters {
+            Ok(characters) => Ok(Some(characters)),
+            Err(Error::RowNotFound) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("{}", e)),
+        }
+    }
+
+    async fn characters(&self) -> Result<Vec<Character>> {
         let characters = sqlx::query_as::<_, Character>("SELECT * FROM characters")
-            .fetch_all(&mut *conn)
+            .fetch_all(&self.pool)
             .await?;
 
         Ok(characters)
     }
 
-    pub async fn character_by_name(&self, mail: &str) -> Result<Option<Character>> {
-        let mut conn = self.pool.acquire().await?;
+    async fn character_by_name(&self, mail: &str) -> Result<Option<Character>> {
         let character = sqlx::query_as::<_, Character>("SELECT * FROM characters WHERE name = $1")
             .bind(mail)
-            .fetch_one(&mut *conn)
+            .fetch_one(&self.pool)
             .await;
 
         match character {
@@ -112,20 +191,26 @@ impl Database {
         }
     }
 
-    pub async fn insert_character(&self, account_id: i64, character: &str) -> Result<i64> {
-        let mut conn = self.pool.acquire().await?;
-        let id = sqlx::query(
-            "
-                INSERT INTO characters ( account_id, name )
-                VALUES ( $1, $2 )
-            ",
-        )
-        .bind(account_id)
-        .bind(character)
-        .execute(&mut *conn)
-        .await?
-        .last_insert_rowid();
+    async fn characters_for_sale(&self) -> Result<Vec<Character>> {
+        let characters =
+            sqlx::query_as::<_, Character>("SELECT * FROM characters WHERE is_for_sale = true")
+                .fetch_all(&self.pool)
+                .await?;
 
-        Ok(id)
+        Ok(characters)
+    }
+
+    async fn character_sell(&self, account_name: &str, character_name: &str, price: i64, for_sale: bool) -> Result<bool> {
+        let updated =
+            sqlx::query("UPDATE characters SET price = $1, is_for_sale = $2 WHERE account_name = $3 name = $4")
+                .bind(price)
+                .bind(for_sale)
+                .bind(account_name)
+                .bind(character_name)
+                .execute(&self.pool)
+                .await
+                .is_ok();
+
+        Ok(updated)
     }
 }
