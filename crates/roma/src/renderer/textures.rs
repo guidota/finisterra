@@ -12,19 +12,19 @@ enum Texture {
     Present(texture::Texture),
 }
 
-pub struct Images {
+pub struct Textures {
     textures: Vec<Texture>,
     files: IntMap<u32, String>,
 
     max_texture_id: usize,
 }
 
-impl Images {
-    pub const MAX_IMAGES: u32 = 10000;
+impl Textures {
+    pub const MAX_TEXTURES: u32 = 10000;
 
     pub fn initialize() -> Self {
-        let mut textures = Vec::with_capacity(Self::MAX_IMAGES as usize);
-        for _ in 0..Self::MAX_IMAGES {
+        let mut textures = Vec::with_capacity(Self::MAX_TEXTURES as usize);
+        for _ in 0..Self::MAX_TEXTURES {
             textures.push(Texture::Uninitialized);
         }
 
@@ -51,7 +51,7 @@ impl Images {
 
     pub fn add_texture(&mut self, texture: texture::Texture) -> TextureID {
         let mut id: TextureID = self.max_texture_id as TextureID + 1;
-        for i in self.max_texture_id + 1..Self::MAX_IMAGES as usize {
+        for i in self.max_texture_id + 1..Self::MAX_TEXTURES as usize {
             if matches!(self.textures[i], Texture::Uninitialized) {
                 id = i as TextureID;
                 self.textures[i] = Texture::Present(texture);

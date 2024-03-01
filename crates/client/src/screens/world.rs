@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use engine::{
     camera::{Viewport, Zoom},
-    draw::{image::DrawImage, text::DrawText, Color, Position, Target},
+    draw::{image::DrawImage, Color, Position, Target},
     engine::{GameEngine, TextureID},
 };
 use interpolation::lerp;
@@ -12,7 +12,7 @@ use crate::{
     ui::{
         button::Button,
         colors::*,
-        fonts::{TAHOMA_BOLD_8_ID, TAHOMA_BOLD_8_SHADOW_ID, TAHOMA_REGULAR_8_ID, WIZARD_16_ID},
+        fonts::{TAHOMA_BOLD_8_SHADOW_ID, WIZARD_16_ID},
         image::Image,
         label::Label,
         textures::{
@@ -245,7 +245,6 @@ impl Bar {
                 .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format! {"{min}/{max}"})
                 .expect("can parse");
 
-            // 999 / 500 * 100
             let percent = ((min as f32 / max as f32) * 100.) as u16;
             self.target = percent;
             self.interpolation_time = Duration::ZERO;

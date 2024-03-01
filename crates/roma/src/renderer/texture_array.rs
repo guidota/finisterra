@@ -2,8 +2,6 @@ use std::rc::Rc;
 
 use engine::engine::TextureID;
 
-use crate::images::Images;
-
 pub struct TextureArray {
     indices: Vec<Option<u32>>,
     textures: Vec<Rc<wgpu::TextureView>>,
@@ -13,12 +11,8 @@ pub struct TextureArray {
 
 impl TextureArray {
     pub fn new() -> Self {
-        let mut indices = Vec::with_capacity(Images::MAX_IMAGES as usize);
-        for _ in 0..Images::MAX_IMAGES {
-            indices.push(None);
-        }
         Self {
-            indices,
+            indices: vec![],
             textures: vec![],
             samplers: vec![],
             bind_group: None,
@@ -30,10 +24,16 @@ impl TextureArray {
     }
 
     pub fn has_texture(&self, id: TextureID) -> bool {
+        if id > self.indices.len() as u32 {
+            return false;
+        }
         self.indices[id as usize].is_some()
     }
 
     pub fn get_index(&self, id: TextureID) -> Option<u32> {
+        if id > self.indices.len() as u32 {
+            return None;
+        }
         self.indices[id as usize]
     }
 
@@ -43,11 +43,17 @@ impl TextureArray {
         texture: Rc<wgpu::TextureView>,
         sampler: Rc<wgpu::Sampler>,
     ) {
+        let size = self.indices.len() as u32;
+        if id > size {
+            for _ in size..=id {
+                self.indices.push(None);
+            }
+        }
         if self.indices[id as usize].is_some() {
             return;
         }
-        let index = self.textures.len() as u32;
 
+        let index = self.textures.len() as u32;
         self.indices[id as usize] = Some(index);
         self.textures.push(texture);
         self.samplers.push(sampler);

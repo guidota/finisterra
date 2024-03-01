@@ -11,7 +11,6 @@ use engine::{
     window::Size,
 };
 use fonts::Fonts;
-use images::Images;
 use input::WinitInputHelper;
 use renderer::{Instructions, Renderer};
 use sounds::Sounds;
@@ -22,7 +21,6 @@ use wgpu::PresentMode;
 mod camera;
 mod files;
 mod fonts;
-mod images;
 mod input;
 mod renderer;
 mod sounds;
@@ -37,8 +35,7 @@ pub struct Roma {
     ui_camera: Camera,
     fonts: Fonts,
     _sounds: Sounds,
-    images: Images,
-    pub(crate) renderer: Renderer,
+    renderer: Renderer,
     input: WinitInputHelper,
 
     depth_texture_view: wgpu::TextureView,
@@ -57,11 +54,10 @@ impl GameEngine for Roma {
         });
 
         let renderer = Renderer::initialize(&state.device, &state.config);
-        let world_camera = Camera::initialize(state.size);
-        let ui_camera = Camera::initialize(state.size);
+        let world_camera = Camera::initialize(state.size, true);
+        let ui_camera = Camera::initialize(state.size, false);
         let fonts = Fonts::initialize();
         let _sounds = Sounds::initialize();
-        let images = Images::initialize();
         let input = WinitInputHelper::new();
 
         let size = engine::window::Size {
@@ -78,7 +74,6 @@ impl GameEngine for Roma {
             ui_camera,
             fonts,
             _sounds,
-            images,
             renderer,
             input,
 
@@ -141,24 +136,20 @@ impl GameEngine for Roma {
     }
 
     fn add_texture(&mut self, path: &str) -> TextureID {
-        self.images.add_file(path)
+        self.renderer.add_texture_file(path)
     }
 
     fn set_texture(&mut self, path: &str, id: TextureID) {
-        self.images.set_file(id, path);
+        self.renderer.set_texture_file(path, id);
     }
 
     fn create_texture(&mut self, dimensions: engine::draw::Dimensions) -> TextureID {
         let texture = texture::Texture::new(&self.state.device, dimensions);
-
-        self.images.add_texture(texture)
+        self.renderer.add_texture(texture)
     }
 
     fn texture_dimensions(&mut self, texture_id: TextureID) -> Option<(u16, u16)> {
-        self.images
-            .get(texture_id)
-            .flatten()
-            .map(|texture| (texture.width, texture.height))
+        self.renderer.texture_dimensions(texture_id)
     }
 
     fn draw_image(
@@ -166,16 +157,22 @@ impl GameEngine for Roma {
         parameters: engine::draw::image::DrawImage,
         target: engine::draw::Target,
     ) {
-        if self
-            .images
-            .load_texture(&self.state.device, &self.state.queue, parameters.index)
-        {
+        if self.renderer.textures.load_texture(
+            &self.state.device,
+            &self.state.queue,
+            parameters.index,
+        ) {
             let texture_array = match target {
-                Target::World | Target::UI => &mut self.renderer.texture_array,
-                _ => &mut self.renderer.pre_render_texture_array,
+                Target::World | Target::UI => &mut self.renderer.main.texture_array,
+                _ => &mut self.renderer.offscreen.texture_array,
             };
             if !texture_array.has_texture(parameters.index) {
-                let texture = self.images.get(parameters.index).unwrap().unwrap();
+                let texture = self
+                    .renderer
+                    .textures
+                    .get(parameters.index)
+                    .unwrap()
+                    .unwrap();
                 let view = texture.view.clone();
                 let sampler = texture.sampler.clone();
 
@@ -202,15 +199,16 @@ impl GameEngine for Roma {
             return;
         };
         if self
-            .images
+            .renderer
+            .textures
             .load_texture(&self.state.device, &self.state.queue, texture_id)
         {
             let texture_array = match target {
-                Target::World | Target::UI => &mut self.renderer.texture_array,
-                _ => &mut self.renderer.pre_render_texture_array,
+                Target::World | Target::UI => &mut self.renderer.main.texture_array,
+                _ => &mut self.renderer.offscreen.texture_array,
             };
             if !texture_array.has_texture(texture_id) {
-                let texture = self.images.get(texture_id).unwrap().unwrap();
+                let texture = self.renderer.textures.get(texture_id).unwrap().unwrap();
                 let view = texture.view.clone();
                 let sampler = texture.sampler.clone();
 
@@ -338,9 +336,9 @@ impl GameEngine for Roma {
         };
 
         let Instructions {
+            to_textures_ranges,
             world_range,
             ui_range,
-            to_textures_ranges,
         } = self
             .renderer
             .prepare(&self.state.device, &self.state.queue, &self.state.config);
@@ -353,56 +351,50 @@ impl GameEngine for Roma {
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-            if let Some(bind_group) = self.renderer.pre_render_texture_array.get_bind_group() {
-                for (texture_id, range) in to_textures_ranges {
-                    if let Some(Some(texture)) = self.images.get(texture_id) {
-                        let size = engine::window::Size {
-                            width: texture.width,
-                            height: texture.height,
-                        };
-                        let depth_texture_view = self
-                            .depth_textures
-                            .entry(size)
-                            .or_insert_with(|| create_depth_texture(&self.state, size));
+            let clear_store_ops = wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                store: wgpu::StoreOp::Store,
+            };
+            let depth_clear_store_ops = wgpu::Operations {
+                load: wgpu::LoadOp::Clear(0.0),
+                store: wgpu::StoreOp::Store,
+            };
 
-                        let mut render_pass =
-                            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                label: Some("Render To Texture Pass"),
-                                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                                    view: &texture.view,
-                                    resolve_target: None,
-                                    ops: wgpu::Operations {
-                                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                                        store: wgpu::StoreOp::Store,
-                                    },
-                                })],
-                                depth_stencil_attachment: Some(
-                                    wgpu::RenderPassDepthStencilAttachment {
-                                        view: depth_texture_view,
-                                        depth_ops: Some(wgpu::Operations {
-                                            load: wgpu::LoadOp::Clear(0.0),
-                                            store: wgpu::StoreOp::Store,
-                                        }),
-                                        stencil_ops: None,
-                                    },
-                                ),
-                                timestamp_writes: None,
-                                occlusion_query_set: None,
-                            });
+            for (texture_id, range) in to_textures_ranges {
+                if let Some(Some(texture)) = self.renderer.textures.get(texture_id) {
+                    let size = engine::window::Size {
+                        width: texture.width,
+                        height: texture.height,
+                    };
+                    let depth_texture_view = self
+                        .depth_textures
+                        .entry(size)
+                        .or_insert_with(|| create_depth_texture(&self.state, size));
 
-                        let dimensions = Size {
-                            width: size.width,
-                            height: size.height,
-                        };
-                        let target_camera = Camera::initialize(dimensions);
-                        self.renderer.prepare_pass(&mut render_pass, bind_group);
-                        self.renderer.render_range(
-                            &mut render_pass,
-                            range,
-                            &target_camera.viewport,
-                            target_camera.build_ui_view_projection_matrix(),
-                        );
-                    }
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some("Render To Texture Pass"),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &texture.view,
+                            resolve_target: None,
+                            ops: clear_store_ops,
+                        })],
+                        depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                            view: depth_texture_view,
+                            depth_ops: Some(depth_clear_store_ops),
+                            stencil_ops: None,
+                        }),
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                    });
+
+                    let dimensions = Size {
+                        width: size.width,
+                        height: size.height,
+                    };
+                    let target_camera = Camera::initialize(dimensions, true);
+                    self.renderer.offscreen.prepare_pass(&mut render_pass);
+                    self.renderer
+                        .render_range(&mut render_pass, range, &target_camera);
                 }
             }
             commands.push(encoder.finish());
@@ -424,17 +416,11 @@ impl GameEngine for Roma {
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view,
                         resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                            store: wgpu::StoreOp::Store,
-                        },
+                        ops: clear_store_ops,
                     })],
                     depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                         view: &self.depth_texture_view,
-                        depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(0.0),
-                            store: wgpu::StoreOp::Store,
-                        }),
+                        depth_ops: Some(depth_clear_store_ops),
                         stencil_ops: None,
                     }),
                     timestamp_writes: None,
@@ -450,44 +436,34 @@ impl GameEngine for Roma {
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                         label: Some("Render Encoder"),
                     });
-            if let Some(bind_group) = self.renderer.texture_array.get_bind_group() {
-                {
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some("Render Pass"),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Load,
-                                store: wgpu::StoreOp::Store,
-                            },
-                        })],
-                        depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
-                            depth_ops: Some(wgpu::Operations {
-                                load: wgpu::LoadOp::Load,
-                                store: wgpu::StoreOp::Store,
-                            }),
-                            stencil_ops: None,
+            {
+                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Render Pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                        view: &self.depth_texture_view,
+                        depth_ops: Some(wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: wgpu::StoreOp::Store,
                         }),
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    });
+                        stencil_ops: None,
+                    }),
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
 
-                    self.renderer.prepare_pass(&mut render_pass, bind_group);
-                    self.renderer.render_range(
-                        &mut render_pass,
-                        world_range,
-                        &self.world_camera.viewport,
-                        self.world_camera.build_view_projection_matrix(true),
-                    );
-                    self.renderer.render_range(
-                        &mut render_pass,
-                        ui_range,
-                        &self.ui_camera.viewport,
-                        self.ui_camera.build_view_projection_matrix(false),
-                    );
-                }
+                self.renderer.main.prepare_pass(&mut render_pass);
+                self.renderer
+                    .render_range(&mut render_pass, world_range, &self.world_camera);
+                self.renderer
+                    .render_range(&mut render_pass, ui_range, &self.ui_camera);
             }
             commands.push(encoder.finish());
 

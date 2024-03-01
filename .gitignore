@@ -2,3 +2,6 @@
 *.db
 *.db-shm
 *.db-wal
+flamegraph.svg
+perf.data
+perf.data.old
