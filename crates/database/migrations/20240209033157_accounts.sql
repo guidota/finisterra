@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS accounts
 (
     name        TEXT NOT NULL PRIMARY KEY UNIQUE,
     mail        TEXT NOT NULL UNIQUE,
-    password    TEXT NOT NULL
+    password    TEXT NOT NULL,
+    balance     INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS characters 
@@ -15,6 +16,14 @@ CREATE TABLE IF NOT EXISTS characters
     FOREIGN KEY (account_name) REFERENCES accounts (name)
 );
 
-INSERT OR IGNORE INTO accounts VALUES('guillo', 'mail', 'asd');
-INSERT OR IGNORE INTO characters VALUES('guillotambo', 'guillo', 'gnomo', null, false);
-INSERT OR IGNORE INTO characters VALUES('guillotambo2', 'guillo', 'enano', null, false);
+INSERT OR IGNORE INTO accounts VALUES('guillotambo', 'mail', 'asd', 0);
+INSERT OR IGNORE INTO characters VALUES('guillotambo', 'guillotambo', 'gnomo', null, false);
+INSERT OR IGNORE INTO characters VALUES('guillotambo2', 'guillotambo', 'enano', null, false);
+
+INSERT OR IGNORE INTO accounts VALUES('giyo', 'mail', 'asd', 0);
+INSERT OR IGNORE INTO characters VALUES('giyo', 'giyo', 'gnomo', null, false);
+INSERT OR IGNORE INTO characters VALUES('giyo2', 'giyo', 'enano', null, false);
+
+INSERT OR IGNORE INTO accounts VALUES('guillo', 'mail', 'asd', 0);
+INSERT OR IGNORE INTO characters VALUES('guillo', 'guillo', 'gnomo', null, false);
+INSERT OR IGNORE INTO characters VALUES('guillo2', 'guillo', 'enano', null, false);
