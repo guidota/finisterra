@@ -216,7 +216,7 @@ impl GameEngine for Roma {
             }
         }
 
-        let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16;
+        let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16 - 1;
 
         for char in &parameters.text.chars {
             let mut position = parameters.position;

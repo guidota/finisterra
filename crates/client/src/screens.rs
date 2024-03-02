@@ -9,18 +9,16 @@ use crate::game::Context;
 
 use self::{
     account::AccountScreen, character_creation::CharacterCreationScreen, home::HomeScreen,
-    loading::LoadingScreen, world::WorldScreen,
+    world::WorldScreen,
 };
 
 pub mod account;
 pub mod character_creation;
 pub mod demo;
 pub mod home;
-pub mod loading;
 pub mod world;
 
 pub enum Screen {
-    Loading(Box<LoadingScreen>),
     Home(Box<HomeScreen>),
     Demo,
     Account(Box<AccountScreen>),
@@ -36,7 +34,6 @@ pub trait GameScreen {
 impl GameScreen for Screen {
     fn update<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
         match self {
-            Screen::Loading(screen) => screen.update(context),
             Screen::Home(screen) => screen.update(context),
             Screen::Account(screen) => screen.update(context),
             Screen::CharacterCreation(screen) => screen.update(context),
@@ -47,7 +44,6 @@ impl GameScreen for Screen {
 
     fn draw<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
         match self {
-            Screen::Loading(screen) => screen.draw(context),
             Screen::Home(screen) => screen.draw(context),
             Screen::Account(screen) => screen.draw(context),
             Screen::CharacterCreation(screen) => screen.draw(context),
@@ -60,7 +56,6 @@ impl GameScreen for Screen {
 impl Display for Screen {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Screen::Loading(_) => f.write_str("Loading"),
             Screen::Home(_) => f.write_str("Home"),
             Screen::Demo => f.write_str("Demo"),
             Screen::Account(_) => f.write_str("Account"),

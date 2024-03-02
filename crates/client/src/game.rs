@@ -5,11 +5,14 @@ use tracing::info;
 
 use crate::{
     networking::connection::ConnectionState,
-    screens::{loading::LoadingScreen, GameScreen, Screen},
+    resources::Resources,
+    screens::{home::HomeScreen, GameScreen, Screen},
     ui::{self},
 };
 
 pub struct Finisterra {
+    resources: Resources,
+
     connection: ConnectionState,
 
     screen: Screen,
@@ -20,6 +23,7 @@ pub struct Context<'tick, E: GameEngine> {
     pub engine: &'tick mut E,
     pub screen_transition_sender: &'tick Sender<Screen>,
     pub connection: &'tick mut ConnectionState,
+    pub resources: &'tick Resources,
 }
 
 impl Game for Finisterra {
@@ -27,7 +31,8 @@ impl Game for Finisterra {
         ui::load(engine);
 
         Self {
-            screen: Screen::Loading(Box::new(LoadingScreen::new())),
+            resources: Resources::load(engine),
+            screen: Screen::Home(Box::new(HomeScreen::new(engine))),
             connection: ConnectionState::new("https://[::1]:7666"),
             screen_transition: channel(),
         }
@@ -41,6 +46,7 @@ impl Game for Finisterra {
         let mut context = Context {
             screen_transition_sender: &self.screen_transition.0,
             connection: &mut self.connection,
+            resources: &self.resources,
             engine,
         };
         self.screen.update(&mut context);

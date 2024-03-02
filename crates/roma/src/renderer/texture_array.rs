@@ -24,14 +24,14 @@ impl TextureArray {
     }
 
     pub fn has_texture(&self, id: TextureID) -> bool {
-        if id > self.indices.len() as u32 {
+        if id >= self.indices.len() as u32 {
             return false;
         }
         self.indices[id as usize].is_some()
     }
 
     pub fn get_index(&self, id: TextureID) -> Option<u32> {
-        if id > self.indices.len() as u32 {
+        if id >= self.indices.len() as u32 {
             return None;
         }
         self.indices[id as usize]
@@ -44,8 +44,8 @@ impl TextureArray {
         sampler: Rc<wgpu::Sampler>,
     ) {
         let size = self.indices.len() as u32;
-        if id > size {
-            for _ in size..=id {
+        if id >= size {
+            for _ in size..id + 1 {
                 self.indices.push(None);
             }
         }

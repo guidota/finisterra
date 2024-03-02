@@ -156,7 +156,9 @@ impl Finisterra {
                     self.outcoming_messages_sender
                         .send((
                             connection_id,
-                            ServerPacket::Account(server::Account::LoginCharacterOk { character }),
+                            ServerPacket::Account(server::Account::LoginCharacterOk {
+                                character: server::Character { name: character },
+                            }),
                         ))
                         .await
                         .expect("poisoned");
@@ -188,7 +190,9 @@ impl Finisterra {
                         .send((
                             connection_id,
                             ServerPacket::Account(server::Account::CreateCharacterOk {
-                                character: character.name,
+                                character: server::Character {
+                                    name: character.name,
+                                },
                             }),
                         ))
                         .await

@@ -1,4 +1,4 @@
-use crate::{race::Race, Range};
+use crate::{class::Class, Range};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Object {
@@ -10,7 +10,7 @@ pub struct Object {
     pub data: ObjectData,
     pub smithy: Option<Smithy>,
     pub carpentry: Option<Carpentry>,
-    pub not_allowed: Vec<Race>,
+    pub not_allowed: Vec<Class>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

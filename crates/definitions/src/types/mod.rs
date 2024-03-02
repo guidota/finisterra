@@ -2,6 +2,7 @@ pub mod animation;
 pub mod atlas;
 pub mod body;
 pub mod city;
+pub mod class;
 pub mod fx;
 pub mod gear;
 pub mod head;

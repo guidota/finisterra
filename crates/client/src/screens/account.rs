@@ -21,6 +21,7 @@ use crate::ui::UI;
 use super::character_creation::CharacterCreationScreen;
 use super::prepare_viewport;
 use super::screen_size;
+use super::world::entity;
 use super::world::WorldScreen;
 use super::GameScreen;
 use super::Screen;
@@ -94,10 +95,18 @@ impl GameScreen for AccountScreen {
         } else {
             for message in messages {
                 match message {
-                    ServerPacket::Account(server::Account::LoginCharacterOk { .. }) => context
-                        .screen_transition_sender
-                        .send(Screen::World(Box::new(WorldScreen::new(context.engine))))
-                        .expect("poisoned"),
+                    ServerPacket::Account(server::Account::LoginCharacterOk { character }) => {
+                        let character =
+                            entity::Character::from(context.engine, character, context.resources);
+                        context
+                            .screen_transition_sender
+                            .send(Screen::World(Box::new(WorldScreen::new(
+                                context.engine,
+                                0,
+                                character,
+                            ))))
+                            .expect("poisoned")
+                    }
                     ServerPacket::Account(server::Account::LoginCharacterFailed { reason }) => {
                         info!("login character failed {reason}");
                         self.connecting = false;

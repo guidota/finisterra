@@ -1,11 +1,13 @@
 use std::time::Duration;
 
 use engine::{
-    camera::{Viewport, Zoom},
+    camera::{self, Viewport, Zoom},
     draw::{image::DrawImage, Color, Position, Target},
     engine::{GameEngine, TextureID},
 };
 use interpolation::lerp;
+use nohash_hasher::IntMap;
+use tracing::info;
 
 use crate::{
     game::Context,
@@ -22,10 +24,18 @@ use crate::{
     },
 };
 
+use self::entity::{Character, Entity};
+
 use super::GameScreen;
+
+pub mod entity;
 
 pub struct WorldScreen {
     ui: WorldUI,
+
+    entities: IntMap<u32, Entity>,
+
+    me: u32,
 }
 
 pub struct WorldUI {
@@ -73,9 +83,14 @@ const WORLD_RENDER_WIDTH: u16 = 17 * TILE_SIZE; // 17 tiles
 const WORLD_RENDER_HEIGHT: u16 = 16 * TILE_SIZE; // 16 tiles
 
 impl WorldScreen {
-    pub fn new<E: GameEngine>(engine: &mut E) -> Self {
+    pub fn new<E: GameEngine>(engine: &mut E, entity_id: u32, character: Character) -> Self {
+        let mut entities = IntMap::default();
+        entities.insert(entity_id, Entity::Character(character));
+
         Self {
             ui: WorldUI::initialize(engine),
+            entities,
+            me: entity_id,
         }
     }
 }
@@ -83,6 +98,14 @@ impl WorldScreen {
 impl GameScreen for WorldScreen {
     fn update<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
         self.prepare_viewports(context.engine);
+        context
+            .engine
+            .set_world_camera_position(camera::Position { x: 300., y: 300. });
+
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            character.update(context.engine);
+        }
+
         self.ui.update(context.engine);
         self.ui.energy_bar.set_values(context.engine, 500, 999);
         self.ui.health_bar.set_values(context.engine, 600, 999);
@@ -97,6 +120,10 @@ impl GameScreen for WorldScreen {
 
     fn draw<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
         self.ui.draw(context.engine);
+
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            character.draw(context.engine, context.resources);
+        }
     }
 }
 
@@ -125,12 +152,13 @@ impl WorldScreen {
             height: size.height as f32,
         });
 
-        engine.set_world_camera_viewport(Viewport {
-            x: x_start as f32 + 14.,
-            y: y_start as f32 + 14.,
-            width: WORLD_RENDER_WIDTH as f32,
-            height: WORLD_RENDER_HEIGHT as f32,
-        });
+        let world_camera_viewport = Viewport {
+            x: (x_start as f32 + 14.) * zoom as f32,
+            y: (y_start as f32 + 14.) * zoom as f32,
+            width: WORLD_RENDER_WIDTH as f32 * zoom as f32,
+            height: WORLD_RENDER_HEIGHT as f32 * zoom as f32,
+        };
+        engine.set_world_camera_viewport(world_camera_viewport);
     }
 }
 

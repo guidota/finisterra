@@ -23,12 +23,20 @@ pub enum Connection {
 pub enum Account {
     Created { id: i64 },
     CreateFailed { reason: String },
+
     LoginOk { characters: Vec<String> },
     LoginFailed,
-    CreateCharacterOk { character: String },
+
+    CreateCharacterOk { character: Character },
     CreateCharacterFailed { reason: String },
-    LoginCharacterOk { character: String },
+
+    LoginCharacterOk { character: Character },
     LoginCharacterFailed { reason: String },
+}
+
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub struct Character {
+    pub name: String,
 }
 
 /// Users and NPCs

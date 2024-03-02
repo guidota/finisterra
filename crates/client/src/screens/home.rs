@@ -10,7 +10,6 @@ use protocol::{
 
 use crate::{
     game::Context,
-    resources::Resources,
     ui::colors::*,
     ui::{button::Button, colors::GRAY_6, input_field::InputField, label::Label, Widget},
     ui::{
@@ -23,8 +22,6 @@ use crate::{
 use super::{account::AccountScreen, prepare_viewport, screen_size, GameScreen, Screen};
 
 pub struct HomeScreen {
-    pub resources: Resources,
-
     ui: HomeUI,
 
     connecting: bool,
@@ -44,10 +41,9 @@ pub struct HomeUI {
 }
 
 impl HomeScreen {
-    pub fn new<E: GameEngine>(resources: Resources, engine: &mut E) -> Self {
+    pub fn new<E: GameEngine>(engine: &mut E) -> Self {
         let ui = HomeUI::initialize(engine);
         Self {
-            resources,
             ui,
             connecting: false,
         }

@@ -16,57 +16,53 @@ pub struct Textures {
     textures: Vec<Texture>,
     files: IntMap<u32, String>,
 
-    max_texture_id: usize,
+    next_texture_id: usize,
 }
 
 impl Textures {
-    pub const MAX_TEXTURES: u32 = 10000;
-
     pub fn initialize() -> Self {
-        let mut textures = Vec::with_capacity(Self::MAX_TEXTURES as usize);
-        for _ in 0..Self::MAX_TEXTURES {
-            textures.push(Texture::Uninitialized);
-        }
-
         Self {
-            textures,
+            textures: vec![],
             files: IntMap::default(),
-            max_texture_id: 0,
+            next_texture_id: 0,
         }
     }
 
     pub fn add_file(&mut self, path: &str) -> TextureID {
-        let id = self.max_texture_id as TextureID + 1;
-        self.max_texture_id = id as usize;
+        let id = self.next_texture_id as TextureID;
+        self.textures.push(Texture::Uninitialized);
         self.files.insert(id, path.to_string());
+        self.next_texture_id += 1;
         id
     }
 
     pub fn set_file(&mut self, id: TextureID, path: &str) {
+        let size = self.textures.len() as u32;
+        if id > size {
+            for _ in size..=id {
+                self.textures.push(Texture::Uninitialized);
+            }
+        }
+
         self.files.insert(id, path.to_string());
-        if id as usize > self.max_texture_id {
-            self.max_texture_id = id as usize;
+        if id as usize > self.next_texture_id {
+            self.next_texture_id = id as usize;
         }
     }
 
     pub fn add_texture(&mut self, texture: texture::Texture) -> TextureID {
-        let mut id: TextureID = self.max_texture_id as TextureID + 1;
-        for i in self.max_texture_id + 1..Self::MAX_TEXTURES as usize {
-            if matches!(self.textures[i], Texture::Uninitialized) {
-                id = i as TextureID;
-                self.textures[i] = Texture::Present(texture);
-                break;
-            }
-        }
-        self.max_texture_id = id as usize;
-        id
+        let id = self.next_texture_id;
+        self.textures.push(Texture::Present(texture));
+        self.next_texture_id += 1;
+
+        id as TextureID
     }
 
     pub fn load_texture(&mut self, device: &Device, queue: &Queue, id: TextureID) -> bool {
         match self.textures[id as usize] {
             Texture::Uninitialized => {
-                if (id as usize) < self.max_texture_id {
-                    self.max_texture_id = id as usize;
+                if (id as usize) < self.next_texture_id {
+                    self.next_texture_id = id as usize;
                 }
                 let Some(path) = self.files.get(&id) else {
                     self.textures[id as usize] = Texture::NotFound;

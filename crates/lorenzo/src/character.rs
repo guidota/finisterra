@@ -41,7 +41,7 @@ pub struct BodyFrameMetadata {
 }
 
 #[derive(Default, Debug)]
-pub struct Character {
+pub struct AnimatedCharacter {
     pub body: Body,
     pub skin: Skin,
 
@@ -56,7 +56,7 @@ pub struct Character {
     pub animator: Animator,
 }
 
-impl Character {
+impl AnimatedCharacter {
     pub fn change_direction(&mut self, direction: Direction) {
         self.animator.direction = direction;
         self.animator.time = Duration::ZERO;

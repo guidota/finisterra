@@ -10,7 +10,11 @@ use crate::ui::{
     Alignment, Widget, UI,
 };
 
-use super::{prepare_viewport, screen_size, world::WorldScreen, GameScreen, Screen};
+use super::{
+    prepare_viewport, screen_size,
+    world::{entity, WorldScreen},
+    GameScreen, Screen,
+};
 
 pub struct CharacterCreationScreen {
     ui: CharacterCreationUI,
@@ -55,11 +59,20 @@ impl GameScreen for CharacterCreationScreen {
             for message in messages {
                 match message {
                     protocol::server::ServerPacket::Account(
-                        server::Account::CreateCharacterOk { .. },
-                    ) => context
-                        .screen_transition_sender
-                        .send(Screen::World(Box::new(WorldScreen::new(context.engine))))
-                        .expect("poisoned"),
+                        server::Account::CreateCharacterOk { character },
+                    ) => {
+                        let character =
+                            entity::Character::from(context.engine, character, context.resources);
+
+                        context
+                            .screen_transition_sender
+                            .send(Screen::World(Box::new(WorldScreen::new(
+                                context.engine,
+                                0,
+                                character,
+                            ))))
+                            .expect("poisoned")
+                    }
                     protocol::server::ServerPacket::Account(
                         server::Account::CreateCharacterFailed { reason },
                     ) => {
