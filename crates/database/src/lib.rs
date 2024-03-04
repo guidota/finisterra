@@ -3,7 +3,7 @@ use std::env;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use sqlx::{Error, FromRow, migrate::MigrateDatabase, SqlitePool};
+use sqlx::{Error, Executor, FromRow, migrate::MigrateDatabase, SqlitePool};
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 pub struct Account {
@@ -56,7 +56,7 @@ pub trait MarketRepository {
     async fn character_sell(&self, character_name: &str, price: i64) -> Result<bool>;
 
     //Buy PJ
-    async fn character_buy(&self, account_name: &str, character_name: &str, price: i64) -> Result<bool>;
+    async fn character_buy(&self, account_buyer: &str, account_seller: &str, character_involved: &str, price: i64) -> Result<bool>;
 }
 
 pub struct Database {
@@ -271,24 +271,31 @@ impl MarketRepository for Database {
         Ok(updated)
     }
 
-    async fn character_buy(&self, account_name: &str, character_involved: &str, balance: i64) -> Result<bool> {
-        //Ver como se arma una TX para eto
+    async fn character_buy(&self, account_buyer: &str, account_seller: &str, character_involved: &str, price: i64) -> Result<bool> {
+        let mut tx = self.pool.begin().await?;
 
-        let mut updated =
-            sqlx::query("UPDATE characters SET account_name = $1, is_for_sale = false WHERE name = $2")
-                .bind(account_name)
-                .bind(character_involved)
-                .execute(&self.pool)
-                .await
-                .is_ok();
+        let mut updated = sqlx::query("UPDATE accounts SET balance = balance + $1 WHERE name = $2;")
+            .bind(price)
+            .bind(account_seller.to_string())
+            .execute(&mut tx)
+            .await?
+            .is_ok();
 
-        updated =
-            sqlx::query("UPDATE account SET balance = $1 WHERE name = $2")
-                .bind(balance)
-                .bind(account_name)
-                .execute(&self.pool)
-                .await
-                .is_ok();
+        updated = sqlx::query("UPDATE accounts SET balance = balance - $1 WHERE name = $2;")
+            .bind(price)
+            .bind(account_buyer.to_string())
+            .execute(&mut tx)
+            .await?
+            .is_ok();
+
+        updated = sqlx::query("UPDATE characters SET account_name = $1, is_for_sale = false WHERE name = $2;")
+            .bind(account_buyer.to_string())
+            .bind(character_involved.to_string())
+            .execute(&mut tx)
+            .await?
+            .is_ok();
+
+        tx.commit().await?;
 
         Ok(updated)
     }
