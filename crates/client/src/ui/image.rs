@@ -3,6 +3,8 @@ use engine::{
     engine::{GameEngine, TextureID},
 };
 
+use crate::game::Context;
+
 use super::Widget;
 
 pub struct Image {
@@ -35,19 +37,19 @@ impl Image {
 }
 
 impl Widget for Image {
-    fn update<E: GameEngine>(&mut self, engine: &mut E) {
-        if let Some(size) = engine.texture_dimensions(self.texture_id) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        if let Some(size) = context.engine.texture_dimensions(self.texture_id) {
             self.size = size;
         }
     }
 
-    fn draw<E: GameEngine>(&mut self, engine: &mut E) {
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let x = self.position.0 - self.size.0 / 2;
         let y = self.position.1 - self.size.1 / 2;
 
         let width = self.size.0 * self.percent / 100;
 
-        engine.draw_image(
+        context.engine.draw_image(
             DrawImage {
                 position: Position::new(x, y, 1.),
                 color: self.color,

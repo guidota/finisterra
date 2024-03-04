@@ -24,7 +24,7 @@ pub enum Account {
     Created { id: i64 },
     CreateFailed { reason: String },
 
-    LoginOk { characters: Vec<String> },
+    LoginOk { characters: Vec<Character> },
     LoginFailed,
 
     CreateCharacterOk { character: Character },

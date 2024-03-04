@@ -8,6 +8,7 @@ use protocol::server;
 use protocol::server::ServerPacket;
 use tracing::info;
 
+use crate::game::Context;
 use crate::ui::button::Button;
 use crate::ui::button::ButtonBuilder;
 use crate::ui::colors::*;
@@ -22,6 +23,7 @@ use super::character_creation::CharacterCreationScreen;
 use super::prepare_viewport;
 use super::screen_size;
 use super::world::entity;
+use super::world::entity::Character;
 use super::world::WorldScreen;
 use super::GameScreen;
 use super::Screen;
@@ -45,8 +47,8 @@ pub struct AccountUI {
 pub enum Slot {
     Char {
         button: Button,
-        label: Label,
-        character: String,
+        // label: Label,
+        character: Box<Character>,
     },
     Empty {
         button: Button,
@@ -54,19 +56,22 @@ pub enum Slot {
 }
 
 impl AccountScreen {
-    pub fn new<E: GameEngine>(engine: &mut E, characters: Vec<String>) -> Self {
+    pub fn new<E: GameEngine>(
+        context: &mut Context<E>,
+        characters: Vec<server::Character>,
+    ) -> Self {
         Self {
-            ui: AccountUI::initialize(engine, characters),
+            ui: AccountUI::initialize(context, characters),
             connecting: false,
         }
     }
 }
 
 impl GameScreen for AccountScreen {
-    fn update<E: engine::engine::GameEngine>(&mut self, context: &mut crate::game::Context<E>) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         prepare_viewport(context);
 
-        self.ui.update(context.engine);
+        self.ui.update(context);
 
         for slot in &self.ui.slots {
             if let Slot::Empty { button } = slot {
@@ -74,9 +79,10 @@ impl GameScreen for AccountScreen {
                     context
                         .screen_transition_sender
                         .send(Screen::CharacterCreation(Box::new(
-                            CharacterCreationScreen::new(context.engine),
+                            CharacterCreationScreen::new(context),
                         )))
-                        .expect("poisoned")
+                        .expect("poisoned");
+                    return;
                 }
             }
         }
@@ -89,15 +95,14 @@ impl GameScreen for AccountScreen {
                 context
                     .connection
                     .send(ClientPacket::Account(client::Account::LoginCharacter {
-                        character: character.to_string(),
+                        character: character.name.to_string(),
                     }));
             }
         } else {
             for message in messages {
                 match message {
                     ServerPacket::Account(server::Account::LoginCharacterOk { character }) => {
-                        let character =
-                            entity::Character::from(context.engine, character, context.resources);
+                        let character = entity::Character::from(context, &character);
                         context
                             .screen_transition_sender
                             .send(Screen::World(Box::new(WorldScreen::new(
@@ -117,61 +122,45 @@ impl GameScreen for AccountScreen {
         }
     }
 
-    fn draw<E: engine::engine::GameEngine>(&mut self, context: &mut crate::game::Context<E>) {
-        self.ui.draw(context.engine);
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.ui.draw(context);
     }
 }
 
 impl AccountUI {
-    fn initialize<E: GameEngine>(engine: &mut E, characters: Vec<String>) -> Self {
-        let mut button = |text: &str| Slot::Char {
+    fn initialize<E: GameEngine>(
+        context: &mut Context<E>,
+        characters: Vec<server::Character>,
+    ) -> Self {
+        let mut button = |character: &server::Character| Slot::Char {
             button: ButtonBuilder::new()
                 .texture_id(CHAR_SLOT_ID)
                 .size((SLOT_SIZE, SLOT_SIZE))
-                .color(GRAY_4)
+                .color(GRAY_1)
                 .build(),
-            label: Label::new(
-                engine.parse_text(TAHOMA_BOLD_8_SHADOW_ID, text).unwrap(),
-                TAHOMA_BOLD_8_SHADOW_ID,
-                BLUE,
-            ),
-            character: text.to_string(),
+
+            character: Box::new(Character::from(context, character)),
         };
         let empty = || Slot::Empty {
             button: ButtonBuilder::new()
                 .texture_id(NEW_CHAR_SLOT_ID)
                 .size((SLOT_SIZE, SLOT_SIZE))
-                .color(GRAY_4)
+                .color(GRAY_2)
                 .build(),
         };
         let slots = [
-            characters
-                .first()
-                .map(|char| button(char))
-                .unwrap_or(empty()),
-            characters
-                .get(1)
-                .map(|char| button(char))
-                .unwrap_or(empty()),
-            characters
-                .get(2)
-                .map(|char| button(char))
-                .unwrap_or(empty()),
-            characters
-                .get(3)
-                .map(|char| button(char))
-                .unwrap_or(empty()),
-            characters
-                .get(4)
-                .map(|char| button(char))
-                .unwrap_or(empty()),
-            characters
-                .get(5)
-                .map(|char| button(char))
-                .unwrap_or(empty()),
+            characters.first().map(&mut button).unwrap_or(empty()),
+            characters.get(1).map(&mut button).unwrap_or(empty()),
+            characters.get(2).map(&mut button).unwrap_or(empty()),
+            characters.get(3).map(&mut button).unwrap_or(empty()),
+            characters.get(4).map(&mut button).unwrap_or(empty()),
+            characters.get(5).map(&mut button).unwrap_or(empty()),
         ];
 
-        let enter_text = engine.parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Enter").unwrap();
+        let enter_text = context
+            .engine
+            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Enter")
+            .unwrap();
         let enter_label = Label {
             text: enter_text,
             position: (0, 0),
@@ -197,8 +186,8 @@ impl AccountUI {
 }
 
 impl UI for AccountUI {
-    fn update<E: GameEngine>(&mut self, engine: &mut E) {
-        let size = screen_size(engine);
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let size = screen_size(context.engine);
         let all_slots_width = (SLOT_SIZE + SPACING) * SLOTS as u16;
         let center_x = size.0 / 2;
         let mut x = center_x - all_slots_width / 2 + 32;
@@ -206,10 +195,10 @@ impl UI for AccountUI {
 
         for (i, slot) in self.slots.iter_mut().enumerate() {
             slot.button().position = (x, center_y);
-            slot.button().update(engine);
+            slot.button().update(context);
 
-            if let Slot::Char { label, .. } = slot {
-                label.position = (x + 2, center_y - 20);
+            if let Slot::Char { character, .. } = slot {
+                character.position = (x, center_y + 2);
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);
@@ -223,12 +212,12 @@ impl UI for AccountUI {
             }
             x += SLOT_SIZE + SPACING;
         }
-        self.enter_button.update(engine);
+        self.enter_button.update(context);
         self.enter_button.position = (center_x, center_y - 100);
     }
 
-    fn draw<E: GameEngine>(&mut self, engine: &mut E) {
-        engine.draw_image(
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        context.engine.draw_image(
             DrawImage {
                 position: Position { x: 0, y: 0, z: 0. },
                 color: WHITE,
@@ -238,12 +227,12 @@ impl UI for AccountUI {
             Target::UI,
         );
         for slot in self.slots.iter_mut() {
-            slot.button().draw(engine);
-            if let Slot::Char { label, .. } = slot {
-                label.draw(engine);
+            slot.button().draw(context);
+            if let Slot::Char { character, .. } = slot {
+                character.draw(context);
             }
         }
-        self.enter_button.draw(engine);
+        self.enter_button.draw(context);
     }
 }
 

@@ -1,5 +1,7 @@
 use engine::engine::GameEngine;
 
+use crate::game::Context;
+
 use self::{fonts::Fonts, textures::Textures};
 
 pub mod button;
@@ -19,13 +21,13 @@ pub enum Alignment {
 }
 
 pub trait Widget {
-    fn update<E: GameEngine>(&mut self, engine: &mut E);
-    fn draw<E: GameEngine>(&mut self, engine: &mut E);
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>);
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>);
 }
 
 pub trait UI {
-    fn update<E: GameEngine>(&mut self, engine: &mut E);
-    fn draw<E: GameEngine>(&mut self, engine: &mut E);
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>);
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>);
 }
 
 pub fn load<E: GameEngine>(engine: &mut E) {

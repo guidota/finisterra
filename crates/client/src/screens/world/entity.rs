@@ -9,14 +9,12 @@ use engine::{
     },
     engine::GameEngine,
 };
-use lorenzo::{
-    animations::Animation,
-    character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
-};
+use lorenzo::character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter};
 use protocol::server;
 use rand::seq::SliceRandom;
 
 use crate::{
+    game::Context,
     resources::Resources,
     ui::{
         colors::{BLUE, BLUE_3},
@@ -36,9 +34,9 @@ impl Entity {
             Entity::Npc(_) => todo!(),
         }
     }
-    pub fn draw<E: GameEngine>(&mut self, engine: &mut E, resources: &Resources) {
+    pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         match self {
-            Entity::Character(character) => character.draw(engine, resources),
+            Entity::Character(character) => character.draw(context),
             Entity::Npc(_) => todo!(),
         }
     }
@@ -64,18 +62,15 @@ pub struct Character {
 }
 
 impl Character {
-    pub fn from<E: GameEngine>(
-        engine: &mut E,
-        character: server::Character,
-        resources: &Resources,
-    ) -> Self {
-        let name_text = engine
+    pub fn from<E: GameEngine>(context: &mut Context<E>, character: &server::Character) -> Self {
+        let name_text = context
+            .engine
             .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &character.name)
             .expect("can parse");
-        let mut animation = Self::random(resources);
+        let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
         Self {
-            name: character.name,
+            name: character.name.to_string(),
             name_text,
 
             position: (300, 300), // TODO!
@@ -128,11 +123,11 @@ impl Character {
         self.animation.update_animation(delta);
     }
 
-    pub fn draw<E: GameEngine>(&mut self, engine: &mut E, resources: &Resources) {
+    pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
 
         let x = self.position.0;
-        engine.draw_text(
+        context.engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
@@ -142,21 +137,22 @@ impl Character {
             Target::World,
         );
 
-        let apoca = engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Rahma Nanarak O'al")
-            .expect("can parse");
-        engine.draw_text(
-            TAHOMA_BOLD_8_SHADOW_ID,
-            DrawText {
-                text: &apoca,
-                position: Position::new(x, self.position.1 + 56, 0.5),
-                color: BLUE_3,
-            },
-            Target::World,
-        );
+        // let apoca = context
+        //     .engine
+        //     .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Rahma Nanarak O'al")
+        //     .expect("can parse");
+        // context.engine.draw_text(
+        //     TAHOMA_BOLD_8_SHADOW_ID,
+        //     DrawText {
+        //         text: &apoca,
+        //         position: Position::new(x, self.position.1 + 56, 0.5),
+        //         color: BLUE_3,
+        //     },
+        //     Target::World,
+        // );
 
         let skin = self.animation.get_skin_frame();
-        let image = &resources.images[skin.image as usize];
+        let image = &context.resources.images[skin.image as usize];
 
         let x = self.position.0 - body.base.x as u16;
         let y = self.position.1 - body.base.y as u16;
@@ -164,7 +160,7 @@ impl Character {
         let color = [255, 255, 255, 255];
         let z = 0.5 + (skin.priority as f32 * 0.0001);
 
-        engine.draw_image(
+        context.engine.draw_image(
             DrawImage {
                 position: Position::new(x, y, z),
                 source: [image.x, image.y, image.width, image.height],
@@ -175,8 +171,8 @@ impl Character {
         );
 
         if let Some(metadata) = self.animation.get_face_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.head.x as u16 - metadata.offset.x as u16,
@@ -192,8 +188,8 @@ impl Character {
         }
 
         if let Some(metadata) = self.animation.get_eyes_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.head.x as u16 - metadata.offset.x as u16,
@@ -209,8 +205,8 @@ impl Character {
         }
 
         if let Some(metadata) = self.animation.get_hair_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.head.x as u16 - metadata.offset.x as u16,
@@ -226,8 +222,8 @@ impl Character {
         }
 
         if let Some(metadata) = self.animation.get_helmet_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.head.x as u16 - metadata.offset.x as u16,
@@ -243,8 +239,8 @@ impl Character {
         }
 
         if let Some(metadata) = self.animation.get_weapon_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.right_hand.x as u16 - metadata.offset.x as u16,
@@ -260,8 +256,8 @@ impl Character {
         }
 
         if let Some(metadata) = self.animation.get_shield_frame() {
-            let image = &resources.images[metadata.image as usize];
-            engine.draw_image(
+            let image = &context.resources.images[metadata.image as usize];
+            context.engine.draw_image(
                 DrawImage {
                     position: Position::new(
                         x + body.left_hand.x as u16 - metadata.offset.x as u16,

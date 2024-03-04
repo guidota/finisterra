@@ -76,13 +76,21 @@ pub fn prepare_viewport<E: GameEngine>(context: &mut Context<E>) {
         width,
         height,
     };
-    context.engine.set_world_camera_viewport(viewport);
     context.engine.set_ui_camera_viewport(viewport);
+    context.engine.set_world_camera_viewport(viewport);
 
     if height >= (540. * 2.) && width >= (800. * 2.) {
         context.engine.set_camera_zoom(camera::Zoom::Double);
+        context.engine.set_world_camera_position(camera::Position {
+            x: width / 4.,
+            y: height / 4.,
+        });
     } else {
         context.engine.set_camera_zoom(camera::Zoom::None);
+        context.engine.set_world_camera_position(camera::Position {
+            x: width / 2.,
+            y: height / 2.,
+        });
     }
 }
 

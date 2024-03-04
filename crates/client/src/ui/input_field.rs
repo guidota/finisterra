@@ -10,6 +10,8 @@ use engine::{
     input::keyboard::{Key, NamedKey},
 };
 
+use crate::game::Context;
+
 use super::Widget;
 
 const TIME_TO_BLINK: Duration = Duration::from_millis(200);
@@ -42,11 +44,11 @@ impl InputField {
         size: (u16, u16),
         font_texture_id: TextureID,
         background_texture_id: TextureID,
-        engine: &mut E,
+        context: &mut Context<E>,
     ) -> Self {
         let text = "".to_string();
-        let parsed_text = engine.parse_text(font_texture_id, "").unwrap();
-        let blinking_cursor = engine.parse_text(font_texture_id, "|").unwrap();
+        let parsed_text = context.engine.parse_text(font_texture_id, "").unwrap();
+        let blinking_cursor = context.engine.parse_text(font_texture_id, "|").unwrap();
 
         Self {
             font_color,
@@ -66,13 +68,13 @@ impl InputField {
         }
     }
 
-    fn update_focus<E: GameEngine>(&mut self, engine: &mut E) {
-        if engine.mouse_clicked() {
-            let zoom = match engine.get_camera_zoom() {
+    fn update_focus<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        if context.engine.mouse_clicked() {
+            let zoom = match context.engine.get_camera_zoom() {
                 engine::camera::Zoom::None => 1.,
                 engine::camera::Zoom::Double => 2.,
             };
-            let mouse_position = engine.mouse_position();
+            let mouse_position = context.engine.mouse_position();
             let (x, y) = (
                 (mouse_position.x / zoom) as u16,
                 (mouse_position.y / zoom) as u16,
@@ -89,25 +91,25 @@ impl InputField {
         }
     }
 
-    fn update_pressed_keys<E: GameEngine>(&mut self, engine: &mut E) {
+    fn update_pressed_keys<E: GameEngine>(&mut self, context: &mut Context<E>) {
         if !self.focused {
             return;
         }
 
-        let pressed_keys = engine.pressed_keys();
+        let pressed_keys = context.engine.pressed_keys();
         for key in pressed_keys.iter() {
-            self.process_key(key, engine);
+            self.process_key(key, context);
         }
 
-        let held_keys = engine.held_keys();
+        let held_keys = context.engine.held_keys();
         for key in held_keys {
-            self.process_key(&key, engine);
+            self.process_key(&key, context);
         }
     }
 
-    fn update_blinking_cursor<E: GameEngine>(&mut self, engine: &mut E) {
+    fn update_blinking_cursor<E: GameEngine>(&mut self, context: &mut Context<E>) {
         if self.focused {
-            let delta = engine.get_delta();
+            let delta = context.engine.get_delta();
             if self.blinking_time.ge(&TIME_TO_BLINK) {
                 self.blinking_time = Duration::ZERO;
                 if self.blinking_transparency > 0 {
@@ -121,7 +123,7 @@ impl InputField {
         }
     }
 
-    fn process_key<E: GameEngine>(&mut self, current_key: &Key, engine: &mut E) {
+    fn process_key<E: GameEngine>(&mut self, current_key: &Key, context: &mut Context<E>) {
         match current_key {
             Key::Named(NamedKey::Backspace) => {
                 if !self.text.is_empty() {
@@ -129,7 +131,7 @@ impl InputField {
                     if self.char_position >= 1 {
                         self.char_position -= 1;
                     }
-                    self.prepare_text(engine);
+                    self.prepare_text(context);
                 }
             }
             Key::Named(NamedKey::ArrowLeft) => {
@@ -143,28 +145,30 @@ impl InputField {
             Key::Named(NamedKey::Space) => {
                 self.text.insert(self.char_position, ' ');
                 self.char_position = std::cmp::min(self.text.len(), self.char_position + 1);
-                self.prepare_text(engine);
+                self.prepare_text(context);
             }
             Key::Character(ref char) => {
                 self.text.insert_str(self.char_position, char);
                 self.char_position = std::cmp::min(self.text.len(), self.char_position + 1);
-                self.prepare_text(engine);
+                self.prepare_text(context);
             }
             _ => {}
         }
     }
 
-    fn prepare_text<E: GameEngine>(&mut self, engine: &mut E) {
+    fn prepare_text<E: GameEngine>(&mut self, context: &mut Context<E>) {
         if self.obfuscate {
             let mut text = String::new();
             for _ in 0..self.text.len() {
                 text += "*";
             }
-            self.parsed_text = engine
+            self.parsed_text = context
+                .engine
                 .parse_text(self.font_texture_id, &text)
                 .expect("can parse text");
         } else {
-            self.parsed_text = engine
+            self.parsed_text = context
+                .engine
                 .parse_text(self.font_texture_id, &self.text)
                 .expect("can parse text");
         }
@@ -172,15 +176,15 @@ impl InputField {
 }
 
 impl Widget for InputField {
-    fn update<E: GameEngine>(&mut self, engine: &mut E) {
-        self.update_focus(engine);
-        self.update_pressed_keys(engine);
-        self.update_blinking_cursor(engine);
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.update_focus(context);
+        self.update_pressed_keys(context);
+        self.update_blinking_cursor(context);
     }
 
-    fn draw<E: GameEngine>(&mut self, engine: &mut E) {
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         // draw background
-        engine.draw_image(
+        context.engine.draw_image(
             DrawImage {
                 position: Position::new(self.position.0 - self.size.0 / 2, self.position.1, 0.9),
                 color: self.background_color,
@@ -193,7 +197,7 @@ impl Widget for InputField {
         // draw text
         let center = self.position.0;
         let y = self.position.1 + self.size.1 / 2 - 6;
-        engine.draw_text(
+        context.engine.draw_text(
             self.font_texture_id,
             DrawText {
                 text: &self.parsed_text,
@@ -220,12 +224,13 @@ impl Widget for InputField {
                     self.text[..self.char_position].to_string()
                 }
             };
-            let text_width = engine
+            let text_width = context
+                .engine
                 .parse_text(self.font_texture_id, &substring)
                 .unwrap()
                 .total_width;
 
-            engine.draw_text(
+            context.engine.draw_text(
                 self.font_texture_id,
                 DrawText {
                     text: &self.blinking_cursor,

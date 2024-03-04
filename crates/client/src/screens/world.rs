@@ -7,7 +7,6 @@ use engine::{
 };
 use interpolation::lerp;
 use nohash_hasher::IntMap;
-use tracing::info;
 
 use crate::{
     game::Context,
@@ -96,7 +95,7 @@ impl WorldScreen {
 }
 
 impl GameScreen for WorldScreen {
-    fn update<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         self.prepare_viewports(context.engine);
         context
             .engine
@@ -106,7 +105,7 @@ impl GameScreen for WorldScreen {
             character.update(context.engine);
         }
 
-        self.ui.update(context.engine);
+        self.ui.update(context);
         self.ui.energy_bar.set_values(context.engine, 500, 999);
         self.ui.health_bar.set_values(context.engine, 600, 999);
         self.ui.mana_bar.set_values(context.engine, 300, 999);
@@ -118,11 +117,11 @@ impl GameScreen for WorldScreen {
         self.ui.ping.set_text(&format!("{ping}"), context.engine);
     }
 
-    fn draw<E: engine::engine::GameEngine>(&mut self, context: &mut Context<E>) {
-        self.ui.draw(context.engine);
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.ui.draw(context);
 
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            character.draw(context.engine, context.resources);
+            character.draw(context);
         }
     }
 }
@@ -279,11 +278,11 @@ impl Bar {
         }
     }
 
-    pub fn update<E: GameEngine>(&mut self, engine: &mut E) {
-        self.image.update(engine);
+    pub fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.image.update(context);
         const INTERPOLIATION_DURATION: Duration = Duration::from_millis(250);
         if self.target != self.image.percent && self.interpolation_time < INTERPOLIATION_DURATION {
-            let delta = engine.get_delta();
+            let delta = context.engine.get_delta();
             self.interpolation_time += delta;
 
             let time_percent = self.interpolation_time.as_millis() as f32
@@ -293,14 +292,14 @@ impl Bar {
         }
     }
 
-    pub fn draw<E: GameEngine>(&mut self, engine: &mut E) {
-        self.image.draw(engine);
-        self.label.draw(engine);
+    pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.image.draw(context);
+        self.label.draw(context);
     }
 }
 
 impl UI for WorldUI {
-    fn update<E: engine::engine::GameEngine>(&mut self, engine: &mut E) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         self.level.position = (
             self.x + 14 + WORLD_RENDER_WIDTH + 43,
             self.y + SCREEN_HEIGHT - 24,
@@ -316,19 +315,19 @@ impl UI for WorldUI {
             self.x + 14 + WORLD_RENDER_WIDTH + 20 + 100 + 53,
             self.y + SCREEN_HEIGHT - 80,
         );
-        self.inventory_button.update(engine);
-        self.spells_button.update(engine);
+        self.inventory_button.update(context);
+        self.spells_button.update(context);
 
-        self.exp_bar.update(engine);
+        self.exp_bar.update(context);
         self.exp_bar.set_position(
             self.x + 14 + WORLD_RENDER_WIDTH + 120,
             self.y + SCREEN_HEIGHT - 25,
         );
 
         let bars_x = self.x + WORLD_RENDER_WIDTH + 144; // 40?
-        self.energy_bar.update(engine);
-        self.health_bar.update(engine);
-        self.mana_bar.update(engine);
+        self.energy_bar.update(context);
+        self.health_bar.update(context);
+        self.mana_bar.update(context);
 
         self.energy_bar.set_position(bars_x, self.y + 193);
         self.health_bar.set_position(bars_x, self.y + 164);
@@ -342,8 +341,8 @@ impl UI for WorldUI {
         self.ping.position = (self.x + SCREEN_WIDTH - 62, self.y + 32);
     }
 
-    fn draw<E: engine::engine::GameEngine>(&mut self, engine: &mut E) {
-        engine.draw_image(
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        context.engine.draw_image(
             DrawImage {
                 position: Position::new(0, 0, 0.),
                 index: DV_BACKGROUND_ID,
@@ -352,7 +351,7 @@ impl UI for WorldUI {
             Target::UI,
         );
 
-        engine.draw_image(
+        context.engine.draw_image(
             DrawImage {
                 position: Position::new(self.x, self.y, 1.),
                 index: MAIN_UI_ID,
@@ -361,22 +360,22 @@ impl UI for WorldUI {
             Target::UI,
         );
 
-        self.exp_bar.draw(engine);
+        self.exp_bar.draw(context);
 
-        self.level.draw(engine);
-        self.desc.draw(engine);
-        self.name.draw(engine);
+        self.level.draw(context);
+        self.desc.draw(context);
+        self.name.draw(context);
 
-        self.energy_bar.draw(engine);
-        self.health_bar.draw(engine);
-        self.mana_bar.draw(engine);
-        self.strength.draw(engine);
-        self.celerity.draw(engine);
-        self.gold.draw(engine);
-        self.fps.draw(engine);
-        self.ping.draw(engine);
+        self.energy_bar.draw(context);
+        self.health_bar.draw(context);
+        self.mana_bar.draw(context);
+        self.strength.draw(context);
+        self.celerity.draw(context);
+        self.gold.draw(context);
+        self.fps.draw(context);
+        self.ping.draw(context);
 
-        self.inventory_button.draw(engine);
-        self.spells_button.draw(engine);
+        self.inventory_button.draw(context);
+        self.spells_button.draw(context);
     }
 }

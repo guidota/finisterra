@@ -5,9 +5,12 @@ use engine::{
 use protocol::{client, server};
 use tracing::info;
 
-use crate::ui::{
-    button::Button, colors::*, fonts::*, input_field::InputField, label::Label, textures::*,
-    Alignment, Widget, UI,
+use crate::{
+    game::Context,
+    ui::{
+        button::Button, colors::*, fonts::*, input_field::InputField, label::Label, textures::*,
+        Alignment, Widget, UI,
+    },
 };
 
 use super::{
@@ -29,8 +32,8 @@ pub struct CharacterCreationUI {
 }
 
 impl CharacterCreationScreen {
-    pub fn new<E: GameEngine>(engine: &mut E) -> Self {
-        let ui = CharacterCreationUI::initialize(engine);
+    pub fn new<E: GameEngine>(context: &mut Context<E>) -> Self {
+        let ui = CharacterCreationUI::initialize(context);
         Self {
             ui,
             creating: false,
@@ -39,10 +42,10 @@ impl CharacterCreationScreen {
 }
 
 impl GameScreen for CharacterCreationScreen {
-    fn update<E: engine::engine::GameEngine>(&mut self, context: &mut crate::game::Context<E>) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         prepare_viewport(context);
 
-        self.ui.update(context.engine);
+        self.ui.update(context);
 
         let messages = context.connection.read();
         if !self.creating && self.ui.create_button.clicked() {
@@ -61,8 +64,7 @@ impl GameScreen for CharacterCreationScreen {
                     protocol::server::ServerPacket::Account(
                         server::Account::CreateCharacterOk { character },
                     ) => {
-                        let character =
-                            entity::Character::from(context.engine, character, context.resources);
+                        let character = entity::Character::from(context, &character);
 
                         context
                             .screen_transition_sender
@@ -85,14 +87,14 @@ impl GameScreen for CharacterCreationScreen {
         }
     }
 
-    fn draw<E: engine::engine::GameEngine>(&mut self, context: &mut crate::game::Context<E>) {
-        self.ui.draw(context.engine);
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.ui.draw(context);
     }
 }
 
 impl CharacterCreationUI {
-    fn initialize<E: GameEngine>(engine: &mut E) -> Self {
-        let name_label_text = engine.parse_text(WIZARD_16_ID, "Name").unwrap();
+    fn initialize<E: GameEngine>(context: &mut Context<E>) -> Self {
+        let name_label_text = context.engine.parse_text(WIZARD_16_ID, "Name").unwrap();
         let name_label = Label {
             text: name_label_text,
             position: ((800 / 2), 320),
@@ -107,11 +109,12 @@ impl CharacterCreationUI {
             (200, 30),
             TAHOMA_BOLD_8_SHADOW_ID,
             INPUT_ID,
-            engine,
+            context,
         );
         name_input.focused = true;
 
-        let create_text = engine
+        let create_text = context
+            .engine
             .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Create")
             .unwrap();
         let create_label = Label {
@@ -140,8 +143,8 @@ impl CharacterCreationUI {
 }
 
 impl UI for CharacterCreationUI {
-    fn update<E: engine::engine::GameEngine>(&mut self, engine: &mut E) {
-        let size = screen_size(engine);
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let size = screen_size(context.engine);
         let center_x = size.0 / 2;
         let center_y = size.1 / 2;
         self.name_label.position = (center_x, center_y);
@@ -151,12 +154,12 @@ impl UI for CharacterCreationUI {
             label.position = (center_x, center_y - 60);
         }
 
-        self.name_input.update(engine);
-        self.create_button.update(engine);
+        self.name_input.update(context);
+        self.create_button.update(context);
     }
 
-    fn draw<E: engine::engine::GameEngine>(&mut self, engine: &mut E) {
-        engine.draw_image(
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        context.engine.draw_image(
             DrawImage {
                 position: Position { x: 0, y: 0, z: 0. },
                 color: WHITE,
@@ -166,8 +169,8 @@ impl UI for CharacterCreationUI {
             Target::UI,
         );
 
-        self.name_label.draw(engine);
-        self.name_input.draw(engine);
-        self.create_button.draw(engine);
+        self.name_label.draw(context);
+        self.name_input.draw(context);
+        self.create_button.draw(context);
     }
 }

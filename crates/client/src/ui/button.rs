@@ -3,6 +3,8 @@ use engine::{
     engine::{GameEngine, TextureID},
 };
 
+use crate::game::Context;
+
 use super::{
     colors::{self, GRAY_5},
     label::Label,
@@ -60,15 +62,15 @@ impl Button {
 }
 
 impl Widget for Button {
-    fn update<E: GameEngine>(&mut self, engine: &mut E) {
-        if let Some(size) = engine.texture_dimensions(self.texture_id) {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        if let Some(size) = context.engine.texture_dimensions(self.texture_id) {
             self.size = size;
         }
-        let zoom = match engine.get_camera_zoom() {
+        let zoom = match context.engine.get_camera_zoom() {
             engine::camera::Zoom::None => 1.,
             engine::camera::Zoom::Double => 2.,
         };
-        let mouse_position = engine.mouse_position();
+        let mouse_position = context.engine.mouse_position();
         let (x, y) = (
             (mouse_position.x / zoom) as u16,
             (mouse_position.y / zoom) as u16,
@@ -77,9 +79,9 @@ impl Widget for Button {
         let (x_start, y_start, x_end, y_end) = self.rect();
 
         if x > x_start && x < x_end && y > y_start && y < y_end {
-            if engine.mouse_released() {
+            if context.engine.mouse_released() {
                 self.state = State::Clicked;
-            } else if engine.mouse_held() {
+            } else if context.engine.mouse_held() {
                 self.state = State::Held;
             } else {
                 self.state = State::Hover;
@@ -89,12 +91,12 @@ impl Widget for Button {
         }
     }
 
-    fn draw<E: GameEngine>(&mut self, engine: &mut E) {
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let button_rect = self.rect();
         let (x, y, _, _) = button_rect;
-        engine.draw_image(
+        context.engine.draw_image(
             DrawImage {
-                position: Position::new(x, y, 1.),
+                position: Position::new(x, y, 0.),
                 index: self.texture_id,
                 color: self.color(),
                 ..Default::default()
@@ -107,7 +109,7 @@ impl Widget for Button {
                 (button_rect.0 + button_rect.2) / 2,
                 (button_rect.1 + button_rect.3) / 2,
             );
-            label.draw(engine);
+            label.draw(context);
         }
     }
 }

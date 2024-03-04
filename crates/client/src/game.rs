@@ -29,12 +29,21 @@ pub struct Context<'tick, E: GameEngine> {
 impl Game for Finisterra {
     fn initialize<E: GameEngine>(engine: &mut E) -> Self {
         ui::load(engine);
-
+        let resources = Resources::load(engine);
+        let screen_transition = channel();
+        let mut connection = ConnectionState::new("https://[::1]:7666");
+        let mut context = Context {
+            screen_transition_sender: &screen_transition.0,
+            connection: &mut connection,
+            resources: &resources,
+            engine,
+        };
+        let x = HomeScreen::new(&mut context);
         Self {
-            resources: Resources::load(engine),
-            screen: Screen::Home(Box::new(HomeScreen::new(engine))),
-            connection: ConnectionState::new("https://[::1]:7666"),
-            screen_transition: channel(),
+            resources,
+            screen: Screen::Home(Box::new(x)),
+            connection,
+            screen_transition,
         }
     }
 

@@ -122,7 +122,9 @@ impl Finisterra {
                     );
                     let characters = characters
                         .iter()
-                        .map(|char| char.name.to_string())
+                        .map(|char| server::Character {
+                            name: char.name.to_string(),
+                        })
                         .collect();
                     self.outcoming_messages_sender
                         .send((

@@ -6,6 +6,8 @@ use engine::{
     engine::{GameEngine, TextureID},
 };
 
+use crate::game::Context;
+
 use super::{Alignment, Widget};
 
 pub struct Label {
@@ -44,12 +46,12 @@ impl Label {
 }
 
 impl Widget for Label {
-    fn update<E: GameEngine>(&mut self, _engine: &mut E) {}
+    fn update<E: GameEngine>(&mut self, _context: &mut Context<E>) {}
 
-    fn draw<E: GameEngine>(&mut self, engine: &mut E) {
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let x = self.position.0;
         let y = self.position.1 - self.text.height / 3;
-        engine.draw_text(
+        context.engine.draw_text(
             self.texture_id,
             DrawText {
                 text: &self.text,

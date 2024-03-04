@@ -1,5 +1,3 @@
-use winit::window::Fullscreen;
-
 pub trait Game {
     fn initialize<E: crate::engine::GameEngine>(engine: &mut E) -> Self;
     fn tick<E: crate::engine::GameEngine>(&mut self, engine: &mut E);
@@ -8,11 +6,6 @@ pub trait Game {
 pub async fn run_game<G: Game, E: crate::engine::GameEngine>(settings: crate::settings::Settings) {
     let event_loop =
         winit::event_loop::EventLoop::new().expect("[run_game] couldn't initialize event loop");
-    let monitor = event_loop
-        .available_monitors()
-        .next()
-        .expect("no monitor found!");
-    let mode = monitor.video_modes().next().expect("no mode found");
 
     let window = winit::window::WindowBuilder::new()
         .with_title(settings.title.clone())
@@ -20,7 +13,6 @@ pub async fn run_game<G: Game, E: crate::engine::GameEngine>(settings: crate::se
             settings.width as u32,
             settings.height as u32,
         ))
-        .with_fullscreen(Some(Fullscreen::Exclusive(mode)))
         .with_decorations(false)
         .with_resizable(false)
         .build(&event_loop)
