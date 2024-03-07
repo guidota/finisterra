@@ -135,6 +135,10 @@ impl GameEngine for Roma {
         self.input.mouse_pressed(winit::event::MouseButton::Right)
     }
 
+    fn set_mouse_cursor(&mut self, cursor: winit::window::CursorIcon) {
+        self.state.window.set_cursor_icon(cursor)
+    }
+
     fn add_texture(&mut self, path: &str) -> TextureID {
         self.renderer.add_texture_file(path)
     }

@@ -14,10 +14,10 @@ async fn main() {
     init_logging();
 
     let settings = engine::settings::Settings {
-        width: 1024,
-        height: 768,
+        width: 920,
+        height: 540,
         title: "Finisterra".to_string(),
-        vsync: false,
+        vsync: true,
     };
 
     run_game::<Finisterra, Roma>(settings).await;

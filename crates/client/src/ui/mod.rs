@@ -4,11 +4,13 @@ use crate::game::Context;
 
 use self::{fonts::Fonts, textures::Textures};
 
+pub mod bar;
 pub mod button;
 pub mod colors;
 pub mod fonts;
 pub mod image;
 pub mod input_field;
+pub mod inventory;
 pub mod label;
 pub mod textures;
 

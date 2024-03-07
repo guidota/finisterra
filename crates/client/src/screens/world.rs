@@ -1,23 +1,21 @@
-use std::time::Duration;
-
 use engine::{
     camera::{self, Viewport, Zoom},
-    draw::{image::DrawImage, Color, Position, Target},
-    engine::{GameEngine, TextureID},
+    draw::{image::DrawImage, Position, Target},
+    engine::GameEngine,
 };
-use interpolation::lerp;
 use nohash_hasher::IntMap;
 
 use crate::{
     game::Context,
     ui::{
+        bar::Bar,
         button::Button,
         colors::*,
         fonts::{TAHOMA_BOLD_8_SHADOW_ID, WIZARD_16_ID},
-        image::Image,
+        inventory::Inventory,
         label::Label,
         textures::{
-            BAR_ID, DV_BACKGROUND_ID, EXP_BAR_ID, INVENTORY_BUTTON_ID, MAIN_UI_ID, SPELLS_BUTTON_ID,
+            DV_BACKGROUND_ID, EXP_BAR_ID, INVENTORY_BUTTON_ID, MAIN_UI_ID, SPELLS_BUTTON_ID,
         },
         Alignment, Widget, UI,
     },
@@ -40,38 +38,31 @@ pub struct WorldScreen {
 pub struct WorldUI {
     x: u16,
     y: u16,
-    width: u16,
-    height: u16,
 
-    inventory_button: Button,
-    spells_button: Button,
-
+    // header
     level: Label,
     name: Label,
     desc: Label,
 
+    // inventory
+    inventory_button: Button,
+    inventory: Inventory,
+
+    // spellbook
+    spells_button: Button,
+
+    // stats
     exp_bar: Bar,
     energy_bar: Bar,
     mana_bar: Bar,
     health_bar: Bar,
-
-    celerity: Label,
+    agility: Label,
     strength: Label,
     gold: Label,
 
+    // info
     fps: Label,
     ping: Label,
-}
-
-struct Bar {
-    label: Label,
-    image: Image,
-
-    min: u16,
-    max: u16,
-
-    target: u16,
-    interpolation_time: Duration,
 }
 
 const SCREEN_WIDTH: u16 = 800;
@@ -83,11 +74,12 @@ const WORLD_RENDER_HEIGHT: u16 = 16 * TILE_SIZE; // 16 tiles
 
 impl WorldScreen {
     pub fn new<E: GameEngine>(engine: &mut E, entity_id: u32, character: Character) -> Self {
+        let ui = WorldUI::initialize(engine, &character);
         let mut entities = IntMap::default();
         entities.insert(entity_id, Entity::Character(character));
 
         Self {
-            ui: WorldUI::initialize(engine),
+            ui,
             entities,
             me: entity_id,
         }
@@ -97,19 +89,19 @@ impl WorldScreen {
 impl GameScreen for WorldScreen {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         self.prepare_viewports(context.engine);
-        context
-            .engine
-            .set_world_camera_position(camera::Position { x: 300., y: 300. });
-
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            character.update(context.engine);
-        }
 
         self.ui.update(context);
-        self.ui.energy_bar.set_values(context.engine, 500, 999);
-        self.ui.health_bar.set_values(context.engine, 600, 999);
-        self.ui.mana_bar.set_values(context.engine, 300, 999);
-        self.ui.exp_bar.set_values(context.engine, 200, 2000);
+
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            // camera follows main character
+            context.engine.set_world_camera_position(camera::Position {
+                x: character.position.x as f32,
+                y: character.position.y as f32,
+            });
+
+            character.update(context.engine);
+            self.ui.update_char(context, character);
+        }
 
         let fps = format!("{:.0}", 1. / context.engine.get_delta().as_secs_f64());
         self.ui.fps.set_text(&fps, context.engine);
@@ -141,8 +133,6 @@ impl WorldScreen {
         let y_start = std::cmp::max(0, (size.height / zoom - SCREEN_HEIGHT) / 2);
         self.ui.x = x_start;
         self.ui.y = y_start;
-        self.ui.width = SCREEN_WIDTH;
-        self.ui.height = SCREEN_HEIGHT;
 
         engine.set_ui_camera_viewport(Viewport {
             x: 0.,
@@ -162,31 +152,50 @@ impl WorldScreen {
 }
 
 impl WorldUI {
-    pub fn initialize<E: GameEngine>(engine: &mut E) -> Self {
-        let level = Label::from("33", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
-        let name = Label::from("Pandora", WIZARD_16_ID, GRAY_4, engine);
-        let desc = Label::from("Clerigo Humano", TAHOMA_BOLD_8_SHADOW_ID, GRAY_3, engine);
+    pub fn initialize<E: GameEngine>(engine: &mut E, character: &Character) -> Self {
+        let level = Label::from(
+            &character.level.to_string(),
+            TAHOMA_BOLD_8_SHADOW_ID,
+            GRAY_4,
+            engine,
+        );
+
+        let mut name = Label::from(&character.name, WIZARD_16_ID, GRAY_4, engine);
+        name.alignment = Alignment::Right;
+
+        let mut desc = Label::from(
+            &format!("{} {}", character.class, character.race),
+            TAHOMA_BOLD_8_SHADOW_ID,
+            GRAY_3,
+            engine,
+        );
+        desc.alignment = Alignment::Right;
 
         let energy_bar = Bar::new(engine, YELLOW);
         let mana_bar = Bar::new(engine, BLUE);
         let health_bar = Bar::new(engine, RED);
-        let exp_bar = Bar::with(engine, EXP_BAR_ID);
+        let exp_bar = Bar::with(engine, EXP_BAR_ID, [0, 0, 0, 0]);
 
         let celerity = Label::from("18", TAHOMA_BOLD_8_SHADOW_ID, tint(YELLOW, 0.1), engine);
         let strength = Label::from("18", TAHOMA_BOLD_8_SHADOW_ID, tint(GREEN, 0.2), engine);
-        let gold = Label::from("100.000", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
+        let mut gold = Label::from("100.000", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
+        gold.alignment = Alignment::Left;
 
-        let fps = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
-        let ping = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
+        let mut fps = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
+        fps.alignment = Alignment::Right;
 
-        let inventory_button = Button::from(INVENTORY_BUTTON_ID);
+        let mut ping = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
+        ping.alignment = Alignment::Right;
+
+        let mut inventory_button = Button::from(INVENTORY_BUTTON_ID);
+        inventory_button.select();
+        let inventory = Inventory::initialize(engine);
+
         let spells_button = Button::from(SPELLS_BUTTON_ID);
 
         Self {
             x: 0,
             y: 0,
-            width: 0,
-            height: 0,
 
             name,
             desc,
@@ -197,7 +206,7 @@ impl WorldUI {
             mana_bar,
             health_bar,
 
-            celerity,
+            agility: celerity,
             strength,
             gold,
 
@@ -205,140 +214,91 @@ impl WorldUI {
             ping,
 
             inventory_button,
+            inventory,
+
             spells_button,
         }
     }
-}
 
-impl Bar {
-    pub fn new<E: GameEngine>(engine: &mut E, color: Color) -> Self {
-        let label = Label {
-            text: engine
-                .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "999/999")
-                .expect("can parse"),
-            position: (0, 0),
-            // color: tint(color, 0.5),
-            color: GRAY_6,
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-
-        let mut image = Image::new(BAR_ID, color, (0, 0));
-        image.percent = 100;
-        Self {
-            label,
-            image,
-            min: 100,
-            max: 100,
-            target: 100,
-            interpolation_time: Duration::ZERO,
-        }
-    }
-
-    pub fn with<E: GameEngine>(engine: &mut E, texture_id: TextureID) -> Self {
-        let label = Label {
-            text: engine
-                .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "")
-                .expect("can parse"),
-            position: (0, 0),
-            // color: tint(color, 0.5),
-            color: [255, 255, 255, 0],
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-
-        let mut image = Image::new(texture_id, [255, 255, 255, 120], (0, 0));
-        image.percent = 100;
-        Self {
-            label,
-            image,
-            min: 100,
-            max: 100,
-            target: 100,
-            interpolation_time: Duration::ZERO,
-        }
-    }
-
-    pub fn set_position(&mut self, x: u16, y: u16) {
-        self.label.position = (x, y);
-        self.image.position = (x, y);
-    }
-
-    pub fn set_values<E: GameEngine>(&mut self, engine: &mut E, min: u16, max: u16) {
-        if min != self.min || max != self.max {
-            self.min = min;
-            self.max = max;
-            self.label.text = engine
-                .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format! {"{min}/{max}"})
-                .expect("can parse");
-
-            let percent = ((min as f32 / max as f32) * 100.) as u16;
-            self.target = percent;
-            self.interpolation_time = Duration::ZERO;
-        }
-    }
-
-    pub fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.image.update(context);
-        const INTERPOLIATION_DURATION: Duration = Duration::from_millis(250);
-        if self.target != self.image.percent && self.interpolation_time < INTERPOLIATION_DURATION {
-            let delta = context.engine.get_delta();
-            self.interpolation_time += delta;
-
-            let time_percent = self.interpolation_time.as_millis() as f32
-                / INTERPOLIATION_DURATION.as_millis() as f32;
-            let percent = lerp(&self.image.percent, &self.target, &time_percent);
-            self.image.set_percent(percent);
-        }
-    }
-
-    pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.image.draw(context);
-        self.label.draw(context);
+    pub fn update_char<E: GameEngine>(&mut self, context: &mut Context<E>, character: &Character) {
+        let stats = &character.stats;
+        self.energy_bar
+            .set_values(context.engine, (stats.stamina.current, stats.stamina.max));
+        self.health_bar
+            .set_values(context.engine, (stats.health.current, stats.health.max));
+        self.mana_bar
+            .set_values(context.engine, (stats.mana.current, stats.mana.max));
+        self.exp_bar
+            .set_values(context.engine, (character.exp.current, character.exp.max));
+        self.strength
+            .set_text(&character.attributes.strength.to_string(), context.engine);
+        self.agility
+            .set_text(&character.attributes.agility.to_string(), context.engine);
+        let gold = character
+            .gold
+            .to_string()
+            .as_bytes()
+            .rchunks(3)
+            .rev()
+            .map(std::str::from_utf8)
+            .collect::<Result<Vec<&str>, _>>()
+            .unwrap()
+            .join(".");
+        self.gold.set_text(&gold, context.engine);
     }
 }
 
 impl UI for WorldUI {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.level.position = (
-            self.x + 14 + WORLD_RENDER_WIDTH + 43,
-            self.y + SCREEN_HEIGHT - 24,
-        );
-        self.name.position = (self.x + SCREEN_WIDTH - 65, self.y + SCREEN_HEIGHT - 18);
-        self.desc.position = (self.x + SCREEN_WIDTH - 77, self.y + SCREEN_HEIGHT - 32);
+        // recalculate positions (we can avoid doing every frame)
+        let right_panel_x_start = self.x + 14 + WORLD_RENDER_WIDTH;
+        self.level.position = (right_panel_x_start + 42, self.y + SCREEN_HEIGHT - 24);
+        self.name.position = (self.x + SCREEN_WIDTH - 30, self.y + SCREEN_HEIGHT - 18);
+        self.desc.position = (self.x + SCREEN_WIDTH - 30, self.y + SCREEN_HEIGHT - 32);
+        self.exp_bar
+            .set_position(right_panel_x_start + 120, self.y + SCREEN_HEIGHT - 25);
 
-        self.inventory_button.position = (
-            self.x + 14 + WORLD_RENDER_WIDTH + 10 + 53,
-            self.y + SCREEN_HEIGHT - 80,
-        );
+        self.inventory_button.position =
+            (right_panel_x_start + 10 + 53, self.y + SCREEN_HEIGHT - 80);
+        self.inventory.position = (right_panel_x_start + 40, self.y + SCREEN_HEIGHT - 80);
         self.spells_button.position = (
-            self.x + 14 + WORLD_RENDER_WIDTH + 20 + 100 + 53,
+            right_panel_x_start + 20 + 100 + 53,
             self.y + SCREEN_HEIGHT - 80,
         );
-        self.inventory_button.update(context);
-        self.spells_button.update(context);
 
-        self.exp_bar.update(context);
-        self.exp_bar.set_position(
-            self.x + 14 + WORLD_RENDER_WIDTH + 120,
-            self.y + SCREEN_HEIGHT - 25,
-        );
-
-        let bars_x = self.x + WORLD_RENDER_WIDTH + 144; // 40?
-        self.energy_bar.update(context);
-        self.health_bar.update(context);
-        self.mana_bar.update(context);
-
+        let bars_x = right_panel_x_start + 130;
         self.energy_bar.set_position(bars_x, self.y + 193);
         self.health_bar.set_position(bars_x, self.y + 164);
         self.mana_bar.set_position(bars_x, self.y + 135);
 
-        self.celerity.position = (self.x + WORLD_RENDER_WIDTH + 167, self.y + 229);
+        self.agility.position = (self.x + WORLD_RENDER_WIDTH + 167, self.y + 229);
         self.strength.position = (self.x + WORLD_RENDER_WIDTH + 207, self.y + 229);
-        self.gold.position = (self.x + WORLD_RENDER_WIDTH + 82, self.y + 229);
+        self.gold.position = (self.x + WORLD_RENDER_WIDTH + 60, self.y + 229);
+        self.fps.position = (self.x + SCREEN_WIDTH - 100, self.y + 32);
+        self.ping.position = (self.x + SCREEN_WIDTH - 50, self.y + 32);
 
-        self.fps.position = (self.x + SCREEN_WIDTH - 115, self.y + 32);
-        self.ping.position = (self.x + SCREEN_WIDTH - 62, self.y + 32);
+        // updates
+        self.inventory_button.update(context);
+        if self.inventory_button.clicked() {
+            self.inventory_button.select();
+            self.inventory.show();
+            self.spells_button.unselect();
+            // TODO! hide spells
+        } else if self.spells_button.clicked() {
+            self.inventory_button.unselect();
+            self.inventory.hide();
+            self.spells_button.select();
+            // TODO! show spells
+        }
+
+        self.inventory.update(context);
+
+        self.spells_button.update(context);
+
+        self.exp_bar.update(context);
+        self.energy_bar.update(context);
+        self.health_bar.update(context);
+        self.mana_bar.update(context);
     }
 
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
@@ -353,7 +313,7 @@ impl UI for WorldUI {
 
         context.engine.draw_image(
             DrawImage {
-                position: Position::new(self.x, self.y, 1.),
+                position: Position::new(self.x, self.y, 0.),
                 index: MAIN_UI_ID,
                 ..Default::default()
             },
@@ -361,21 +321,24 @@ impl UI for WorldUI {
         );
 
         self.exp_bar.draw(context);
-
         self.level.draw(context);
         self.desc.draw(context);
         self.name.draw(context);
 
+        self.inventory_button.draw(context);
+        self.inventory.draw(context);
+
+        self.spells_button.draw(context);
+
+        self.strength.draw(context);
+        self.agility.draw(context);
+        self.gold.draw(context);
+
         self.energy_bar.draw(context);
         self.health_bar.draw(context);
         self.mana_bar.draw(context);
-        self.strength.draw(context);
-        self.celerity.draw(context);
-        self.gold.draw(context);
+
         self.fps.draw(context);
         self.ping.draw(context);
-
-        self.inventory_button.draw(context);
-        self.spells_button.draw(context);
     }
 }

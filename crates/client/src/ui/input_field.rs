@@ -8,6 +8,7 @@ use engine::{
     },
     engine::{GameEngine, TextureID},
     input::keyboard::{Key, NamedKey},
+    CursorIcon,
 };
 
 use crate::game::Context;
@@ -34,6 +35,8 @@ pub struct InputField {
     char_position: usize,
     pub focused: bool,
     pub obfuscate: bool,
+
+    mouse_in: bool,
 }
 
 impl InputField {
@@ -65,29 +68,38 @@ impl InputField {
             blinking_transparency: 0,
             blinking_time: Duration::ZERO,
             char_position: 0,
+            mouse_in: false,
         }
     }
 
-    fn update_focus<E: GameEngine>(&mut self, context: &mut Context<E>) {
+    fn update_mouse<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let zoom = match context.engine.get_camera_zoom() {
+            engine::camera::Zoom::None => 1.,
+            engine::camera::Zoom::Double => 2.,
+        };
+        let mouse_position = context.engine.mouse_position();
+        let (x, y) = (
+            (mouse_position.x / zoom) as u16,
+            (mouse_position.y / zoom) as u16,
+        );
+
+        let (x_start, y_start, x_end, y_end) = (
+            self.position.0,
+            self.position.1,
+            self.position.0 + self.size.0,
+            self.position.1 + self.size.1,
+        );
+
+        let mouse_in = x > x_start && x < x_end && y > y_start && y < y_end;
+
+        match (self.mouse_in, mouse_in) {
+            (true, false) => self.on_mouse_exit(context),
+            (false, true) => self.on_mouse_enter(context),
+            _ => {}
+        }
+
         if context.engine.mouse_clicked() {
-            let zoom = match context.engine.get_camera_zoom() {
-                engine::camera::Zoom::None => 1.,
-                engine::camera::Zoom::Double => 2.,
-            };
-            let mouse_position = context.engine.mouse_position();
-            let (x, y) = (
-                (mouse_position.x / zoom) as u16,
-                (mouse_position.y / zoom) as u16,
-            );
-
-            let (x_start, y_start, x_end, y_end) = (
-                self.position.0,
-                self.position.1,
-                self.position.0 + self.size.0,
-                self.position.1 + self.size.1,
-            );
-
-            self.focused = x > x_start && x < x_end && y > y_start && y < y_end;
+            self.focused = mouse_in;
         }
     }
 
@@ -173,11 +185,22 @@ impl InputField {
                 .expect("can parse text");
         }
     }
+
+    fn on_mouse_enter<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.mouse_in = true;
+        context.engine.set_mouse_cursor(CursorIcon::Text);
+    }
+
+    fn on_mouse_exit<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.mouse_in = false;
+        // TODO: handle set prev mouse cursor
+        context.engine.set_mouse_cursor(CursorIcon::Default);
+    }
 }
 
 impl Widget for InputField {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.update_focus(context);
+        self.update_mouse(context);
         self.update_pressed_keys(context);
         self.update_blinking_cursor(context);
     }

@@ -9,7 +9,7 @@ log.workspace = true
 tokio.workspace = true
 
 # WGPU
-wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "56d9d32a072fd9d6bfc5bcb6c0fa0d5091fbd9c9" }
+wgpu = "0.19"
 cgmath = "0.18"
 bytemuck = { version = "1.12", features = ["derive"] }
 

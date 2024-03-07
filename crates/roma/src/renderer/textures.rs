@@ -46,7 +46,7 @@ impl Textures {
 
         self.files.insert(id, path.to_string());
         if id as usize > self.next_texture_id {
-            self.next_texture_id = id as usize;
+            self.next_texture_id = id as usize + 1;
         }
     }
 

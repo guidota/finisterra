@@ -2,6 +2,7 @@ use engine::draw::image::DrawImage;
 use engine::draw::Position;
 use engine::draw::Target;
 use engine::engine::GameEngine;
+use protocol::character;
 use protocol::client;
 use protocol::client::ClientPacket;
 use protocol::server;
@@ -15,7 +16,6 @@ use crate::ui::colors::*;
 use crate::ui::fonts::*;
 use crate::ui::label::Label;
 use crate::ui::textures::*;
-use crate::ui::Alignment;
 use crate::ui::Widget;
 use crate::ui::UI;
 
@@ -58,7 +58,7 @@ pub enum Slot {
 impl AccountScreen {
     pub fn new<E: GameEngine>(
         context: &mut Context<E>,
-        characters: Vec<server::Character>,
+        characters: Vec<character::Character>,
     ) -> Self {
         Self {
             ui: AccountUI::initialize(context, characters),
@@ -102,7 +102,7 @@ impl GameScreen for AccountScreen {
             for message in messages {
                 match message {
                     ServerPacket::Account(server::Account::LoginCharacterOk { character }) => {
-                        let character = entity::Character::from(context, &character);
+                        let character = entity::Character::from(context, character);
                         context
                             .screen_transition_sender
                             .send(Screen::World(Box::new(WorldScreen::new(
@@ -130,16 +130,17 @@ impl GameScreen for AccountScreen {
 impl AccountUI {
     fn initialize<E: GameEngine>(
         context: &mut Context<E>,
-        characters: Vec<server::Character>,
+        characters: Vec<character::Character>,
     ) -> Self {
-        let mut button = |character: &server::Character| Slot::Char {
+        let mut button = |character: &character::Character| Slot::Char {
             button: ButtonBuilder::new()
                 .texture_id(CHAR_SLOT_ID)
                 .size((SLOT_SIZE, SLOT_SIZE))
                 .color(GRAY_1)
+                .selected_color(GREEN)
                 .build(),
 
-            character: Box::new(Character::from(context, character)),
+            character: Box::new(Character::from(context, character.clone())),
         };
         let empty = || Slot::Empty {
             button: ButtonBuilder::new()
@@ -157,25 +158,12 @@ impl AccountUI {
             characters.get(5).map(&mut button).unwrap_or(empty()),
         ];
 
-        let enter_text = context
-            .engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Enter")
-            .unwrap();
-        let enter_label = Label {
-            text: enter_text,
-            position: (0, 0),
-            color: GRAY_6,
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-        let enter_button = Button {
-            position: (0, 0),
-            size: (80, 20),
-            color: GRAY_2,
-            texture_id: BUTTON_ID,
-            label: Some(enter_label),
-            ..Default::default()
-        };
+        let enter_label = Label::from("Enter", TAHOMA_BOLD_8_SHADOW_ID, GRAY_6, context.engine);
+        let enter_button = ButtonBuilder::new()
+            .color(GRAY_2)
+            .label(enter_label)
+            .texture_id(BUTTON_ID)
+            .build();
 
         Self {
             slots,
@@ -198,7 +186,8 @@ impl UI for AccountUI {
             slot.button().update(context);
 
             if let Slot::Char { character, .. } = slot {
-                character.position = (x, center_y + 2);
+                character.position.x = x;
+                character.position.y = center_y + 2;
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);

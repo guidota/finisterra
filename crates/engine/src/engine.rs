@@ -1,3 +1,5 @@
+use winit::window::CursorIcon;
+
 use crate::draw::{Dimensions, Target};
 
 pub type TextureID = u32;
@@ -38,6 +40,9 @@ pub trait GameEngine {
 
     /// Check mouse secondary click
     fn mouse_secondary_clicked(&self) -> bool;
+
+    /// Sets current mouse cursor
+    fn set_mouse_cursor(&mut self, cursor: CursorIcon);
 
     /// Adds a texture and receives an integer to be used later on draw_image
     fn add_texture(&mut self, path: &str) -> TextureID;

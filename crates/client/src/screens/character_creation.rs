@@ -2,14 +2,22 @@ use engine::{
     draw::{image::DrawImage, Position, Target},
     engine::GameEngine,
 };
-use protocol::{client, server};
+use protocol::{
+    character::{Class, Gender, Race},
+    client, server,
+};
 use tracing::info;
 
 use crate::{
     game::Context,
     ui::{
-        button::Button, colors::*, fonts::*, input_field::InputField, label::Label, textures::*,
-        Alignment, Widget, UI,
+        button::{Button, ButtonBuilder},
+        colors::*,
+        fonts::*,
+        input_field::InputField,
+        label::Label,
+        textures::*,
+        Widget, UI,
     },
 };
 
@@ -27,6 +35,21 @@ pub struct CharacterCreationScreen {
 pub struct CharacterCreationUI {
     name_label: Label,
     pub name_input: InputField,
+
+    // classes
+    pub classes_label: Label,
+    pub classes: Vec<Button>,
+    pub selected_class: usize,
+
+    // races
+    pub races_label: Label,
+    pub races: Vec<Button>,
+    pub selected_race: usize,
+
+    // gender
+    pub genders_label: Label,
+    pub genders: Vec<Button>,
+    pub selected_gender: usize,
 
     pub create_button: Button,
 }
@@ -56,6 +79,9 @@ impl GameScreen for CharacterCreationScreen {
                 .send(protocol::client::ClientPacket::Account(
                     client::Account::CreateCharacter {
                         name: name.to_string(),
+                        class: Class::VALUES[self.ui.selected_class].clone(),
+                        race: Race::VALUES[self.ui.selected_race].clone(),
+                        gender: Gender::VALUES[self.ui.selected_gender].clone(),
                     },
                 ))
         } else {
@@ -64,7 +90,7 @@ impl GameScreen for CharacterCreationScreen {
                     protocol::server::ServerPacket::Account(
                         server::Account::CreateCharacterOk { character },
                     ) => {
-                        let character = entity::Character::from(context, &character);
+                        let character = entity::Character::from(context, character);
 
                         context
                             .screen_transition_sender
@@ -94,14 +120,7 @@ impl GameScreen for CharacterCreationScreen {
 
 impl CharacterCreationUI {
     fn initialize<E: GameEngine>(context: &mut Context<E>) -> Self {
-        let name_label_text = context.engine.parse_text(WIZARD_16_ID, "Name").unwrap();
-        let name_label = Label {
-            text: name_label_text,
-            position: ((800 / 2), 320),
-            color: GRAY_6,
-            texture_id: WIZARD_16_ID,
-            alignment: Alignment::Center,
-        };
+        let name_label = Label::from("Name", WIZARD_16_ID, GRAY_6, context.engine);
         let mut name_input = InputField::new(
             GRAY_6,
             GRAY_1,
@@ -113,31 +132,103 @@ impl CharacterCreationUI {
         );
         name_input.focused = true;
 
-        let create_text = context
-            .engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Create")
-            .unwrap();
-        let create_label = Label {
-            text: create_text,
-            position: (400 - 40 - 10, 196),
-            color: GRAY_6,
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-        let create_button = Button {
-            position: (400 - 80 - 10, 190),
-            size: (80, 20),
-            color: GRAY_2,
-            texture_id: BUTTON_ID,
-            label: Some(create_label),
-            ..Default::default()
-        };
+        let create_label = Label::from("Create", WIZARD_16_ID, GRAY_6, context.engine);
+        let create_button = ButtonBuilder::new()
+            .color(GRAY_2)
+            .texture_id(BUTTON_ID)
+            .label(create_label)
+            .build();
+
+        let classes_label = Label::from("Classes", WIZARD_16_ID, GRAY_6, context.engine);
+        let mut classes = vec![];
+        let default_class = Class::default();
+        let mut selected_class = 0;
+        for (i, class) in Class::VALUES.iter().enumerate() {
+            let class_label = Label::from(
+                &class.to_string(),
+                TAHOMA_BOLD_8_SHADOW_ID,
+                GRAY_6,
+                context.engine,
+            );
+            let mut class_button = ButtonBuilder::new()
+                .color(GRAY_2)
+                .texture_id(BUTTON_ID)
+                .label(class_label)
+                .selected_color(BLUE)
+                .build();
+            if class == &default_class {
+                class_button.select();
+                selected_class = i;
+            }
+
+            classes.push(class_button);
+        }
+
+        let races_label = Label::from("Races", WIZARD_16_ID, GRAY_6, context.engine);
+        let mut races = vec![];
+        let default_race = Race::default();
+        let mut selected_race = 0;
+        for (i, race) in Race::VALUES.iter().enumerate() {
+            let label = Label::from(
+                &race.to_string(),
+                TAHOMA_BOLD_8_SHADOW_ID,
+                GRAY_6,
+                context.engine,
+            );
+            let mut button = ButtonBuilder::new()
+                .color(GRAY_2)
+                .texture_id(BUTTON_ID)
+                .label(label)
+                .selected_color(BLUE)
+                .build();
+            if race == &default_race {
+                button.select();
+                selected_race = i;
+            }
+            races.push(button);
+        }
+
+        let genders_label = Label::from("Genders", WIZARD_16_ID, GRAY_6, context.engine);
+        let mut genders = vec![];
+        let default_gender = Gender::default();
+        let mut selected_gender = 0;
+        for (i, gender) in Gender::VALUES.iter().enumerate() {
+            let label = Label::from(
+                &gender.to_string(),
+                TAHOMA_BOLD_8_SHADOW_ID,
+                GRAY_6,
+                context.engine,
+            );
+            let mut button = ButtonBuilder::new()
+                .color(GRAY_2)
+                .texture_id(BUTTON_ID)
+                .label(label)
+                .selected_color(BLUE)
+                .build();
+            if gender == &default_gender {
+                button.select();
+                selected_gender = i;
+            }
+            genders.push(button);
+        }
 
         Self {
             name_label,
             name_input,
 
             create_button,
+
+            classes_label,
+            selected_class,
+            classes,
+
+            races_label,
+            selected_race,
+            races,
+
+            genders,
+            genders_label,
+            selected_gender,
         }
     }
 }
@@ -146,12 +237,70 @@ impl UI for CharacterCreationUI {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let size = screen_size(context.engine);
         let center_x = size.0 / 2;
-        let center_y = size.1 / 2;
-        self.name_label.position = (center_x, center_y);
-        self.name_input.position = (center_x, center_y - 35);
-        self.create_button.position = (center_x, center_y - 60);
+        let y = 100;
+        self.name_label.position = (center_x, y);
+        self.name_input.position = (center_x, y - 35);
+        self.create_button.position = (center_x, y - 60);
         if let Some(label) = self.create_button.label.as_mut() {
-            label.position = (center_x, center_y - 60);
+            label.position = (center_x, y - 60);
+        }
+
+        let x = 100;
+        let mut y = size.1 - (size.1 - self.classes.len() as u16 * 30 - 30) / 2;
+        self.classes_label.position = (x, y);
+        let mut selection = self.selected_class;
+        for (i, button) in self.classes.iter_mut().enumerate() {
+            y -= 30;
+            button.position = (x, y);
+            button.update(context);
+            if button.clicked() {
+                button.select();
+                selection = i;
+            }
+        }
+        if selection != self.selected_class {
+            let selected_button = &mut self.classes[self.selected_class];
+            selected_button.unselect();
+            self.selected_class = selection;
+        }
+
+        let x = size.0 - 100;
+        let mut y = size.1
+            - (size.1 - (self.races.len() as u16 + self.genders.len() as u16) * 30 - 30 * 2) / 2;
+        self.races_label.position = (x, y);
+
+        let mut selection = self.selected_race;
+        for (i, button) in self.races.iter_mut().enumerate() {
+            y -= 30;
+            button.position = (x, y);
+            button.update(context);
+            if button.clicked() {
+                button.select();
+                selection = i;
+            }
+        }
+        if selection != self.selected_race {
+            let selected_button = &mut self.races[self.selected_race];
+            selected_button.unselect();
+            self.selected_race = selection;
+        }
+
+        y -= 30;
+        self.genders_label.position = (x, y);
+        let mut selection = self.selected_gender;
+        for (i, button) in self.genders.iter_mut().enumerate() {
+            y -= 30;
+            button.position = (x, y);
+            button.update(context);
+            if button.clicked() {
+                button.select();
+                selection = i;
+            }
+        }
+        if selection != self.selected_gender {
+            let selected_button = &mut self.genders[self.selected_gender];
+            selected_button.unselect();
+            self.selected_gender = selection;
         }
 
         self.name_input.update(context);
@@ -172,5 +321,17 @@ impl UI for CharacterCreationUI {
         self.name_label.draw(context);
         self.name_input.draw(context);
         self.create_button.draw(context);
+        self.classes_label.draw(context);
+        for button in self.classes.iter_mut() {
+            button.draw(context);
+        }
+        self.races_label.draw(context);
+        for button in self.races.iter_mut() {
+            button.draw(context);
+        }
+        self.genders_label.draw(context);
+        for button in self.genders.iter_mut() {
+            button.draw(context);
+        }
     }
 }

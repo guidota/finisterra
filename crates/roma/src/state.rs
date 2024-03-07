@@ -67,6 +67,7 @@ impl State {
             present_mode,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![surface_format],
+            desired_maximum_frame_latency: 3,
         };
 
         surface.configure(&device, &config);

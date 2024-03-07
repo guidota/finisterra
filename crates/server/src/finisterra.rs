@@ -1,10 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
-use database::Database;
+use database::{model::CreateCharacter, Database};
 use protocol::{
+    character::{self, Attributes, Class, Equipment, Look, Race, Skills, Stat, Stats},
     client::{self, ClientPacket},
     server::{self, ServerPacket},
+    world::WorldPosition,
 };
 use tokio::sync::mpsc::{channel, Sender};
 
@@ -30,7 +32,7 @@ pub struct User {
 
 pub enum UserState {
     Connected,
-    InAccount { account_id: i64 },
+    InAccount { account_name: String },
     InWorld { character: String },
 }
 
@@ -82,17 +84,22 @@ impl Finisterra {
         let authentication_events = self.accounts.poll_account_events().await;
         for event in authentication_events {
             match event {
-                AccountEvent::Created { connection_id, id } => {
+                AccountEvent::Created {
+                    connection_id,
+                    account_name,
+                } => {
                     self.users.insert(
                         connection_id,
                         User {
-                            state: UserState::InAccount { account_id: id },
+                            state: UserState::InAccount {
+                                account_name: account_name.clone(),
+                            },
                         },
                     );
                     self.outcoming_messages_sender
                         .send((
                             connection_id,
-                            ServerPacket::Account(server::Account::Created { id }),
+                            ServerPacket::Account(server::Account::Created { account_name }),
                         ))
                         .await
                         .expect("poisoned");
@@ -111,19 +118,20 @@ impl Finisterra {
                 }
                 AccountEvent::LoginAccountOk {
                     connection_id,
-                    account_id,
+                    account_name,
                     characters,
                 } => {
                     self.users.insert(
                         connection_id,
                         User {
-                            state: UserState::InAccount { account_id },
+                            state: UserState::InAccount { account_name },
                         },
                     );
                     let characters = characters
                         .iter()
-                        .map(|char| server::Character {
+                        .map(|char| character::Character {
                             name: char.name.to_string(),
+                            ..Default::default()
                         })
                         .collect();
                     self.outcoming_messages_sender
@@ -151,7 +159,7 @@ impl Finisterra {
                         connection_id,
                         User {
                             state: UserState::InWorld {
-                                character: character.to_string(),
+                                character: character.name.to_string(),
                             },
                         },
                     );
@@ -159,7 +167,24 @@ impl Finisterra {
                         .send((
                             connection_id,
                             ServerPacket::Account(server::Account::LoginCharacterOk {
-                                character: server::Character { name: character },
+                                character: character::Character {
+                                    name: character.name,
+                                    desc: character.description,
+                                    level: character.level as u16,
+                                    exp: Stat {
+                                        current: character.exp as u64,
+                                        max: character.exp as u64,
+                                    },
+                                    gold: 0,
+                                    position: WorldPosition { map: 1, x: 0, y: 0 },
+                                    class: Class::from(character.class_id as usize).unwrap(),
+                                    race: Race::from(character.class_id as usize).unwrap(),
+                                    look: Look::default(),
+                                    equipment: Equipment::default(),
+                                    attributes: Attributes::default(),
+                                    skills: Skills::default(),
+                                    stats: Stats::default(),
+                                },
                             }),
                         ))
                         .await
@@ -192,8 +217,9 @@ impl Finisterra {
                         .send((
                             connection_id,
                             ServerPacket::Account(server::Account::CreateCharacterOk {
-                                character: server::Character {
+                                character: character::Character {
                                     name: character.name,
+                                    ..Default::default()
                                 },
                             }),
                         ))
@@ -221,26 +247,44 @@ impl Finisterra {
         for (connection_id, message) in incoming_messages {
             match message {
                 ClientPacket::Account(message) => match message {
-                    client::Account::CreateAccount { mail, password } => {
-                        self.accounts.create(connection_id, &mail, &password).await
+                    client::Account::CreateAccount {
+                        name,
+                        email,
+                        password,
+                        pin,
+                    } => {
+                        self.accounts
+                            .create(connection_id, &name, &email, &password, pin)
+                            .await
                     }
-                    client::Account::LoginAccount { mail, password } => {
-                        self.accounts.login(connection_id, &mail, &password).await
+                    client::Account::LoginAccount { name, password } => {
+                        self.accounts.login(connection_id, &name, &password).await
                     }
                     client::Account::LoginCharacter { character } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_id } = user.state {
+                            if let UserState::InAccount { account_name } = &user.state {
                                 self.accounts
-                                    .enter(connection_id, account_id, &character)
+                                    .enter(connection_id, account_name, &character)
                                     .await
                             }
                         }
                     }
-                    client::Account::CreateCharacter { name } => {
+                    client::Account::CreateCharacter {
+                        name,
+                        class,
+                        race,
+                        gender,
+                    } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_id } = user.state {
+                            if let UserState::InAccount { account_name } = &user.state {
+                                let create_character = CreateCharacter {
+                                    name,
+                                    class_id: class.id() as i32,
+                                    race_id: race.id() as i32,
+                                    gender_id: gender.id() as i32,
+                                };
                                 self.accounts
-                                    .create_character(connection_id, account_id, &name)
+                                    .create_character(connection_id, account_name, create_character)
                                     .await
                             }
                         }

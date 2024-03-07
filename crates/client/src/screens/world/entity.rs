@@ -1,6 +1,8 @@
-use std::time::Duration;
+use std::{
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 
-use definitions::{class::Class, race::Race};
 use engine::{
     draw::{
         image::DrawImage,
@@ -9,17 +11,18 @@ use engine::{
     },
     engine::GameEngine,
 };
-use lorenzo::character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter};
-use protocol::server;
+use lorenzo::{
+    animations::ImageFrameMetadata,
+    character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
+    Offset,
+};
+use protocol::character::{self};
 use rand::seq::SliceRandom;
 
 use crate::{
     game::Context,
     resources::Resources,
-    ui::{
-        colors::{BLUE, BLUE_3},
-        fonts::TAHOMA_BOLD_8_SHADOW_ID,
-    },
+    ui::{colors::BLUE, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
 
 pub enum Entity {
@@ -43,26 +46,29 @@ impl Entity {
 }
 
 pub struct Character {
-    pub name: String,
-    pub name_text: ParsedText,
+    name_text: ParsedText,
+    inner: character::Character,
 
-    pub position: (u16, u16),
-
-    pub class: Class,
-    pub race: Race,
-
-    pub level: u16,
-    pub exp: (u16, u16),
-
-    pub mana: (u16, u16),
-    pub health: (u16, u16),
-    pub energy: (u16, u16),
-
+    // visual aspect
     animation: AnimatedCharacter,
 }
 
+impl Deref for Character {
+    type Target = character::Character;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DerefMut for Character {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
 impl Character {
-    pub fn from<E: GameEngine>(context: &mut Context<E>, character: &server::Character) -> Self {
+    pub fn from<E: GameEngine>(context: &mut Context<E>, character: character::Character) -> Self {
         let name_text = context
             .engine
             .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &character.name)
@@ -70,20 +76,9 @@ impl Character {
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
         Self {
-            name: character.name.to_string(),
             name_text,
 
-            position: (300, 300), // TODO!
-
-            class: Class::Mage,
-            race: Race::Human,
-
-            level: 10,
-            exp: (0, 100),
-
-            health: (20, 20),
-            mana: (100, 100),
-            energy: (200, 200),
+            inner: character,
 
             animation,
         }
@@ -126,150 +121,47 @@ impl Character {
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
 
-        let x = self.position.0;
+        let x = self.inner.position.x;
         context.engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
-                position: Position::new(x, self.position.1 - 14, 0.5),
+                position: Position::new(x, self.inner.position.y - 14, 0.5),
                 color: BLUE,
             },
             Target::World,
         );
 
-        // let apoca = context
-        //     .engine
-        //     .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Rahma Nanarak O'al")
-        //     .expect("can parse");
-        // context.engine.draw_text(
-        //     TAHOMA_BOLD_8_SHADOW_ID,
-        //     DrawText {
-        //         text: &apoca,
-        //         position: Position::new(x, self.position.1 + 56, 0.5),
-        //         color: BLUE_3,
-        //     },
-        //     Target::World,
-        // );
-
-        let skin = self.animation.get_skin_frame();
-        let image = &context.resources.images[skin.image as usize];
-
-        let x = self.position.0 - body.base.x as u16;
-        let y = self.position.1 - body.base.y as u16;
+        let x = self.inner.position.x - body.base.x as u16;
+        let y = self.inner.position.y - body.base.y as u16;
 
         let color = [255, 255, 255, 255];
-        let z = 0.5 + (skin.priority as f32 * 0.0001);
 
-        context.engine.draw_image(
-            DrawImage {
-                position: Position::new(x, y, z),
-                source: [image.x, image.y, image.width, image.height],
-                color,
-                index: image.file,
-            },
-            Target::World,
-        );
+        let mut draw_image = |metadata: Option<&ImageFrameMetadata>, offset: Offset| {
+            if let Some(metadata) = metadata {
+                let image = &context.resources.images[metadata.image as usize];
+                context.engine.draw_image(
+                    DrawImage {
+                        position: Position::new(
+                            x + offset.x as u16 - metadata.offset.x as u16,
+                            y + offset.y as u16 - metadata.offset.y as u16,
+                            0.5 + (metadata.priority as f32 * 0.0001),
+                        ),
+                        source: [image.x, image.y, image.width, image.height],
+                        color,
+                        index: image.file,
+                    },
+                    Target::World,
+                );
+            }
+        };
 
-        if let Some(metadata) = self.animation.get_face_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.head.x as u16 - metadata.offset.x as u16,
-                        y + body.head.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
-
-        if let Some(metadata) = self.animation.get_eyes_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.head.x as u16 - metadata.offset.x as u16,
-                        y + body.head.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
-
-        if let Some(metadata) = self.animation.get_hair_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.head.x as u16 - metadata.offset.x as u16,
-                        y + body.head.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
-
-        if let Some(metadata) = self.animation.get_helmet_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.head.x as u16 - metadata.offset.x as u16,
-                        y + body.head.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
-
-        if let Some(metadata) = self.animation.get_weapon_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.right_hand.x as u16 - metadata.offset.x as u16,
-                        y + body.right_hand.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
-
-        if let Some(metadata) = self.animation.get_shield_frame() {
-            let image = &context.resources.images[metadata.image as usize];
-            context.engine.draw_image(
-                DrawImage {
-                    position: Position::new(
-                        x + body.left_hand.x as u16 - metadata.offset.x as u16,
-                        y + body.left_hand.y as u16 - metadata.offset.y as u16,
-                        0.5 + (metadata.priority as f32 * 0.0001),
-                    ),
-                    source: [image.x, image.y, image.width, image.height],
-                    color,
-                    index: image.file,
-                },
-                Target::World,
-            );
-        }
+        draw_image(Some(self.animation.get_skin_frame()), body.base);
+        draw_image(self.animation.get_face_frame(), body.head);
+        draw_image(self.animation.get_eyes_frame(), body.head);
+        draw_image(self.animation.get_hair_frame(), body.head);
+        draw_image(self.animation.get_helmet_frame(), body.head);
+        draw_image(self.animation.get_weapon_frame(), body.right_hand);
+        draw_image(self.animation.get_shield_frame(), body.left_hand);
     }
 }

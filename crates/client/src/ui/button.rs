@@ -1,6 +1,7 @@
 use engine::{
     draw::{image::DrawImage, Color, Position, Target},
     engine::{GameEngine, TextureID},
+    CursorIcon,
 };
 
 use crate::game::Context;
@@ -24,6 +25,10 @@ pub struct Button {
     pub selected: bool,
 
     pub alignment: Alignment,
+
+    pub selected_color: Option<Color>,
+
+    mouse_in: bool,
 }
 
 #[derive(Default)]
@@ -51,6 +56,8 @@ impl Button {
             state: State::Normal,
             selected: false,
             alignment: Alignment::Center,
+            selected_color: None,
+            mouse_in: false,
         }
     }
 
@@ -58,6 +65,17 @@ impl Button {
         let mut button = Self::new((0, 0), (0, 0), texture_id, None);
         button.color = GRAY_5;
         button
+    }
+
+    fn on_mouse_enter<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.mouse_in = true;
+        context.engine.set_mouse_cursor(CursorIcon::Pointer);
+    }
+
+    fn on_mouse_exit<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.mouse_in = false;
+        // TODO: handle set prev mouse cursor
+        context.engine.set_mouse_cursor(CursorIcon::Default);
     }
 }
 
@@ -78,7 +96,14 @@ impl Widget for Button {
 
         let (x_start, y_start, x_end, y_end) = self.rect();
 
-        if x > x_start && x < x_end && y > y_start && y < y_end {
+        let mouse_in = x > x_start && x < x_end && y > y_start && y < y_end;
+        match (self.mouse_in, mouse_in) {
+            (true, false) => self.on_mouse_exit(context),
+            (false, true) => self.on_mouse_enter(context),
+            _ => {}
+        }
+
+        if mouse_in {
             if context.engine.mouse_released() {
                 self.state = State::Clicked;
             } else if context.engine.mouse_held() {
@@ -117,7 +142,8 @@ impl Widget for Button {
 impl Button {
     fn color(&self) -> Color {
         if self.selected {
-            colors::tint(self.color, 0.8)
+            self.selected_color
+                .unwrap_or_else(|| colors::tint(self.color, 0.8))
         } else {
             match self.state {
                 State::Normal => self.color,
@@ -202,6 +228,16 @@ impl ButtonBuilder {
 
     pub fn label(mut self, label: Label) -> Self {
         self.button.label = Some(label);
+        self
+    }
+
+    pub fn selected_color(mut self, color: Color) -> Self {
+        self.button.selected_color = Some(color);
+        self
+    }
+
+    pub fn alignment(mut self, alignment: Alignment) -> Self {
+        self.button.alignment = alignment;
         self
     }
 

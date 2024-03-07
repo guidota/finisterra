@@ -12,7 +12,7 @@ pub struct Image {
     pub color: Color,
     pub texture_id: TextureID,
 
-    size: (u16, u16),
+    pub size: (u16, u16),
     pub percent: u16,
 }
 

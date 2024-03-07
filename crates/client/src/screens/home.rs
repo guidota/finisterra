@@ -11,7 +11,13 @@ use protocol::{
 use crate::{
     game::Context,
     ui::colors::*,
-    ui::{button::Button, colors::GRAY_6, input_field::InputField, label::Label, Widget},
+    ui::{
+        button::{Button, ButtonBuilder},
+        colors::GRAY_6,
+        input_field::InputField,
+        label::Label,
+        Widget,
+    },
     ui::{
         fonts::{TAHOMA_BOLD_8_SHADOW_ID, WIZARD_16_ID},
         Alignment,
@@ -98,7 +104,7 @@ impl GameScreen for HomeScreen {
             context
                 .connection
                 .send(ClientPacket::Account(client::Account::LoginAccount {
-                    mail: user.to_string(),
+                    name: user.to_string(),
                     password: password.to_string(),
                 }))
         } else if self.ui.register_button.clicked() {
@@ -106,8 +112,10 @@ impl GameScreen for HomeScreen {
             context
                 .connection
                 .send(ClientPacket::Account(client::Account::CreateAccount {
-                    mail: user.to_string(),
+                    name: user.to_string(),
+                    email: user.to_string(),
                     password: password.to_string(),
+                    pin: 0,
                 }))
         }
     }
@@ -122,14 +130,7 @@ impl HomeUI {
         let size = context.engine.get_window_size();
         let center_x = size.width / 2;
 
-        let user_label_text = context.engine.parse_text(WIZARD_16_ID, "User").unwrap();
-        let user_label = Label {
-            text: user_label_text,
-            position: (center_x, 320),
-            color: GRAY_6,
-            texture_id: WIZARD_16_ID,
-            alignment: Alignment::Center,
-        };
+        let user_label = Label::from("User", WIZARD_16_ID, GRAY_6, context.engine);
         let mut user_input = InputField::new(
             GRAY_6,
             GRAY_1,
@@ -141,14 +142,7 @@ impl HomeUI {
         );
         user_input.focused = true;
 
-        let password_label_text = context.engine.parse_text(WIZARD_16_ID, "Password").unwrap();
-        let password_label = Label {
-            text: password_label_text,
-            position: (center_x, 260),
-            color: GRAY_6,
-            texture_id: WIZARD_16_ID,
-            alignment: Alignment::Center,
-        };
+        let password_label = Label::from("Password", WIZARD_16_ID, GRAY_6, context.engine);
         let mut password_input = InputField::new(
             GRAY_6,
             GRAY_1,
@@ -160,48 +154,22 @@ impl HomeUI {
         );
         password_input.obfuscate = true;
 
-        let login_text = context
-            .engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Log in")
-            .unwrap();
-        let login_label = Label {
-            text: login_text,
-            position: (0, 10),
-            color: GRAY_6,
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-        let login_button = Button {
-            position: (center_x + 10, 190),
-            size: (80, 20),
-            color: BLUE,
-            texture_id: BUTTON_ID,
-            label: Some(login_label),
-            alignment: Alignment::Left,
+        let login_label = Label::from("Log in", TAHOMA_BOLD_8_SHADOW_ID, GRAY_6, context.engine);
+        let login_button = ButtonBuilder::new()
+            .color(BLUE)
+            .label(login_label)
+            .texture_id(BUTTON_ID)
+            .alignment(Alignment::Left)
+            .build();
 
-            ..Default::default()
-        };
-
-        let register_text = context
-            .engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, "Register")
-            .unwrap();
-        let register_label = Label {
-            text: register_text,
-            position: (0, 10),
-            color: GRAY_6,
-            texture_id: TAHOMA_BOLD_8_SHADOW_ID,
-            alignment: Alignment::Center,
-        };
-        let register_button = Button {
-            position: (center_x - 10, 190),
-            size: (80, 20),
-            color: GRAY_2,
-            texture_id: BUTTON_ID,
-            label: Some(register_label),
-            alignment: Alignment::Right,
-            ..Default::default()
-        };
+        let register_label =
+            Label::from("Register", TAHOMA_BOLD_8_SHADOW_ID, GRAY_6, context.engine);
+        let register_button = ButtonBuilder::new()
+            .color(GRAY_2)
+            .label(register_label)
+            .texture_id(BUTTON_ID)
+            .alignment(Alignment::Right)
+            .build();
 
         Self {
             user_input,
@@ -227,13 +195,14 @@ impl UI for HomeUI {
 
         let size = screen_size(context.engine);
         let center_x = size.0 / 2;
+        let center_y = size.1 / 2;
 
-        self.user_label.position = (center_x, self.user_label.position.1);
-        self.user_input.position = (center_x, self.user_input.position.1);
-        self.password_label.position = (center_x, self.password_label.position.1);
-        self.password_input.position = (center_x, self.password_input.position.1);
-        self.login_button.position = (center_x + 10, self.login_button.position.1);
-        self.register_button.position = (center_x - 10, self.register_button.position.1);
+        self.user_label.position = (center_x, center_y + 50);
+        self.user_input.position = (center_x, center_y + 20);
+        self.password_label.position = (center_x, center_y + 10);
+        self.password_input.position = (center_x, center_y - 20);
+        self.login_button.position = (center_x + 10, center_y - 50);
+        self.register_button.position = (center_x - 10, center_y - 50);
 
         self.user_input.update(context);
         self.password_input.update(context);

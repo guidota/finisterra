@@ -1,7 +1,9 @@
 mod admin;
 mod bincode;
+pub mod character;
 pub mod client;
 pub mod server;
+pub mod world;
 
 pub const CONFIG: Configuration = standard();
 

@@ -1,4 +1,4 @@
-use crate::{networking::bincode::CONFIG, ProtocolMessage};
+use crate::{character::Character, networking::bincode::CONFIG, ProtocolMessage};
 use bincode::{Decode, Encode};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
@@ -21,7 +21,7 @@ pub enum Connection {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Account {
-    Created { id: i64 },
+    Created { account_name: String },
     CreateFailed { reason: String },
 
     LoginOk { characters: Vec<Character> },
@@ -32,11 +32,6 @@ pub enum Account {
 
     LoginCharacterOk { character: Character },
     LoginCharacterFailed { reason: String },
-}
-
-#[derive(Encode, Decode, PartialEq, Debug)]
-pub struct Character {
-    pub name: String,
 }
 
 /// Users and NPCs
