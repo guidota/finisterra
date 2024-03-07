@@ -274,29 +274,26 @@ impl MarketRepository for Database {
     async fn character_buy(&self, account_buyer: &str, account_seller: &str, character_involved: &str, price: i64) -> Result<bool> {
         let mut tx = self.pool.begin().await?;
 
-        let mut updated = sqlx::query("UPDATE accounts SET balance = balance + $1 WHERE name = $2;")
+        sqlx::query("UPDATE accounts SET balance = balance + $1 WHERE name = $2;")
             .bind(price)
             .bind(account_seller.to_string())
-            .execute(&mut tx)
-            .await?
-            .is_ok();
+            .execute(&mut *tx)
+            .await?;
 
-        updated = sqlx::query("UPDATE accounts SET balance = balance - $1 WHERE name = $2;")
+        sqlx::query("UPDATE accounts SET balance = balance - $1 WHERE name = $2;")
             .bind(price)
             .bind(account_buyer.to_string())
-            .execute(&mut tx)
-            .await?
-            .is_ok();
+            .execute(&mut *tx)
+            .await?;
 
-        updated = sqlx::query("UPDATE characters SET account_name = $1, is_for_sale = false WHERE name = $2;")
+        sqlx::query("UPDATE characters SET account_name = $1, is_for_sale = false WHERE name = $2;")
             .bind(account_buyer.to_string())
             .bind(character_involved.to_string())
-            .execute(&mut tx)
-            .await?
-            .is_ok();
+            .execute(&mut *tx)
+            .await?;
 
         tx.commit().await?;
 
-        Ok(updated)
+        Ok(true)
     }
 }

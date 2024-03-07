@@ -207,7 +207,13 @@ async fn post_on_sale_character(state: &Arc<StateDB>, account_name: &String, mar
 
 async fn buy_character(state: &Arc<StateDB>, account_buyer: &String, marketplace: &Marketplace) -> Response {
     let character_to_buy = &state.database.character_by_name(&marketplace.character_involved).await;
-    let pj: &Character;
+    let pj: &Character = &Character {
+        name: "".to_string(),
+        account_name: "".to_string(),
+        race: "".to_string(),
+        price: 0,
+        is_for_sale: false,
+    };
     if let Ok(Some(pj)) = character_to_buy {
         println!("character_to_buy = {:?}", pj);
         if !pj.is_for_sale {
@@ -224,14 +230,14 @@ async fn buy_character(state: &Arc<StateDB>, account_buyer: &String, marketplace
     if let Ok(Some(account)) = account_with_characters {
         println!("account = {:?}", account);
         println!("account balance {} - char price {} ", account.balance, pj.price);
-        if account.balance < pj.price.clone() {
+        if account.balance < pj.price {
             return Json("no te alcanza la guita mostro, ponete a matar aranitas").into_response()
         }
-        println!("pj price = {:?}", pj.price.clone());
+        println!("pj price = {:?}", pj.price);
     }
 
     let updated = &state.database
-        .character_buy(&account_buyer, &pj.account_name, &marketplace.character_involved, pj.price.clone())
+        .character_buy(&account_buyer, &pj.account_name, &marketplace.character_involved, pj.price)
         .await;
 
     println!("updated = {:?}", updated);
