@@ -2,8 +2,8 @@ use std::env;
 
 use anyhow::Result;
 use model::{
-    Account, Attributes, Character, CreateAccount, CreateCharacter, Equipment, RawCharacter,
-    Statistics,
+    Account, Attributes, Character, CharacterPreview, CreateAccount, CreateCharacter, Equipment,
+    Look, Statistics,
 };
 use sqlx::{
     migrate::MigrateDatabase,
@@ -54,13 +54,40 @@ impl Database {
         Ok(account)
     }
 
-    pub async fn account_characters(&self, account_name: &str) -> Result<Vec<Character>> {
+    pub async fn account_characters(&self, account_name: &str) -> Result<Vec<CharacterPreview>> {
         let mut conn = self.pool.acquire().await?;
-        let characters = sqlx::query_as::<_, Character>(
+        let characters = sqlx::query_as::<_, CharacterPreview>(
             r#"              
             SELECT char.*,
+                look.body, look.face, look.skin, look.hair,
+                equipment.body, equipment.face, equipment.skin, equipment.hair
+            FROM characters AS char 
+
+            JOIN character_equipment as equipment ON char.name = equipment.name
+            JOIN character_look as look ON char.name = look.name
+
+            WHERE char.name IN (SELECT character_name FROM account_characters WHERE account_name = $1);
+            "#,
+        )
+        .bind(account_name)
+        .fetch_all(&mut *conn)
+        .await;
+
+        characters.map_err(|e| {
+            println!("error while querying characters {e}");
+            anyhow::anyhow!("{e}")
+        })
+    }
+
+    pub async fn character(&self, character_name: &str) -> Result<Character> {
+        let mut conn = self.pool.acquire().await?;
+        let character = sqlx::query_as::<_, Character>(
+            r#"              
+            SELECT 
+                char.*,
                 stats.health, stats.mana, stats.stamina, stats.max_health, stats.max_mana, stats.max_stamina,
                 attributes.strength, attributes.agility, attributes.intelligence, attributes.charisma, attributes.constitution,
+                look.body, look.face, look.skin, look.hair,
                 equipment.body, equipment.face, equipment.skin, equipment.hair,
                 character_skills.value as skills,
                 character_inventory.value as inventory,
@@ -75,27 +102,23 @@ impl Database {
             JOIN character_inventories as character_inventory ON char.name = character_inventory.name
             JOIN character_vaults as character_vault ON char.name = character_vault.name
             JOIN character_spellbooks as character_spellbook ON char.name = character_spellbook.name
+            JOIN character_look as look ON char.name = look.name
 
-            WHERE char.name IN 
-              (SELECT character_name FROM account_characters WHERE account_name = $1);
-            "#
+            WHERE char.name = $1
+            "#,
         )
-            
-        .bind(account_name)
-        .fetch_all(&mut *conn)
-        .await;
+        .bind(character_name)
+        .fetch_one(&mut *conn)
+        .await?;
 
-        characters.map_err(|e| {
-            println!("error while querying characters {e}");
-            anyhow::anyhow!("{e}")
-        })
+        Ok(character)
     }
-
     pub async fn insert_character(
         &self,
         account_name: &str,
         character: CreateCharacter,
         attributes: &Attributes,
+        look: &Look,
         equipment: &Equipment,
         statistics: &Statistics,
     ) -> Result<Character> {
@@ -140,24 +163,35 @@ impl Database {
             .bind(statistics.max_stamina)
             .execute(&mut *transaction)
             .await?;
-        // insert equipment
+
         sqlx::query(
-            r#"INSERT INTO "character_equipment" ("name", "body", "face", "skin", "hair") VALUES ($1, $2, $3, $4, $5)"#,
+            r#"INSERT INTO "character_look" ("name", "body", "face", "skin", "hair") VALUES ($1, $2, $3, $4, $5)"#,
         )
         .bind(&character.name)
-        .bind(equipment.body)
-        .bind(equipment.face)
-        .bind(equipment.skin)
-        .bind(equipment.hair)
+        .bind(look.body)
+        .bind(look.face)
+        .bind(look.skin)
+        .bind(look.hair)
         .execute(&mut *transaction)
         .await?;
-        // insert vault
+
+        sqlx::query(
+            r#"INSERT INTO "character_equipment" ("name", "weapon", "shield", "clothing", "headgear") VALUES ($1, $2, $3, $4, $5)"#,
+        )
+        .bind(&character.name)
+        .bind(equipment.weapon)
+        .bind(equipment.shield)
+        .bind(equipment.clothing)
+        .bind(equipment.headgear)
+        .execute(&mut *transaction)
+        .await?;
+
         sqlx::query(r#"INSERT INTO "character_vaults" ("name", "value") VALUES ($1, $2)"#)
             .bind(&character.name)
             .bind(vec![])
             .execute(&mut *transaction)
             .await?;
-        // insert skills
+
         sqlx::query(r#"INSERT INTO "character_skills" ("name", "value") VALUES ($1, $2)"#)
             .bind(&character.name)
             .bind(vec![])
@@ -195,6 +229,11 @@ impl Database {
             skills: vec![],
             attributes: attributes.clone(),
             equipment: equipment.clone(),
+            look: look.clone(),
+            gold: 0,
+            map: 1,
+            x: 50,
+            y: 50,
         })
     }
 }

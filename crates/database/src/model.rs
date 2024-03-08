@@ -31,7 +31,7 @@ pub struct CreateCharacter {
 }
 
 #[derive(sqlx::FromRow, Debug)]
-pub struct RawCharacter {
+pub struct CharacterPreview {
     pub name: String,
     pub description: String,
     pub level: i32,
@@ -39,7 +39,16 @@ pub struct RawCharacter {
     pub class_id: i32,
     pub race_id: i32,
     pub gender_id: i32,
-    pub created_at: DateTime<Utc>,
+    pub gold: i32,
+    pub map: i32,
+    pub x: i32,
+    pub y: i32,
+
+    #[sqlx(flatten)]
+    pub look: Look,
+
+    #[sqlx(flatten)]
+    pub equipment: Equipment,
 }
 
 #[derive(sqlx::FromRow, Debug)]
@@ -51,7 +60,11 @@ pub struct Character {
     pub class_id: i32,
     pub race_id: i32,
     pub gender_id: i32,
-    pub created_at: DateTime<Utc>,
+
+    pub gold: i64,
+    pub map: i32,
+    pub x: i32,
+    pub y: i32,
 
     pub inventory: Vec<u8>,
     pub spellbook: Vec<u8>,
@@ -62,7 +75,12 @@ pub struct Character {
     pub attributes: Attributes,
 
     #[sqlx(flatten)]
+    pub look: Look,
+
+    #[sqlx(flatten)]
     pub equipment: Equipment,
+
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(sqlx::FromRow, Debug, Clone, Default)]
@@ -75,11 +93,19 @@ pub struct Attributes {
 }
 
 #[derive(sqlx::FromRow, Debug, Clone, Default)]
-pub struct Equipment {
+pub struct Look {
     pub body: i32,
     pub face: i32,
     pub skin: i32,
     pub hair: i32,
+}
+
+#[derive(sqlx::FromRow, Debug, Clone, Default)]
+pub struct Equipment {
+    pub weapon: Option<i32>,
+    pub shield: Option<i32>,
+    pub headgear: Option<i32>,
+    pub clothing: Option<i32>,
 }
 
 #[derive(sqlx::FromRow, Debug, Clone, Default)]

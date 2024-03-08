@@ -1,4 +1,8 @@
-use crate::{character::Character, networking::bincode::CONFIG, ProtocolMessage};
+use crate::{
+    character::{Character, CharacterPreview},
+    networking::bincode::CONFIG,
+    ProtocolMessage,
+};
 use bincode::{Decode, Encode};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
@@ -24,7 +28,7 @@ pub enum Account {
     Created { account_name: String },
     CreateFailed { reason: String },
 
-    LoginOk { characters: Vec<Character> },
+    LoginOk { characters: Vec<CharacterPreview> },
     LoginFailed,
 
     CreateCharacterOk { character: Character },

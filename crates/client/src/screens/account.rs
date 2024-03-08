@@ -58,7 +58,7 @@ pub enum Slot {
 impl AccountScreen {
     pub fn new<E: GameEngine>(
         context: &mut Context<E>,
-        characters: Vec<character::Character>,
+        characters: Vec<character::CharacterPreview>,
     ) -> Self {
         Self {
             ui: AccountUI::initialize(context, characters),
@@ -130,9 +130,9 @@ impl GameScreen for AccountScreen {
 impl AccountUI {
     fn initialize<E: GameEngine>(
         context: &mut Context<E>,
-        characters: Vec<character::Character>,
+        characters: Vec<character::CharacterPreview>,
     ) -> Self {
-        let mut button = |character: &character::Character| Slot::Char {
+        let mut button = |character: &character::CharacterPreview| Slot::Char {
             button: ButtonBuilder::new()
                 .texture_id(CHAR_SLOT_ID)
                 .size((SLOT_SIZE, SLOT_SIZE))
@@ -140,7 +140,7 @@ impl AccountUI {
                 .selected_color(GREEN)
                 .build(),
 
-            character: Box::new(Character::from(context, character.clone())),
+            character: Box::new(Character::from_preview(context, character.clone())),
         };
         let empty = || Slot::Empty {
             button: ButtonBuilder::new()

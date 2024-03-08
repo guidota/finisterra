@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS characters
     class_id    integer not null,
     race_id     integer not null,
     gender_id   integer not null,
+    gold        integer not null default 0,
+    map         integer not null default 1,
+    x           integer not null default 50,
+    y           integer not null default 50,
     created_at  timestamp not null default current_timestamp
 );
 
@@ -45,6 +49,17 @@ CREATE TABLE IF NOT EXISTS character_statistics
 );
 
 CREATE TABLE IF NOT EXISTS character_equipment
+(
+    name        text primary key,
+    weapon      int,
+    shield      int,
+    headgear    int,
+    clothing    int,
+
+    CONSTRAINT fk_character_name_3 FOREIGN KEY (name) REFERENCES characters(name)
+);
+
+CREATE TABLE IF NOT EXISTS character_look
 (
     name        text primary key,
     body    int not null,

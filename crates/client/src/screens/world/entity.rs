@@ -68,6 +68,36 @@ impl DerefMut for Character {
 }
 
 impl Character {
+    pub fn from_preview<E: GameEngine>(
+        context: &mut Context<E>,
+        character: character::CharacterPreview,
+    ) -> Self {
+        let name_text = context
+            .engine
+            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &character.name)
+            .expect("can parse");
+        let mut animation = Self::random(context.resources);
+        animation.change_animation(CharacterAnimation::Walk);
+        Self {
+            name_text,
+
+            inner: character::Character {
+                name: character.name,
+                desc: String::new(),
+                level: character.level,
+                exp: character.exp,
+                gold: character.gold,
+                position: character.position,
+                class: character.class,
+                race: character.race,
+                look: character.look,
+                equipment: character.equipment,
+                ..Default::default()
+            },
+
+            animation,
+        }
+    }
     pub fn from<E: GameEngine>(context: &mut Context<E>, character: character::Character) -> Self {
         let name_text = context
             .engine

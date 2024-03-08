@@ -32,8 +32,13 @@ pub struct User {
 
 pub enum UserState {
     Connected,
-    InAccount { account_name: String },
-    InWorld { character: String },
+    InAccount {
+        account_name: String,
+        character_names: Vec<String>,
+    },
+    InWorld {
+        character: String,
+    },
 }
 
 impl Finisterra {
@@ -93,6 +98,7 @@ impl Finisterra {
                         User {
                             state: UserState::InAccount {
                                 account_name: account_name.clone(),
+                                character_names: vec![],
                             },
                         },
                     );
@@ -121,17 +127,48 @@ impl Finisterra {
                     account_name,
                     characters,
                 } => {
+                    let character_names = characters
+                        .iter()
+                        .map(|character| character.name.to_string())
+                        .collect();
                     self.users.insert(
                         connection_id,
                         User {
-                            state: UserState::InAccount { account_name },
+                            state: UserState::InAccount {
+                                account_name,
+                                character_names,
+                            },
                         },
                     );
                     let characters = characters
                         .iter()
-                        .map(|char| character::Character {
+                        .map(|char| character::CharacterPreview {
                             name: char.name.to_string(),
-                            ..Default::default()
+                            level: char.level as u16,
+                            exp: Stat {
+                                current: char.exp as u64,
+                                max: char.exp as u64,
+                            },
+                            gold: char.gold as u64,
+                            position: WorldPosition {
+                                map: char.map as u16,
+                                x: char.x as u16,
+                                y: char.y as u16,
+                            },
+                            class: Class::from(char.class_id as usize).unwrap(),
+                            race: Race::from(char.race_id as usize).unwrap(),
+                            look: Look {
+                                body: char.look.body as u8,
+                                skin: char.look.skin as u8,
+                                face: char.look.face as u8,
+                                hair: char.look.hair as u8,
+                            },
+                            equipment: Equipment {
+                                weapon: char.equipment.weapon.map(|w| w as u8),
+                                shield: char.equipment.shield.map(|w| w as u8),
+                                headgear: char.equipment.headgear.map(|w| w as u8),
+                                clothing: char.equipment.clothing.map(|w| w as u8),
+                            },
                         })
                         .collect();
                     self.outcoming_messages_sender
@@ -262,10 +299,13 @@ impl Finisterra {
                     }
                     client::Account::LoginCharacter { character } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_name } = &user.state {
-                                self.accounts
-                                    .enter(connection_id, account_name, &character)
-                                    .await
+                            if let UserState::InAccount {
+                                character_names, ..
+                            } = &user.state
+                            {
+                                if character_names.contains(&character) {
+                                    self.accounts.enter(connection_id, &character).await
+                                }
                             }
                         }
                     }
@@ -276,7 +316,7 @@ impl Finisterra {
                         gender,
                     } => {
                         if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_name } = &user.state {
+                            if let UserState::InAccount { account_name, .. } = &user.state {
                                 let create_character = CreateCharacter {
                                     name,
                                     class_id: class.id() as i32,

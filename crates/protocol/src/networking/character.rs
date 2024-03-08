@@ -5,6 +5,20 @@ use bincode::{Decode, Encode};
 use crate::world::WorldPosition;
 
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
+pub struct CharacterPreview {
+    pub name: String,
+    pub level: u16,
+    pub exp: Stat<u64>,
+    pub gold: u64,
+    pub position: WorldPosition,
+
+    pub class: Class,
+    pub race: Race,
+    pub look: Look,
+    pub equipment: Equipment,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
 pub struct Character {
     pub name: String,
     pub desc: String,
@@ -35,7 +49,7 @@ pub struct Look {
 pub struct Equipment {
     pub weapon: Option<u8>,
     pub shield: Option<u8>,
-    pub heargear: Option<u8>,
+    pub headgear: Option<u8>,
     pub clothing: Option<u8>,
 }
 

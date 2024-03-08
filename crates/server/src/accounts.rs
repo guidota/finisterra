@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use database::{
     model::{
-        Account, Attributes, Character, CreateAccount, CreateCharacter, Equipment, Statistics,
+        Account, Attributes, Character, CharacterPreview, CreateAccount, CreateCharacter,
+        Equipment, Look, Statistics,
     },
     Database,
 };
@@ -29,7 +30,7 @@ pub enum AccountEvent {
     LoginAccountOk {
         connection_id: u32,
         account_name: String,
-        characters: Vec<Character>,
+        characters: Vec<CharacterPreview>,
     },
     LoginAccountFailed {
         connection_id: u32,
@@ -148,6 +149,7 @@ impl Accounts {
             async move {
                 let attributes = Attributes::default();
                 let equipment = Equipment::default();
+                let look = Look::default();
                 let statistics = Statistics::default();
 
                 if let Ok(character) = database
@@ -155,6 +157,7 @@ impl Accounts {
                         &account_name,
                         character,
                         &attributes,
+                        &look,
                         &equipment,
                         &statistics,
                     )
@@ -180,33 +183,27 @@ impl Accounts {
         });
     }
 
-    pub async fn enter(&self, connection_id: u32, account_name: &str, character: &str) {
+    pub async fn enter(&self, connection_id: u32, character: &str) {
         tokio::spawn({
             let database = self.database.clone();
             let character = character.to_string();
-            let account_name = account_name.to_string();
 
             let account_events_sender = self.account_events_sender.clone();
 
             async move {
-                if let Ok(account_characters) = database.account_characters(&account_name).await {
-                    for account_character in account_characters {
-                        if account_character.name.to_lowercase() == character.to_lowercase() {
-                            account_events_sender
-                                .send(AccountEvent::LoginCharacterOk {
-                                    connection_id,
-                                    character: account_character,
-                                })
-                                .await
-                                .expect("poisoned");
-                            return;
-                        }
-                    }
+                if let Ok(character) = database.character(&character).await {
                     account_events_sender
-                        .send(AccountEvent::LoginCharacterFailed { connection_id })
+                        .send(AccountEvent::LoginCharacterOk {
+                            connection_id,
+                            character,
+                        })
                         .await
                         .expect("poisoned");
                 }
+                account_events_sender
+                    .send(AccountEvent::LoginCharacterFailed { connection_id })
+                    .await
+                    .expect("poisoned");
             }
         });
     }
