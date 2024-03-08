@@ -18,12 +18,15 @@ use lorenzo::{
 };
 use protocol::character::{self};
 use rand::seq::SliceRandom;
+use tracing::debug;
 
 use crate::{
     game::Context,
     resources::Resources,
     ui::{colors::BLUE, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
+
+use super::TILE_SIZE;
 
 pub enum Entity {
     Character(Character),
@@ -48,6 +51,7 @@ impl Entity {
 pub struct Character {
     name_text: ParsedText,
     inner: character::Character,
+    pub render_position: (u16, u16),
 
     // visual aspect
     animation: AnimatedCharacter,
@@ -78,6 +82,10 @@ impl Character {
             .expect("can parse");
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
+        let render_position = (
+            character.position.x * TILE_SIZE,
+            character.position.y * TILE_SIZE,
+        );
         Self {
             name_text,
 
@@ -94,6 +102,7 @@ impl Character {
                 equipment: character.equipment,
                 ..Default::default()
             },
+            render_position,
 
             animation,
         }
@@ -105,10 +114,15 @@ impl Character {
             .expect("can parse");
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
+        let render_position = (
+            character.position.x * TILE_SIZE,
+            character.position.y * TILE_SIZE,
+        );
         Self {
             name_text,
 
             inner: character,
+            render_position,
 
             animation,
         }
@@ -151,19 +165,19 @@ impl Character {
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
 
-        let x = self.inner.position.x;
+        let x = self.render_position.0;
         context.engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
-                position: Position::new(x, self.inner.position.y - 14, 0.5),
+                position: Position::new(x, self.render_position.1 - 14, 0.5),
                 color: BLUE,
             },
             Target::World,
         );
 
-        let x = self.inner.position.x - body.base.x as u16;
-        let y = self.inner.position.y - body.base.y as u16;
+        let x = self.render_position.0 - body.base.x as u16;
+        let y = self.render_position.1 - body.base.y as u16;
 
         let color = [255, 255, 255, 255];
 

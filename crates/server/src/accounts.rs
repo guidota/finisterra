@@ -8,7 +8,7 @@ use database::{
     Database,
 };
 use tokio::sync::mpsc::{channel, Receiver, Sender};
-use tracing::info;
+use tracing::{debug, info};
 
 pub struct Accounts {
     database: Arc<Database>,
@@ -116,8 +116,15 @@ impl Accounts {
 
                 let result = match account {
                     Ok(Account { name, password, .. }) if password == login_password => {
-                        let result = database.account_characters(&name).await;
-                        let characters = result.ok().unwrap_or_else(std::vec::Vec::new);
+                        let characters = match database.account_characters(&name).await {
+                            Ok(characters) => characters,
+                            Err(e) => {
+                                debug!(
+                                    "Couldn't retrieve account characters or it has no characters {e}"
+                                );
+                                vec![]
+                            }
+                        };
 
                         AccountEvent::LoginAccountOk {
                             connection_id,

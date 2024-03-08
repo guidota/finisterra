@@ -213,7 +213,11 @@ impl Finisterra {
                                         max: character.exp as u64,
                                     },
                                     gold: 0,
-                                    position: WorldPosition { map: 1, x: 0, y: 0 },
+                                    position: WorldPosition {
+                                        map: character.map as u16,
+                                        x: character.x as u16,
+                                        y: character.y as u16,
+                                    },
                                     class: Class::from(character.class_id as usize).unwrap(),
                                     race: Race::from(character.class_id as usize).unwrap(),
                                     look: Look::default(),
@@ -256,7 +260,25 @@ impl Finisterra {
                             ServerPacket::Account(server::Account::CreateCharacterOk {
                                 character: character::Character {
                                     name: character.name,
-                                    ..Default::default()
+                                    desc: character.description,
+                                    level: character.level as u16,
+                                    exp: Stat {
+                                        current: character.exp as u64,
+                                        max: character.exp as u64,
+                                    },
+                                    gold: 0,
+                                    position: WorldPosition {
+                                        map: character.map as u16,
+                                        x: character.x as u16,
+                                        y: character.y as u16,
+                                    },
+                                    class: Class::from(character.class_id as usize).unwrap(),
+                                    race: Race::from(character.class_id as usize).unwrap(),
+                                    look: Look::default(),
+                                    equipment: Equipment::default(),
+                                    attributes: Attributes::default(),
+                                    skills: Skills::default(),
+                                    stats: Stats::default(),
                                 },
                             }),
                         ))

@@ -4,6 +4,7 @@ use engine::{
     engine::GameEngine,
 };
 use nohash_hasher::IntMap;
+use tracing::debug;
 
 use crate::{
     game::Context,
@@ -93,13 +94,13 @@ impl GameScreen for WorldScreen {
         self.ui.update(context);
 
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            character.update(context.engine);
             // camera follows main character
             context.engine.set_world_camera_position(camera::Position {
-                x: character.position.x as f32,
-                y: character.position.y as f32,
+                x: character.render_position.0 as f32,
+                y: character.render_position.1 as f32,
             });
 
-            character.update(context.engine);
             self.ui.update_char(context, character);
         }
 

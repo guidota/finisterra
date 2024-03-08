@@ -186,8 +186,8 @@ impl UI for AccountUI {
             slot.button().update(context);
 
             if let Slot::Char { character, .. } = slot {
-                character.position.x = x;
-                character.position.y = center_y + 2;
+                character.render_position.0 = x;
+                character.render_position.1 = center_y + 2;
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);

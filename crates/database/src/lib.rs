@@ -60,7 +60,7 @@ impl Database {
             r#"              
             SELECT char.*,
                 look.body, look.face, look.skin, look.hair,
-                equipment.body, equipment.face, equipment.skin, equipment.hair
+                equipment.weapon, equipment.shield, equipment.headgear, equipment.clothing
             FROM characters AS char 
 
             JOIN character_equipment as equipment ON char.name = equipment.name
@@ -88,7 +88,7 @@ impl Database {
                 stats.health, stats.mana, stats.stamina, stats.max_health, stats.max_mana, stats.max_stamina,
                 attributes.strength, attributes.agility, attributes.intelligence, attributes.charisma, attributes.constitution,
                 look.body, look.face, look.skin, look.hair,
-                equipment.body, equipment.face, equipment.skin, equipment.hair,
+                equipment.weapon, equipment.shield, equipment.headgear, equipment.clothing,
                 character_skills.value as skills,
                 character_inventory.value as inventory,
                 character_vault.value as vault,
@@ -128,12 +128,15 @@ impl Database {
         let mut transaction = conn.begin().await?;
         // insert character
         sqlx::query(
-            r#"INSERT INTO "characters" ("name", "class_id", "race_id", "gender_id") VALUES ($1, $2, $3, $4)"#,
+            r#"INSERT INTO "characters" ("name", "class_id", "race_id", "gender_id", "map", "x", "y") VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
         )
         .bind(&character.name)
         .bind(character.class_id)
         .bind(character.race_id)
         .bind(character.gender_id)
+        .bind(1)
+        .bind(50)
+        .bind(50)
         .execute(&mut *transaction)
         .await?;
         // insert inventory
