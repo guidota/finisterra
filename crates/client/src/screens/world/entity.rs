@@ -1,5 +1,5 @@
 use std::{
-    ops::{Deref, DerefMut},
+    ops::{AddAssign, Deref, DerefMut},
     time::Duration,
 };
 
@@ -7,10 +7,11 @@ use engine::{
     draw::{
         image::DrawImage,
         text::{DrawText, ParsedText},
-        Position, Target,
+        Color, Position, Target,
     },
-    engine::GameEngine,
+    engine::{FontID, GameEngine},
 };
+use interpolation::quad_bez;
 use lorenzo::{
     animations::ImageFrameMetadata,
     character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
@@ -18,43 +19,88 @@ use lorenzo::{
 };
 use protocol::character::{self};
 use rand::seq::SliceRandom;
-use tracing::debug;
 
 use crate::{
     game::Context,
     resources::Resources,
-    ui::{colors::BLUE, fonts::TAHOMA_BOLD_8_SHADOW_ID},
+    ui::{colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
 
 use super::TILE_SIZE;
 
 pub enum Entity {
     Character(Character),
-    Npc(AnimatedCharacter),
+    // Npc(AnimatedCharacter),
 }
 
 impl Entity {
     pub fn update<E: GameEngine>(&mut self, engine: &mut E) {
         match self {
             Entity::Character(character) => character.update(engine),
-            Entity::Npc(_) => todo!(),
+            // Entity::Npc(_) => todo!(),
         }
     }
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         match self {
             Entity::Character(character) => character.draw(context),
-            Entity::Npc(_) => todo!(),
+            // Entity::Npc(_) => todo!(),
         }
     }
 }
 
 pub struct Character {
-    name_text: ParsedText,
     inner: character::Character,
-    pub render_position: (u16, u16),
 
-    // visual aspect
-    animation: AnimatedCharacter,
+    name_text: ParsedText,
+    pub animation: AnimatedCharacter,
+
+    dialog: Option<Dialog>,
+
+    pub render_position: (f64, f64),
+}
+
+struct Dialog {
+    text: ParsedText,
+    color: Color,
+    font_id: FontID,
+
+    total_duration: Duration,
+    effect_duration: Duration,
+    time: Duration,
+}
+
+impl Dialog {
+    pub fn update(&mut self, delta: Duration) {
+        self.time.add_assign(delta);
+    }
+
+    pub fn draw<E: GameEngine>(&self, engine: &mut E, mut position: Position) {
+        let fade = {
+            if self.time > self.effect_duration {
+                1.
+            } else {
+                self.time.as_millis() as f32 / self.effect_duration.as_millis() as f32
+            }
+        };
+        let color = shade(self.color, fade);
+
+        let y_offset = quad_bez(&0, &19, &23, &fade) as u16;
+        position.y += y_offset;
+
+        engine.draw_text(
+            self.font_id,
+            DrawText {
+                text: &self.text,
+                color,
+                position,
+            },
+            Target::World,
+        );
+    }
+
+    pub fn finished(&self) -> bool {
+        self.time.ge(&self.total_duration)
+    }
 }
 
 impl Deref for Character {
@@ -83,15 +129,15 @@ impl Character {
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
         let render_position = (
-            character.position.x * TILE_SIZE,
-            character.position.y * TILE_SIZE,
+            (character.position.x * TILE_SIZE) as f64,
+            (character.position.y * TILE_SIZE) as f64,
         );
         Self {
             name_text,
 
             inner: character::Character {
                 name: character.name,
-                desc: String::new(),
+                description: String::new(),
                 level: character.level,
                 exp: character.exp,
                 gold: character.gold,
@@ -103,6 +149,7 @@ impl Character {
                 ..Default::default()
             },
             render_position,
+            dialog: None,
 
             animation,
         }
@@ -115,14 +162,16 @@ impl Character {
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
         let render_position = (
-            character.position.x * TILE_SIZE,
-            character.position.y * TILE_SIZE,
+            (character.position.x * TILE_SIZE) as f64,
+            (character.position.y * TILE_SIZE) as f64,
         );
         Self {
             name_text,
 
             inner: character,
             render_position,
+
+            dialog: None,
 
             animation,
         }
@@ -151,7 +200,7 @@ impl Character {
             helmet,
             weapon,
             animator: Animator {
-                duration: Duration::from_millis(500),
+                duration: Duration::from_millis(300),
                 ..Default::default()
             },
         }
@@ -160,37 +209,46 @@ impl Character {
     pub fn update<E: GameEngine>(&mut self, engine: &mut E) {
         let delta = engine.get_delta();
         self.animation.update_animation(delta);
+        if let Some(dialog) = self.dialog.as_mut() {
+            dialog.update(delta);
+            if dialog.finished() {
+                self.dialog = None;
+            }
+        }
     }
 
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
 
-        let x = self.render_position.0;
+        let x = self.render_position.0.floor() as u16;
+        let y = self.render_position.1.floor() as u16;
         context.engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
-                position: Position::new(x, self.render_position.1 - 14, 0.5),
-                color: BLUE,
+                position: Position::new(x, y - 14, 0.5),
+                color: RED,
             },
             Target::World,
         );
 
-        let x = self.render_position.0 - body.base.x as u16;
-        let y = self.render_position.1 - body.base.y as u16;
+        let x = self.render_position.0.floor() as u16 - body.base.x as u16;
+        let y = self.render_position.1.floor() as u16 - body.base.y as u16;
 
         let color = [255, 255, 255, 255];
 
         let mut draw_image = |metadata: Option<&ImageFrameMetadata>, offset: Offset| {
             if let Some(metadata) = metadata {
                 let image = &context.resources.images[metadata.image as usize];
+
+                let x = x + offset.x as u16 - metadata.offset.x as u16;
+                let y = y + offset.y as u16 - metadata.offset.y as u16;
+                let z = 0.5 + (metadata.priority as f32 * 0.0001); // TODO! calculate from position in map
+                let position = Position::new(x, y, z);
+
                 context.engine.draw_image(
                     DrawImage {
-                        position: Position::new(
-                            x + offset.x as u16 - metadata.offset.x as u16,
-                            y + offset.y as u16 - metadata.offset.y as u16,
-                            0.5 + (metadata.priority as f32 * 0.0001),
-                        ),
+                        position,
                         source: [image.x, image.y, image.width, image.height],
                         color,
                         index: image.file,
@@ -207,5 +265,29 @@ impl Character {
         draw_image(self.animation.get_helmet_frame(), body.head);
         draw_image(self.animation.get_weapon_frame(), body.right_hand);
         draw_image(self.animation.get_shield_frame(), body.left_hand);
+
+        if let Some(dialog) = self.dialog.as_mut() {
+            let x = self.render_position.0.floor() as u16 - body.base.x as u16 + body.head.x as u16;
+            let y = self.render_position.1.floor() as u16 - body.base.y as u16 + body.head.y as u16;
+            dialog.draw(context.engine, Position::new(x, y, 0.5));
+        }
+    }
+
+    pub fn add_dialog<E: GameEngine>(
+        &mut self,
+        engine: &mut E,
+        text: &str,
+        font_id: FontID,
+        color: Color,
+    ) {
+        let text = engine.parse_text(font_id, text).expect("can parse text");
+        self.dialog = Some(Dialog {
+            text,
+            color,
+            font_id,
+            total_duration: Duration::from_secs(15),
+            effect_duration: Duration::from_millis(150),
+            time: Duration::ZERO,
+        })
     }
 }

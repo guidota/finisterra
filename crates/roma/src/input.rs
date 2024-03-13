@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::time::Instant;
 use winit::dpi::PhysicalSize;
 use winit::event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent};

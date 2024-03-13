@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use database::{
-    model::{
-        Account, Attributes, Character, CharacterPreview, CreateAccount, CreateCharacter,
-        Equipment, Look, Statistics,
-    },
+    model::{Account, Character, CharacterPreview, CreateAccount, CreateCharacter},
     Database,
 };
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -154,22 +151,7 @@ impl Accounts {
             let account_events_sender = self.account_events_sender.clone();
 
             async move {
-                let attributes = Attributes::default();
-                let equipment = Equipment::default();
-                let look = Look::default();
-                let statistics = Statistics::default();
-
-                if let Ok(character) = database
-                    .insert_character(
-                        &account_name,
-                        character,
-                        &attributes,
-                        &look,
-                        &equipment,
-                        &statistics,
-                    )
-                    .await
-                {
+                if let Ok(character) = database.insert_character(&account_name, character).await {
                     account_events_sender
                         .send(AccountEvent::CreateCharacterOk {
                             connection_id,

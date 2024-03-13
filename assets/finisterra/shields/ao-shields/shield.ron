@@ -1,4 +1,26 @@
 (
+  idle: (
+    south: (
+      frames: [
+        (image: 1, priority: 11, offset: (x: 15, y: 17)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 3, priority: 8, offset: (x: 15, y: 16)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 4, priority: 11, offset: (x: 15, y: 16)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 2, priority: 8, offset: (x: 15, y: 16)),
+      ],
+    ),
+  ),
   walk: (
     south: (
       frames: [
@@ -10,15 +32,6 @@
         (image: 10, priority: 11, offset: (x: 15, y: 16)),
       ],
     ),
-    west: (
-      frames: [
-        (image: 22, priority: 10, offset: (x: 15, y: 17)),
-        (image: 23, priority: 10, offset: (x: 15, y: 17)),
-        (image: 24, priority: 10, offset: (x: 15, y: 17)),
-        (image: 25, priority: 10, offset: (x: 15, y: 17)),
-        (image: 26, priority: 10, offset: (x: 15, y: 17)),
-      ],
-    ),
     east: (
       frames: [
         (image: 17, priority: 8, offset: (x: 15, y: 16)),
@@ -26,6 +39,15 @@
         (image: 19, priority: 8, offset: (x: 15, y: 16)),
         (image: 20, priority: 8, offset: (x: 15, y: 16)),
         (image: 21, priority: 8, offset: (x: 15, y: 16)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 22, priority: 11, offset: (x: 15, y: 17)),
+        (image: 23, priority: 11, offset: (x: 15, y: 17)),
+        (image: 24, priority: 11, offset: (x: 15, y: 17)),
+        (image: 25, priority: 11, offset: (x: 15, y: 17)),
+        (image: 26, priority: 11, offset: (x: 15, y: 17)),
       ],
     ),
     north: (
@@ -36,28 +58,6 @@
         (image: 14, priority: 8, offset: (x: 15, y: 17)),
         (image: 15, priority: 8, offset: (x: 15, y: 17)),
         (image: 16, priority: 8, offset: (x: 15, y: 17)),
-      ],
-    ),
-  ),
-  idle: (
-    south: (
-      frames: [
-        (image: 1, priority: 10, offset: (x: 15, y: 17)),
-      ],
-    ),
-    west: (
-      frames: [
-        (image: 4, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
-    east: (
-      frames: [
-        (image: 3, priority: 8, offset: (x: 15, y: 16)),
-      ],
-    ),
-    north: (
-      frames: [
-        (image: 2, priority: 8, offset: (x: 15, y: 16)),
       ],
     ),
   ),

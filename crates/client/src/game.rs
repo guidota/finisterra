@@ -1,7 +1,6 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 use engine::{engine::GameEngine, game::Game};
-use tracing::info;
 
 use crate::{
     networking::connection::ConnectionState,
@@ -38,10 +37,10 @@ impl Game for Finisterra {
             resources: &resources,
             engine,
         };
-        let x = HomeScreen::new(&mut context);
+        let home_screen = HomeScreen::new(&mut context);
         Self {
             resources,
-            screen: Screen::Home(Box::new(x)),
+            screen: Screen::Home(Box::new(home_screen)),
             connection,
             screen_transition,
         }
@@ -62,7 +61,6 @@ impl Game for Finisterra {
         self.screen.draw(&mut context);
 
         if let Ok(screen) = self.screen_transition.1.try_recv() {
-            info!("Transitioning to screen: {screen}");
             self.screen = screen;
         }
     }

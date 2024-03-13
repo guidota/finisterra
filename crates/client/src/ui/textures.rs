@@ -17,7 +17,6 @@ pub const LANZAR_BUTTON_ID: TextureID = 12;
 pub const SPELLS_BUTTON_ID: TextureID = 13;
 pub const SPELLS_LIST_ID: TextureID = 14;
 pub const INVENTORY_SLOT_BACKGROUND_ID: TextureID = 15;
-pub const INVENTORY_BACKGROUND_ID: TextureID = 16;
 
 pub struct Textures;
 
@@ -50,10 +49,7 @@ impl Textures {
             SPELLS_BUTTON_ID,
         );
         engine.set_texture("./assets/interface/main/spells_list.png", SPELLS_LIST_ID);
-        engine.set_texture(
-            "./assets/interface/main/inventory.png",
-            INVENTORY_BACKGROUND_ID,
-        );
+
         engine.set_texture(
             "./assets/interface/main/inventory_slot.png",
             INVENTORY_SLOT_BACKGROUND_ID,

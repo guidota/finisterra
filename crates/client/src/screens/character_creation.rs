@@ -1,6 +1,7 @@
 use engine::{
     draw::{image::DrawImage, Position, Target},
     engine::GameEngine,
+    CursorIcon,
 };
 use protocol::{
     character::{Class, Gender, Race},
@@ -57,6 +58,9 @@ pub struct CharacterCreationUI {
 impl CharacterCreationScreen {
     pub fn new<E: GameEngine>(context: &mut Context<E>) -> Self {
         let ui = CharacterCreationUI::initialize(context);
+
+        context.engine.set_mouse_cursor(CursorIcon::Default);
+
         Self {
             ui,
             creating: false,

@@ -14,6 +14,7 @@ pub struct Label {
     pub parsed_text: ParsedText,
     pub text: String,
     pub position: (u16, u16),
+    pub z: f32,
     pub color: Color,
     pub font_id: FontID,
     pub alignment: Alignment,
@@ -28,6 +29,7 @@ impl Label {
             color,
             position: (0, 0),
             alignment: Alignment::Center,
+            z: 1.,
         }
     }
 
@@ -64,7 +66,7 @@ impl Widget for Label {
             self.font_id,
             DrawText {
                 text: &self.parsed_text,
-                position: Position::new(x, y, 1.),
+                position: Position::new(x, y, self.z),
                 color: self.color,
             },
             Target::UI,

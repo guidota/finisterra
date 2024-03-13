@@ -160,6 +160,7 @@ impl HomeUI {
             .label(login_label)
             .texture_id(BUTTON_ID)
             .alignment(Alignment::Left)
+            .z(0.9)
             .build();
 
         let register_label =
@@ -169,6 +170,7 @@ impl HomeUI {
             .label(register_label)
             .texture_id(BUTTON_ID)
             .alignment(Alignment::Right)
+            .z(0.9)
             .build();
 
         Self {

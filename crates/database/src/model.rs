@@ -28,6 +28,14 @@ pub struct CreateCharacter {
     pub class_id: i32,
     pub race_id: i32,
     pub gender_id: i32,
+    pub map: i32,
+    pub x: i32,
+    pub y: i32,
+
+    pub attributes: Attributes,
+    pub statistics: Statistics,
+    pub look: Look,
+    pub equipment: Equipment,
 }
 
 #[derive(sqlx::FromRow, Debug)]
@@ -70,6 +78,9 @@ pub struct Character {
     pub spellbook: Vec<u8>,
     pub vault: Vec<u8>,
     pub skills: Vec<u8>,
+
+    #[sqlx(flatten)]
+    pub stats: Statistics,
 
     #[sqlx(flatten)]
     pub attributes: Attributes,

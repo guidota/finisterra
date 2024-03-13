@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub enum Direction {
     #[default]
     South,

@@ -1,10 +1,7 @@
 use std::env;
 
 use anyhow::Result;
-use model::{
-    Account, Attributes, Character, CharacterPreview, CreateAccount, CreateCharacter, Equipment,
-    Look, Statistics,
-};
+use model::{Account, Character, CharacterPreview, CreateAccount, CreateCharacter};
 use sqlx::{
     migrate::MigrateDatabase,
     types::chrono::{DateTime, Utc},
@@ -12,6 +9,7 @@ use sqlx::{
 };
 
 pub mod model;
+pub mod types;
 
 pub struct Database {
     pool: SqlitePool,
@@ -117,35 +115,36 @@ impl Database {
         &self,
         account_name: &str,
         character: CreateCharacter,
-        attributes: &Attributes,
-        look: &Look,
-        equipment: &Equipment,
-        statistics: &Statistics,
     ) -> Result<Character> {
         let mut conn = self.pool.acquire().await?;
 
-        // begin transaction
         let mut transaction = conn.begin().await?;
-        // insert character
-        sqlx::query(
-            r#"INSERT INTO "characters" ("name", "class_id", "race_id", "gender_id", "map", "x", "y") VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
-        )
-        .bind(&character.name)
-        .bind(character.class_id)
-        .bind(character.race_id)
-        .bind(character.gender_id)
-        .bind(1)
-        .bind(50)
-        .bind(50)
-        .execute(&mut *transaction)
-        .await?;
-        // insert inventory
+
+        let CreateCharacter {
+            attributes,
+            statistics,
+            look,
+            equipment,
+            ..
+        } = &character;
+
+        sqlx::query(r#"INSERT INTO "characters" ("name", "class_id", "race_id", "gender_id", "map", "x", "y") VALUES ($1, $2, $3, $4, $5, $6, $7)"#)
+            .bind(&character.name)
+            .bind(character.class_id)
+            .bind(character.race_id)
+            .bind(character.gender_id)
+            .bind(character.map)
+            .bind(character.x)
+            .bind(character.y)
+            .execute(&mut *transaction)
+            .await?;
+
         sqlx::query(r#"INSERT INTO "character_inventories" ("name", "value") VALUES ($1, $2)"#)
             .bind(&character.name)
             .bind(vec![])
             .execute(&mut *transaction)
             .await?;
-        // insert attributes
+
         sqlx::query(r#"INSERT INTO "character_attributes" ("name", "strength", "agility", "intelligence", "charisma", "constitution") VALUES ($1, $2, $3, $4, $5, $6)"#)
             .bind(&character.name)
             .bind(attributes.strength)
@@ -155,7 +154,7 @@ impl Database {
             .bind(attributes.constitution)
             .execute(&mut *transaction)
             .await?;
-        // insert stats
+
         sqlx::query(r#"INSERT INTO "character_statistics" ("name", "health", "mana", "stamina", "max_health", "max_mana", "max_stamina") VALUES ($1, $2, $3, $4, $5, $6, $7)"#)
             .bind(&character.name)
             .bind(statistics.health)
@@ -167,27 +166,23 @@ impl Database {
             .execute(&mut *transaction)
             .await?;
 
-        sqlx::query(
-            r#"INSERT INTO "character_look" ("name", "body", "face", "skin", "hair") VALUES ($1, $2, $3, $4, $5)"#,
-        )
-        .bind(&character.name)
-        .bind(look.body)
-        .bind(look.face)
-        .bind(look.skin)
-        .bind(look.hair)
-        .execute(&mut *transaction)
-        .await?;
+        sqlx::query(r#"INSERT INTO "character_look" ("name", "body", "face", "skin", "hair") VALUES ($1, $2, $3, $4, $5)"#)
+            .bind(&character.name)
+            .bind(look.body)
+            .bind(look.face)
+            .bind(look.skin)
+            .bind(look.hair)
+            .execute(&mut *transaction)
+            .await?;
 
-        sqlx::query(
-            r#"INSERT INTO "character_equipment" ("name", "weapon", "shield", "clothing", "headgear") VALUES ($1, $2, $3, $4, $5)"#,
-        )
-        .bind(&character.name)
-        .bind(equipment.weapon)
-        .bind(equipment.shield)
-        .bind(equipment.clothing)
-        .bind(equipment.headgear)
-        .execute(&mut *transaction)
-        .await?;
+        sqlx::query(r#"INSERT INTO "character_equipment" ("name", "weapon", "shield", "clothing", "headgear") VALUES ($1, $2, $3, $4, $5)"#)
+            .bind(&character.name)
+            .bind(equipment.weapon)
+            .bind(equipment.shield)
+            .bind(equipment.clothing)
+            .bind(equipment.headgear)
+            .execute(&mut *transaction)
+            .await?;
 
         sqlx::query(r#"INSERT INTO "character_vaults" ("name", "value") VALUES ($1, $2)"#)
             .bind(&character.name)
@@ -207,18 +202,16 @@ impl Database {
             .execute(&mut *transaction)
             .await?;
 
-        sqlx::query(
-            r#"INSERT INTO "account_characters" ("account_name", "character_name") VALUES ($1, $2)"#,
-        )
-        .bind(account_name)
-        .bind(&character.name)
-        .execute(&mut *transaction)
-        .await?;
+        sqlx::query(r#"INSERT INTO "account_characters" ("account_name", "character_name") VALUES ($1, $2)"#)
+            .bind(account_name)
+            .bind(&character.name)
+            .execute(&mut *transaction)
+            .await?;
 
         transaction.commit().await?;
 
         Ok(Character {
-            name: character.name,
+            name: character.name.to_string(),
             description: String::new(),
             level: 1,
             exp: 0,
@@ -234,9 +227,10 @@ impl Database {
             equipment: equipment.clone(),
             look: look.clone(),
             gold: 0,
-            map: 1,
-            x: 50,
-            y: 50,
+            map: character.map,
+            x: character.x,
+            y: character.y,
+            stats: statistics.clone(),
         })
     }
 }

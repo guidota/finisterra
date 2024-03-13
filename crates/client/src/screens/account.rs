@@ -2,6 +2,7 @@ use engine::draw::image::DrawImage;
 use engine::draw::Position;
 use engine::draw::Target;
 use engine::engine::GameEngine;
+use engine::CursorIcon;
 use protocol::character;
 use protocol::client;
 use protocol::client::ClientPacket;
@@ -60,6 +61,7 @@ impl AccountScreen {
         context: &mut Context<E>,
         characters: Vec<character::CharacterPreview>,
     ) -> Self {
+        context.engine.set_mouse_cursor(CursorIcon::Default);
         Self {
             ui: AccountUI::initialize(context, characters),
             connecting: false,
@@ -163,6 +165,7 @@ impl AccountUI {
             .color(GRAY_2)
             .label(enter_label)
             .texture_id(BUTTON_ID)
+            .z(0.9)
             .build();
 
         Self {
@@ -186,8 +189,8 @@ impl UI for AccountUI {
             slot.button().update(context);
 
             if let Slot::Char { character, .. } = slot {
-                character.render_position.0 = x;
-                character.render_position.1 = center_y + 2;
+                character.render_position.0 = x as f64;
+                character.render_position.1 = (center_y + 2) as f64;
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);

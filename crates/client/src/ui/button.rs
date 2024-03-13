@@ -15,6 +15,7 @@ use super::{
 #[derive(Default)]
 pub struct Button {
     pub position: (u16, u16),
+    pub z: f32,
     pub size: (u16, u16),
     pub color: [u8; 4],
 
@@ -58,6 +59,7 @@ impl Button {
             alignment: Alignment::Center,
             selected_color: None,
             mouse_in: false,
+            z: 0.,
         }
     }
 
@@ -121,7 +123,7 @@ impl Widget for Button {
         let (x, y, _, _) = button_rect;
         context.engine.draw_image(
             DrawImage {
-                position: Position::new(x, y, 0.),
+                position: Position::new(x, y, self.z),
                 index: self.texture_id,
                 color: self.color(),
                 ..Default::default()
@@ -238,6 +240,11 @@ impl ButtonBuilder {
 
     pub fn alignment(mut self, alignment: Alignment) -> Self {
         self.button.alignment = alignment;
+        self
+    }
+
+    pub fn z(mut self, z: f32) -> Self {
+        self.button.z = z;
         self
     }
 

@@ -31,11 +31,11 @@ impl Resources {
     pub fn load<E: GameEngine>(engine: &mut E) -> Self {
         let mut resources = Resources::default();
 
-        resources.load_body(engine, "art/human/ao-human/");
-        resources.load_head(engine, "art/human/ao-human/");
-        resources.load_shields(engine, "art/shields/ao-shields/");
-        resources.load_helmets(engine, "art/helmets/ao-helmets/");
-        resources.load_weapons(engine, "art/weapons/ao-weapons/");
+        resources.load_body(engine, "assets/finisterra/human/ao-human/");
+        resources.load_head(engine, "assets/finisterra/human/ao-human/");
+        resources.load_shields(engine, "assets/finisterra/shields/ao-shields/");
+        resources.load_helmets(engine, "assets/finisterra/helmets/ao-helmets/");
+        resources.load_weapons(engine, "assets/finisterra/weapons/ao-weapons/");
 
         resources
     }

@@ -58,12 +58,18 @@ pub struct AnimatedCharacter {
 
 impl AnimatedCharacter {
     pub fn change_direction(&mut self, direction: Direction) {
+        if self.animator.direction == direction {
+            return;
+        }
         self.animator.direction = direction;
         self.animator.time = Duration::ZERO;
         self.animator.current_frame = 0;
     }
 
     pub fn change_animation(&mut self, animation: CharacterAnimation) {
+        if self.animator.animation == animation {
+            return;
+        }
         self.animator.animation = animation;
         self.animator.time = Duration::ZERO;
         self.animator.current_frame = 0;

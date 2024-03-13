@@ -38,7 +38,7 @@ pub fn tint(color: Color, percent: f32) -> Color {
 
 pub fn shade(color: Color, factor: f32) -> Color {
     let mut to_color = color;
-    for i in 0..3 {
+    for i in 0..=3 {
         to_color[i] = (color[i] as f32 * factor).round() as u8;
     }
     to_color

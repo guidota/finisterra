@@ -1,6 +1,5 @@
 use std::{
     cmp::{max, min},
-    collections::HashMap,
     time::Duration,
 };
 
@@ -8,11 +7,10 @@ use camera::Camera;
 use engine::{
     draw::{image::DrawImage, Target},
     engine::{FontID, GameEngine, SoundID, TextureID},
-    window::Size,
 };
 use fonts::Fonts;
 use input::WinitInputHelper;
-use renderer::{Instructions, Renderer};
+use renderer::Renderer;
 use sounds::Sounds;
 use state::State;
 use tokio::runtime::Handle;
@@ -35,11 +33,8 @@ pub struct Roma {
     ui_camera: Camera,
     fonts: Fonts,
     _sounds: Sounds,
-    renderer: Renderer,
+    renderer: Box<dyn Renderer>,
     input: WinitInputHelper,
-
-    depth_texture_view: wgpu::TextureView,
-    depth_textures: HashMap<engine::window::Size, wgpu::TextureView>,
 }
 
 impl GameEngine for Roma {
@@ -53,18 +48,12 @@ impl GameEngine for Roma {
             Handle::current().block_on(State::initialize(window, present_mode))
         });
 
-        let renderer = Renderer::initialize(&state.device, &state.config);
+        let renderer = renderer::initialize(&state);
         let world_camera = Camera::initialize(state.size, true);
         let ui_camera = Camera::initialize(state.size, false);
         let fonts = Fonts::initialize();
         let _sounds = Sounds::initialize();
         let input = WinitInputHelper::new();
-
-        let size = engine::window::Size {
-            width: state.config.width as u16,
-            height: state.config.height as u16,
-        };
-        let depth_texture_view = create_depth_texture(&state, size);
 
         Self {
             state,
@@ -76,9 +65,6 @@ impl GameEngine for Roma {
             _sounds,
             renderer,
             input,
-
-            depth_texture_view,
-            depth_textures: HashMap::default(),
         }
     }
 
@@ -161,32 +147,8 @@ impl GameEngine for Roma {
         parameters: engine::draw::image::DrawImage,
         target: engine::draw::Target,
     ) {
-        if self.renderer.textures.load_texture(
-            &self.state.device,
-            &self.state.queue,
-            parameters.index,
-        ) {
-            let texture_array = match target {
-                Target::World | Target::UI => &mut self.renderer.main.texture_array,
-                _ => &mut self.renderer.offscreen.texture_array,
-            };
-            if !texture_array.has_texture(parameters.index) {
-                let texture = self
-                    .renderer
-                    .textures
-                    .get(parameters.index)
-                    .unwrap()
-                    .unwrap();
-                let view = texture.view.clone();
-                let sampler = texture.sampler.clone();
-
-                texture_array.push(parameters.index, view, sampler);
-            }
-
-            self.renderer.draw_image(parameters, target);
-        } else {
-            log::error!("[draw_image] with invalid texture");
-        }
+        self.renderer
+            .draw_images(&self.state, vec![parameters], target);
     }
 
     fn add_font(&mut self, id: FontID, path: &str, texture_id: TextureID) {
@@ -202,26 +164,10 @@ impl GameEngine for Roma {
             log::error!("[draw_text] texture id for font {id} not found");
             return;
         };
-        if self
-            .renderer
-            .textures
-            .load_texture(&self.state.device, &self.state.queue, texture_id)
-        {
-            let texture_array = match target {
-                Target::World | Target::UI => &mut self.renderer.main.texture_array,
-                _ => &mut self.renderer.offscreen.texture_array,
-            };
-            if !texture_array.has_texture(texture_id) {
-                let texture = self.renderer.textures.get(texture_id).unwrap().unwrap();
-                let view = texture.view.clone();
-                let sampler = texture.sampler.clone();
-
-                texture_array.push(texture_id, view, sampler);
-            }
-        }
 
         let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16 - 1;
 
+        let mut draws = vec![];
         for char in &parameters.text.chars {
             let mut position = parameters.position;
 
@@ -238,16 +184,14 @@ impl GameEngine for Roma {
             position.x -= offset_x;
             position.y += y as u16;
 
-            self.renderer.draw_image(
-                DrawImage {
-                    position,
-                    source,
-                    color: parameters.color,
-                    index: texture_id,
-                },
-                target,
-            );
+            draws.push(DrawImage {
+                position,
+                source,
+                color: parameters.color,
+                index: texture_id,
+            });
         }
+        self.renderer.draw_images(&self.state, draws, target);
     }
 
     fn add_sound(&mut self, _path: &str) -> SoundID {
@@ -330,174 +274,15 @@ impl GameEngine for Roma {
 
     fn set_window_size(&mut self, size: engine::window::Size) {
         self.state.resize(size);
-        self.depth_texture_view = create_depth_texture(&self.state, size);
+        self.renderer.resize(&self.state, size);
     }
 
     fn render(&mut self) {
-        let Ok(frame) = self.state.surface.get_current_texture() else {
-            log::error!("");
-            return;
-        };
-
-        let Instructions {
-            to_textures_ranges,
-            world_range,
-            ui_range,
-        } = self
-            .renderer
-            .prepare(&self.state.device, &self.state.queue, &self.state.config);
-
-        {
-            let mut commands = vec![];
-            // Render to textures
-            let mut encoder = self
-                .state
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-            let clear_store_ops = wgpu::Operations {
-                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                store: wgpu::StoreOp::Store,
-            };
-            let depth_clear_store_ops = wgpu::Operations {
-                load: wgpu::LoadOp::Clear(0.0),
-                store: wgpu::StoreOp::Store,
-            };
-
-            for (texture_id, range) in to_textures_ranges {
-                if let Some(Some(texture)) = self.renderer.textures.get(texture_id) {
-                    let size = engine::window::Size {
-                        width: texture.width,
-                        height: texture.height,
-                    };
-                    let depth_texture_view = self
-                        .depth_textures
-                        .entry(size)
-                        .or_insert_with(|| create_depth_texture(&self.state, size));
-
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some("Render To Texture Pass"),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &texture.view,
-                            resolve_target: None,
-                            ops: clear_store_ops,
-                        })],
-                        depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                            view: depth_texture_view,
-                            depth_ops: Some(depth_clear_store_ops),
-                            stencil_ops: None,
-                        }),
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    });
-
-                    let dimensions = Size {
-                        width: size.width,
-                        height: size.height,
-                    };
-                    let target_camera = Camera::initialize(dimensions, true);
-                    self.renderer.offscreen.prepare_pass(&mut render_pass);
-                    self.renderer
-                        .render_range(&mut render_pass, range, &target_camera);
-                }
-            }
-            commands.push(encoder.finish());
-
-            let view = &frame
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
-
-            // Clear render pass
-            let mut encoder =
-                self.state
-                    .device
-                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                        label: Some("Render Encoder"),
-                    });
-            {
-                let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Clear Render Pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view,
-                        resolve_target: None,
-                        ops: clear_store_ops,
-                    })],
-                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: &self.depth_texture_view,
-                        depth_ops: Some(depth_clear_store_ops),
-                        stencil_ops: None,
-                    }),
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
-            }
-
-            commands.push(encoder.finish());
-
-            let mut encoder =
-                self.state
-                    .device
-                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                        label: Some("Render Encoder"),
-                    });
-            {
-                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Render Pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: &self.depth_texture_view,
-                        depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        }),
-                        stencil_ops: None,
-                    }),
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
-
-                self.renderer.main.prepare_pass(&mut render_pass);
-                self.renderer
-                    .render_range(&mut render_pass, world_range, &self.world_camera);
-                self.renderer
-                    .render_range(&mut render_pass, ui_range, &self.ui_camera);
-            }
-            commands.push(encoder.finish());
-
-            self.state.queue.submit(commands);
-            frame.present();
-        }
+        self.renderer
+            .render(&self.state, &self.world_camera, &self.ui_camera);
     }
 
     fn finish(&self) {
         self.state.window.request_redraw();
     }
-}
-
-fn create_depth_texture(state: &State, size: engine::window::Size) -> wgpu::TextureView {
-    let size = wgpu::Extent3d {
-        width: size.width as u32,
-        height: size.height as u32,
-        depth_or_array_layers: 1,
-    };
-    let desc = wgpu::TextureDescriptor {
-        label: Some("depth_texture"),
-        size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Depth24PlusStencil8,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[wgpu::TextureFormat::Depth24PlusStencil8],
-    };
-    let texture = state.device.create_texture(&desc);
-
-    texture.create_view(&wgpu::TextureViewDescriptor::default())
 }

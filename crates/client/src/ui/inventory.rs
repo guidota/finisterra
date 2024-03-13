@@ -23,11 +23,12 @@ pub struct InventorySlot {
 }
 
 const SLOT_SIZE: u16 = 32;
-const GRID_SIZE: usize = 5;
+const GRID_SIZE: usize = 6;
 
 impl Inventory {
     pub fn initialize<E: GameEngine>(engine: &mut E) -> Self {
-        let background = Image::new(INVENTORY_BACKGROUND_ID, shade(GRAY_1, 0.5), (0, 0));
+        // let background = Image::new(INVENTORY_BACKGROUND_ID, shade(GRAY_1, 0.5), (0, 0));
+        let background = Image::new(INVENTORY_LIST_ID, WHITE, (0, 0));
 
         let mut slots = vec![];
         for _ in 0..(GRID_SIZE * GRID_SIZE) {
@@ -87,7 +88,7 @@ impl Widget for Inventory {
 impl InventorySlot {
     pub fn initialize<E: GameEngine>(engine: &mut E) -> Self {
         let mut color = GRAY_2;
-        color[3] = 50;
+        color[3] = 0;
 
         let background = Image::new(INVENTORY_SLOT_BACKGROUND_ID, color, (0, 0));
         let amount = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_5, engine);
@@ -133,7 +134,7 @@ impl Widget for InventorySlot {
             self.background.color = RED;
         } else {
             let mut color = GRAY_2;
-            color[3] = 50;
+            color[3] = 0;
             self.background.color = color;
         }
         self.background.draw(context);

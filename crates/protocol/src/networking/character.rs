@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use bincode::{Decode, Encode};
 
-use crate::world::WorldPosition;
+use crate::{world::WorldPosition, ProtocolMessage, CONFIG};
 
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
 pub struct CharacterPreview {
@@ -21,7 +21,7 @@ pub struct CharacterPreview {
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
 pub struct Character {
     pub name: String,
-    pub desc: String,
+    pub description: String,
     pub level: u16,
     pub exp: Stat<u64>,
     pub gold: u64,
@@ -35,6 +35,7 @@ pub struct Character {
     pub attributes: Attributes,
     pub skills: Skills,
     pub stats: Stats,
+    pub inventory: Inventory,
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
@@ -60,28 +61,6 @@ pub enum Gender {
     Female,
 }
 
-impl Gender {
-    pub const VALUES: [Self; 2] = [Self::Male, Self::Female];
-    pub fn id(&self) -> usize {
-        let mut result = 0;
-        for item in Self::VALUES.iter() {
-            if item == self {
-                return result;
-            }
-            result += 1;
-        }
-        result
-    }
-    pub fn from(id: usize) -> Option<Self> {
-        for (i, item) in Self::VALUES.iter().enumerate() {
-            if i == id {
-                return Some(item.clone());
-            }
-        }
-        None
-    }
-}
-
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
 pub enum Race {
     #[default]
@@ -90,28 +69,6 @@ pub enum Race {
     Drow,
     Gnome,
     Dwarf,
-}
-
-impl Race {
-    pub const VALUES: [Self; 5] = [Self::Human, Self::Elf, Self::Drow, Self::Dwarf, Self::Gnome];
-    pub fn id(&self) -> usize {
-        let mut result = 0;
-        for item in Self::VALUES.iter() {
-            if item == self {
-                return result;
-            }
-            result += 1;
-        }
-        result
-    }
-    pub fn from(id: usize) -> Option<Self> {
-        for (i, item) in Self::VALUES.iter().enumerate() {
-            if i == id {
-                return Some(item.clone());
-            }
-        }
-        None
-    }
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
@@ -131,41 +88,6 @@ pub enum Class {
     Fisher,
     Miner,
     Woodcutter,
-}
-
-impl Class {
-    pub const VALUES: [Self; 12] = [
-        Self::Mage,
-        Self::Druid,
-        Self::Bard,
-        Self::Cleric,
-        Self::Assesin,
-        Self::Paladin,
-        Self::Pirate,
-        Self::Thief,
-        Self::Woodcutter,
-        Self::Fisher,
-        Self::Miner,
-        Self::Tailor,
-    ];
-    pub fn id(&self) -> usize {
-        let mut result = 0;
-        for item in Self::VALUES.iter() {
-            if item == self {
-                return result;
-            }
-            result += 1;
-        }
-        result
-    }
-    pub fn from(id: usize) -> Option<Self> {
-        for (i, item) in Self::VALUES.iter().enumerate() {
-            if i == id {
-                return Some(item.clone());
-            }
-        }
-        None
-    }
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
@@ -218,6 +140,58 @@ pub struct Stat<T> {
     pub max: T,
 }
 
+#[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
+pub struct Vault {
+    items: Vec<Item>,
+    gold: u64,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
+pub struct Inventory {
+    items: Vec<Item>,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
+pub struct Item {
+    item_id: u32,
+    amount: u32,
+}
+
+impl Class {
+    pub const VALUES: [Self; 12] = [
+        Self::Mage,
+        Self::Druid,
+        Self::Bard,
+        Self::Cleric,
+        Self::Assesin,
+        Self::Paladin,
+        Self::Pirate,
+        Self::Thief,
+        Self::Woodcutter,
+        Self::Fisher,
+        Self::Miner,
+        Self::Tailor,
+    ];
+    pub fn id(&self) -> usize {
+        let mut result = 0;
+        for item in Self::VALUES.iter() {
+            if item == self {
+                return result;
+            }
+            result += 1;
+        }
+        result
+    }
+    pub fn from(id: usize) -> Option<Self> {
+        for (i, item) in Self::VALUES.iter().enumerate() {
+            if i == id {
+                return Some(item.clone());
+            }
+        }
+        None
+    }
+}
+
 impl Display for Class {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
@@ -237,6 +211,27 @@ impl Display for Class {
     }
 }
 
+impl Race {
+    pub const VALUES: [Self; 5] = [Self::Human, Self::Elf, Self::Drow, Self::Dwarf, Self::Gnome];
+    pub fn id(&self) -> usize {
+        let mut result = 0;
+        for item in Self::VALUES.iter() {
+            if item == self {
+                return result;
+            }
+            result += 1;
+        }
+        result
+    }
+    pub fn from(id: usize) -> Option<Self> {
+        for (i, item) in Self::VALUES.iter().enumerate() {
+            if i == id {
+                return Some(item.clone());
+            }
+        }
+        None
+    }
+}
 impl Display for Race {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
@@ -249,11 +244,57 @@ impl Display for Race {
     }
 }
 
+impl Gender {
+    pub const VALUES: [Self; 2] = [Self::Male, Self::Female];
+    pub fn id(&self) -> usize {
+        let mut result = 0;
+        for item in Self::VALUES.iter() {
+            if item == self {
+                return result;
+            }
+            result += 1;
+        }
+        result
+    }
+    pub fn from(id: usize) -> Option<Self> {
+        for (i, item) in Self::VALUES.iter().enumerate() {
+            if i == id {
+                return Some(item.clone());
+            }
+        }
+        None
+    }
+}
+
 impl Display for Gender {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Gender::Male => "Hombre",
             Gender::Female => "Mujer",
         })
+    }
+}
+
+impl ProtocolMessage for Inventory {
+    fn decode(bytes: &[u8]) -> Option<Self> {
+        bincode::decode_from_slice(bytes, CONFIG)
+            .ok()
+            .map(|(result, _)| result)
+    }
+
+    fn encode(self) -> Option<Vec<u8>> {
+        bincode::encode_to_vec(self, CONFIG).ok()
+    }
+}
+
+impl ProtocolMessage for Skills {
+    fn decode(bytes: &[u8]) -> Option<Self> {
+        bincode::decode_from_slice(bytes, CONFIG)
+            .ok()
+            .map(|(result, _)| result)
+    }
+
+    fn encode(self) -> Option<Vec<u8>> {
+        bincode::encode_to_vec(self, CONFIG).ok()
     }
 }

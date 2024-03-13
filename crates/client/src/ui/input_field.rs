@@ -4,7 +4,7 @@ use engine::{
     draw::{
         image::DrawImage,
         text::{DrawText, ParsedText},
-        Position, Target,
+        Color, Position, Target,
     },
     engine::{GameEngine, TextureID},
     input::keyboard::{Key, NamedKey},
@@ -41,8 +41,8 @@ pub struct InputField {
 
 impl InputField {
     pub fn new<E: GameEngine>(
-        font_color: [u8; 4],
-        background_color: [u8; 4],
+        font_color: Color,
+        background_color: Color,
         position: (u16, u16),
         size: (u16, u16),
         font_texture_id: TextureID,

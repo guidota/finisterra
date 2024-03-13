@@ -9,6 +9,7 @@ pub(crate) struct State {
     pub(crate) surface: wgpu::Surface<'static>,
     pub(crate) device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
+    pub(crate) limits: wgpu::Limits,
 }
 
 impl State {
@@ -28,7 +29,6 @@ impl State {
         let optional_features = wgpu::Features::DEPTH_CLIP_CONTROL;
         let required_features = wgpu::Features::PUSH_CONSTANTS
             .union(wgpu::Features::TEXTURE_BINDING_ARRAY)
-            // .union(wgpu::Features::PARTIALLY_BOUND_BINDING_ARRAY)
             .union(wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING);
         let adapter_features = adapter.features();
         let mut required_limits = adapter.limits();
@@ -82,6 +82,7 @@ impl State {
             surface,
             device,
             queue,
+            limits: adapter.limits(),
         }
     }
 

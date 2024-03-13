@@ -3,10 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use database::{model::CreateCharacter, Database};
 use protocol::{
-    character::{self, Attributes, Class, Equipment, Look, Race, Skills, Stat, Stats},
     client::{self, ClientPacket},
     server::{self, ServerPacket},
-    world::WorldPosition,
 };
 use tokio::sync::mpsc::{channel, Sender};
 
@@ -140,41 +138,17 @@ impl Finisterra {
                             },
                         },
                     );
-                    let characters = characters
-                        .iter()
-                        .map(|char| character::CharacterPreview {
-                            name: char.name.to_string(),
-                            level: char.level as u16,
-                            exp: Stat {
-                                current: char.exp as u64,
-                                max: char.exp as u64,
-                            },
-                            gold: char.gold as u64,
-                            position: WorldPosition {
-                                map: char.map as u16,
-                                x: char.x as u16,
-                                y: char.y as u16,
-                            },
-                            class: Class::from(char.class_id as usize).unwrap(),
-                            race: Race::from(char.race_id as usize).unwrap(),
-                            look: Look {
-                                body: char.look.body as u8,
-                                skin: char.look.skin as u8,
-                                face: char.look.face as u8,
-                                hair: char.look.hair as u8,
-                            },
-                            equipment: Equipment {
-                                weapon: char.equipment.weapon.map(|w| w as u8),
-                                shield: char.equipment.shield.map(|w| w as u8),
-                                headgear: char.equipment.headgear.map(|w| w as u8),
-                                clothing: char.equipment.clothing.map(|w| w as u8),
-                            },
-                        })
-                        .collect();
+
+                    let mut account_characters = vec![];
+                    for character in characters {
+                        account_characters.push(character.into());
+                    }
                     self.outcoming_messages_sender
                         .send((
                             connection_id,
-                            ServerPacket::Account(server::Account::LoginOk { characters }),
+                            ServerPacket::Account(server::Account::LoginOk {
+                                characters: account_characters,
+                            }),
                         ))
                         .await
                         .expect("poisoned");
@@ -204,28 +178,7 @@ impl Finisterra {
                         .send((
                             connection_id,
                             ServerPacket::Account(server::Account::LoginCharacterOk {
-                                character: character::Character {
-                                    name: character.name,
-                                    desc: character.description,
-                                    level: character.level as u16,
-                                    exp: Stat {
-                                        current: character.exp as u64,
-                                        max: character.exp as u64,
-                                    },
-                                    gold: 0,
-                                    position: WorldPosition {
-                                        map: character.map as u16,
-                                        x: character.x as u16,
-                                        y: character.y as u16,
-                                    },
-                                    class: Class::from(character.class_id as usize).unwrap(),
-                                    race: Race::from(character.class_id as usize).unwrap(),
-                                    look: Look::default(),
-                                    equipment: Equipment::default(),
-                                    attributes: Attributes::default(),
-                                    skills: Skills::default(),
-                                    stats: Stats::default(),
-                                },
+                                character: character.into(),
                             }),
                         ))
                         .await
@@ -258,28 +211,7 @@ impl Finisterra {
                         .send((
                             connection_id,
                             ServerPacket::Account(server::Account::CreateCharacterOk {
-                                character: character::Character {
-                                    name: character.name,
-                                    desc: character.description,
-                                    level: character.level as u16,
-                                    exp: Stat {
-                                        current: character.exp as u64,
-                                        max: character.exp as u64,
-                                    },
-                                    gold: 0,
-                                    position: WorldPosition {
-                                        map: character.map as u16,
-                                        x: character.x as u16,
-                                        y: character.y as u16,
-                                    },
-                                    class: Class::from(character.class_id as usize).unwrap(),
-                                    race: Race::from(character.class_id as usize).unwrap(),
-                                    look: Look::default(),
-                                    equipment: Equipment::default(),
-                                    attributes: Attributes::default(),
-                                    skills: Skills::default(),
-                                    stats: Stats::default(),
-                                },
+                                character: character.into(),
                             }),
                         ))
                         .await
@@ -344,6 +276,27 @@ impl Finisterra {
                                     class_id: class.id() as i32,
                                     race_id: race.id() as i32,
                                     gender_id: gender.id() as i32,
+                                    // TODO: hardcoded
+                                    map: 1,
+                                    x: 50,
+                                    y: 50,
+                                    attributes: database::model::Attributes {
+                                        strength: 18,
+                                        agility: 18,
+                                        intelligence: 18,
+                                        charisma: 18,
+                                        constitution: 18,
+                                    },
+                                    statistics: database::model::Statistics {
+                                        health: 20,
+                                        mana: 100,
+                                        stamina: 100,
+                                        max_health: 20,
+                                        max_mana: 100,
+                                        max_stamina: 100,
+                                    },
+                                    look: database::model::Look::default(),
+                                    equipment: database::model::Equipment::default(),
                                 };
                                 self.accounts
                                     .create_character(connection_id, account_name, create_character)

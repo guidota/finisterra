@@ -1,0 +1,46 @@
+(
+  idle: (
+    south: (
+      frames: [
+        (image: 1, priority: 11, offset: (x: 8, y: 1)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 3, priority: 11, offset: (x: 8, y: 3)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 4, priority: 11, offset: (x: 7, y: 3)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 2, priority: 11, offset: (x: 8, y: 1)),
+      ],
+    ),
+  ),
+  walk: (
+    south: (
+      frames: [
+        (image: 5, priority: 11, offset: (x: 8, y: 1)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 7, priority: 11, offset: (x: 8, y: 3)),
+      ],
+    ),
+    west: (
+      frames: [
+        (image: 8, priority: 11, offset: (x: 7, y: 3)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 6, priority: 11, offset: (x: 8, y: 1)),
+      ],
+    ),
+  ),
+)
