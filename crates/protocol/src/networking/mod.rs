@@ -2,6 +2,7 @@ mod admin;
 mod bincode;
 pub mod character;
 pub mod client;
+pub mod movement;
 pub mod server;
 pub mod world;
 

@@ -10,6 +10,10 @@ pub const GRAY_4: Color = [189, 189, 189, 255];
 pub const GRAY_5: Color = [224, 224, 224, 255];
 pub const GRAY_6: Color = [242, 242, 242, 255];
 
+pub const CYAN: Color = [0, 255, 255, 255];
+pub const RED_0: Color = [231, 76, 60, 255];
+pub const BLUE_0: Color = [52, 152, 219, 255];
+
 pub const RED: Color = [235, 87, 87, 255];
 pub const ORANGE: Color = [242, 153, 74, 255];
 pub const YELLOW: Color = [242, 201, 76, 255];
@@ -42,4 +46,10 @@ pub fn shade(color: Color, factor: f32) -> Color {
         to_color[i] = (color[i] as f32 * factor).round() as u8;
     }
     to_color
+}
+
+pub fn transparent(color: Color, transparency: u8) -> Color {
+    let mut color = color;
+    color[3] = transparency;
+    color
 }

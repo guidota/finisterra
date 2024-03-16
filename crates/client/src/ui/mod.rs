@@ -2,21 +2,16 @@ use engine::engine::GameEngine;
 
 use crate::game::Context;
 
-use self::{fonts::Fonts, textures::Textures};
-
 pub mod bar;
 pub mod button;
 pub mod colors;
-pub mod console;
 pub mod fonts;
 pub mod image;
 pub mod input_field;
-pub mod inventory;
 pub mod label;
-pub mod spellbook;
 pub mod textures;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub enum Alignment {
     Left,
     #[default]
@@ -32,9 +27,4 @@ pub trait Widget {
 pub trait UI {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>);
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>);
-}
-
-pub fn load<E: GameEngine>(engine: &mut E) {
-    Textures::load(engine);
-    Fonts::load(engine);
 }

@@ -2,6 +2,7 @@ use bincode::{Decode, Encode};
 
 use crate::{
     character::{Class, Gender, Race},
+    movement::{KeyPressed, KeyReleased},
     ProtocolMessage, CONFIG,
 };
 
@@ -44,8 +45,9 @@ pub enum Account {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Action {
-    Talk,
-    Move,
+    Talk { text: String },
+    MoveKeyPressed(KeyPressed),
+    MoveKeyReleased(KeyReleased),
     Attack,
     LeftClick,
     DoubleClick,

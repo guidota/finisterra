@@ -18,6 +18,7 @@ pub struct TextureArrayRenderer {
     main: Node,
 
     draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
+    draws_to_zero_world: Vec<DrawImage>,
     draws_to_world: Vec<DrawImage>,
     draws_to_ui: Vec<DrawImage>,
 
@@ -40,11 +41,11 @@ impl Renderer for TextureArrayRenderer {
         self.depth_texture_view = create_depth_texture(state, size);
     }
 
-    fn draw_images(&mut self, state: &State, mut parameters: Vec<DrawImage>, target: Target) {
-        if parameters.is_empty() {
+    fn draw_images(&mut self, state: &State, mut draws: Vec<DrawImage>, target: Target) {
+        if draws.is_empty() {
             return;
         }
-        let index = parameters[0].index;
+        let index = draws[0].index;
         if self
             .textures
             .load_texture(&state.device, &state.queue, index)
@@ -62,10 +63,16 @@ impl Renderer for TextureArrayRenderer {
             }
             match target {
                 Target::World => {
-                    self.draws_to_world.append(&mut parameters);
+                    for draw in draws {
+                        if draw.position.z == 0.0 {
+                            self.draws_to_zero_world.push(draw);
+                        } else {
+                            self.draws_to_world.push(draw);
+                        }
+                    }
                 }
                 Target::UI => {
-                    self.draws_to_ui.append(&mut parameters);
+                    self.draws_to_ui.append(&mut draws);
                 }
                 Target::Texture {
                     id: target_texture_id,
@@ -73,11 +80,9 @@ impl Renderer for TextureArrayRenderer {
                     self.draws_to_textures
                         .entry(target_texture_id)
                         .or_default()
-                        .append(&mut parameters);
+                        .append(&mut draws);
                 }
             }
-        } else {
-            log::error!("[draw_image] with invalid texture");
         }
     }
 
@@ -213,6 +218,7 @@ impl TextureArrayRenderer {
             textures: Textures::initialize(),
 
             draws_to_textures: IntMap::default(),
+            draws_to_zero_world: vec![],
             draws_to_world: vec![],
             draws_to_ui: vec![],
 
@@ -251,21 +257,32 @@ impl TextureArrayRenderer {
         }
         self.offscreen.prepare(device, config);
 
-        let main_draws_len = self.draws_to_world.len() + self.draws_to_ui.len();
+        let main_draws_len =
+            self.draws_to_zero_world.len() + self.draws_to_world.len() + self.draws_to_ui.len();
         self.main.ensure_buffer_size(device, main_draws_len);
-
+        self.main.update_draws(&mut self.draws_to_zero_world);
         self.main.update_draws(&mut self.draws_to_world);
         self.main.update_draws(&mut self.draws_to_ui);
 
-        let world_draws = self.draws_to_world.len();
+        let world_draws = self.draws_to_zero_world.len() + self.draws_to_world.len();
         let world_range = 0..world_draws;
         let ui_range = world_draws..(world_draws + self.draws_to_ui.len());
 
-        self.main.write_buffer(queue, &self.draws_to_world[..], 0);
         self.main
-            .write_buffer(queue, &self.draws_to_ui[..], self.draws_to_world.len());
+            .write_buffer(queue, &self.draws_to_zero_world[..], 0);
+        self.main.write_buffer(
+            queue,
+            &self.draws_to_world[..],
+            self.draws_to_zero_world.len(),
+        );
+        self.main.write_buffer(
+            queue,
+            &self.draws_to_ui[..],
+            self.draws_to_zero_world.len() + self.draws_to_world.len(),
+        );
 
         self.draws_to_textures.clear();
+        self.draws_to_zero_world.clear();
         self.draws_to_world.clear();
         self.draws_to_ui.clear();
 

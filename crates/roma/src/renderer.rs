@@ -30,7 +30,7 @@ pub trait Renderer {
 }
 
 pub fn initialize(state: &State) -> Box<dyn Renderer> {
-    if state.limits.max_samplers_per_shader_stage <= 1000 {
+    if std::env::var("SPRITE_BATCH").is_ok() || state.limits.max_samplers_per_shader_stage <= 1000 {
         Box::new(SpriteBatchRenderer::initialize(state))
     } else {
         Box::new(TextureArrayRenderer::initialize(state))

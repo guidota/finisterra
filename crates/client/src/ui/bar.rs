@@ -8,7 +8,7 @@ use interpolation::lerp;
 
 use crate::{game::Context, ui::Widget};
 
-use super::{colors::*, fonts::*, image::Image, label::Label, textures::*};
+use super::{colors::*, fonts::*, image::Image, label::Label};
 
 pub struct Bar {
     pub label: Label,
@@ -22,10 +22,10 @@ pub struct Bar {
 }
 
 impl Bar {
-    pub fn new<E: GameEngine>(engine: &mut E, color: Color) -> Self {
-        let label = Label::from("", TAHOMA_BOLD_8_SHADOW_ID, GRAY_6, engine);
+    pub fn new<E: GameEngine>(context: &mut Context<E>, color: Color) -> Self {
+        let label = Label::from("", TAHOMA_BOLD_8_SHADOW_ID, GRAY_6, context.engine);
 
-        let mut image = Image::new(BAR_ID, color, (0, 0));
+        let mut image = Image::new(context.resources.textures.bar, color, (0, 0));
         image.percent = 100;
         Self {
             label,

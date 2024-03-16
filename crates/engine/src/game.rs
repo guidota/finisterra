@@ -4,6 +4,7 @@ pub trait Game {
 }
 
 pub async fn run_game<G: Game, E: crate::engine::GameEngine>(settings: crate::settings::Settings) {
+    crate::logging::initialize_logging();
     let event_loop =
         winit::event_loop::EventLoop::new().expect("[run_game] couldn't initialize event loop");
 

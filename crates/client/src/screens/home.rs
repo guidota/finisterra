@@ -11,6 +11,7 @@ use protocol::{
 use crate::{
     game::Context,
     ui::colors::*,
+    ui::UI,
     ui::{
         button::{Button, ButtonBuilder},
         colors::GRAY_6,
@@ -22,7 +23,6 @@ use crate::{
         fonts::{TAHOMA_BOLD_8_SHADOW_ID, WIZARD_16_ID},
         Alignment,
     },
-    ui::{textures::*, UI},
 };
 
 use super::{account::AccountScreen, prepare_viewport, screen_size, GameScreen, Screen};
@@ -137,7 +137,7 @@ impl HomeUI {
             (center_x, 290),
             (200, 30),
             TAHOMA_BOLD_8_SHADOW_ID,
-            INPUT_ID,
+            context.resources.textures.input,
             context,
         );
         user_input.focused = true;
@@ -149,7 +149,7 @@ impl HomeUI {
             (center_x, 230),
             (200, 30),
             TAHOMA_BOLD_8_SHADOW_ID,
-            INPUT_ID,
+            context.resources.textures.input,
             context,
         );
         password_input.obfuscate = true;
@@ -158,7 +158,7 @@ impl HomeUI {
         let login_button = ButtonBuilder::new()
             .color(BLUE)
             .label(login_label)
-            .texture_id(BUTTON_ID)
+            .texture_id(context.resources.textures.button)
             .alignment(Alignment::Left)
             .z(0.9)
             .build();
@@ -168,7 +168,7 @@ impl HomeUI {
         let register_button = ButtonBuilder::new()
             .color(GRAY_2)
             .label(register_label)
-            .texture_id(BUTTON_ID)
+            .texture_id(context.resources.textures.button)
             .alignment(Alignment::Right)
             .z(0.9)
             .build();
@@ -207,6 +207,7 @@ impl UI for HomeUI {
         self.register_button.position = (center_x - 10, center_y - 50);
 
         self.user_input.update(context);
+
         self.password_input.update(context);
         self.login_button.update(context);
         self.register_button.update(context);
@@ -217,7 +218,7 @@ impl UI for HomeUI {
             DrawImage {
                 position: Position { x: 0, y: 0, z: 0. },
                 color: [255, 255, 255, 255],
-                index: DV_BACKGROUND_ID,
+                index: context.resources.textures.dv_background,
                 source: [0, 0, 0, 0],
             },
             Target::UI,

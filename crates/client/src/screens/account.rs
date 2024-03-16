@@ -16,7 +16,6 @@ use crate::ui::button::ButtonBuilder;
 use crate::ui::colors::*;
 use crate::ui::fonts::*;
 use crate::ui::label::Label;
-use crate::ui::textures::*;
 use crate::ui::Widget;
 use crate::ui::UI;
 
@@ -108,9 +107,7 @@ impl GameScreen for AccountScreen {
                         context
                             .screen_transition_sender
                             .send(Screen::World(Box::new(WorldScreen::new(
-                                context.engine,
-                                0,
-                                character,
+                                context, 0, character,
                             ))))
                             .expect("poisoned")
                     }
@@ -134,19 +131,21 @@ impl AccountUI {
         context: &mut Context<E>,
         characters: Vec<character::CharacterPreview>,
     ) -> Self {
+        let char_create_slot = context.resources.textures.char_create_slot;
         let mut button = |character: &character::CharacterPreview| Slot::Char {
             button: ButtonBuilder::new()
-                .texture_id(CHAR_SLOT_ID)
+                .texture_id(context.resources.textures.char_slot)
                 .size((SLOT_SIZE, SLOT_SIZE))
                 .color(GRAY_1)
                 .selected_color(GREEN)
+                .target(Target::World)
                 .build(),
 
             character: Box::new(Character::from_preview(context, character.clone())),
         };
         let empty = || Slot::Empty {
             button: ButtonBuilder::new()
-                .texture_id(NEW_CHAR_SLOT_ID)
+                .texture_id(char_create_slot)
                 .size((SLOT_SIZE, SLOT_SIZE))
                 .color(GRAY_2)
                 .build(),
@@ -164,7 +163,7 @@ impl AccountUI {
         let enter_button = ButtonBuilder::new()
             .color(GRAY_2)
             .label(enter_label)
-            .texture_id(BUTTON_ID)
+            .texture_id(context.resources.textures.button)
             .z(0.9)
             .build();
 
@@ -189,8 +188,10 @@ impl UI for AccountUI {
             slot.button().update(context);
 
             if let Slot::Char { character, .. } = slot {
-                character.render_position.0 = x as f64;
-                character.render_position.1 = (center_y + 2) as f64;
+                character.movement.position.x = 0;
+                character.movement.position.y = 0;
+                character.movement.moving_position.0 = x as f64 / 32.;
+                character.movement.moving_position.1 = (center_y + 2) as f64 / 32.;
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);
@@ -213,10 +214,10 @@ impl UI for AccountUI {
             DrawImage {
                 position: Position { x: 0, y: 0, z: 0. },
                 color: WHITE,
-                index: DV_BACKGROUND_ID,
+                index: context.resources.textures.dv_background,
                 source: [0, 0, 0, 0],
             },
-            Target::UI,
+            Target::World,
         );
         for slot in self.slots.iter_mut() {
             slot.button().draw(context);

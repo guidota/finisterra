@@ -17,7 +17,6 @@ use crate::{
         fonts::*,
         input_field::InputField,
         label::Label,
-        textures::*,
         Widget, UI,
     },
 };
@@ -99,9 +98,7 @@ impl GameScreen for CharacterCreationScreen {
                         context
                             .screen_transition_sender
                             .send(Screen::World(Box::new(WorldScreen::new(
-                                context.engine,
-                                0,
-                                character,
+                                context, 0, character,
                             ))))
                             .expect("poisoned")
                     }
@@ -131,7 +128,7 @@ impl CharacterCreationUI {
             ((800 / 2) - 100, 290),
             (200, 30),
             TAHOMA_BOLD_8_SHADOW_ID,
-            INPUT_ID,
+            context.resources.textures.input,
             context,
         );
         name_input.focused = true;
@@ -139,7 +136,7 @@ impl CharacterCreationUI {
         let create_label = Label::from("Create", WIZARD_16_ID, GRAY_6, context.engine);
         let create_button = ButtonBuilder::new()
             .color(GRAY_2)
-            .texture_id(BUTTON_ID)
+            .texture_id(context.resources.textures.button)
             .label(create_label)
             .build();
 
@@ -156,7 +153,7 @@ impl CharacterCreationUI {
             );
             let mut class_button = ButtonBuilder::new()
                 .color(GRAY_2)
-                .texture_id(BUTTON_ID)
+                .texture_id(context.resources.textures.button)
                 .label(class_label)
                 .selected_color(BLUE)
                 .build();
@@ -181,7 +178,7 @@ impl CharacterCreationUI {
             );
             let mut button = ButtonBuilder::new()
                 .color(GRAY_2)
-                .texture_id(BUTTON_ID)
+                .texture_id(context.resources.textures.button)
                 .label(label)
                 .selected_color(BLUE)
                 .build();
@@ -205,7 +202,7 @@ impl CharacterCreationUI {
             );
             let mut button = ButtonBuilder::new()
                 .color(GRAY_2)
-                .texture_id(BUTTON_ID)
+                .texture_id(context.resources.textures.button)
                 .label(label)
                 .selected_color(BLUE)
                 .build();
@@ -316,7 +313,7 @@ impl UI for CharacterCreationUI {
             DrawImage {
                 position: Position { x: 0, y: 0, z: 0. },
                 color: WHITE,
-                index: DV_BACKGROUND_ID,
+                index: context.resources.textures.dv_background,
                 ..Default::default()
             },
             Target::UI,

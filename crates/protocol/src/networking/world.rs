@@ -6,3 +6,12 @@ pub struct WorldPosition {
     pub x: u16,
     pub y: u16,
 }
+
+#[derive(Encode, Decode, PartialEq, Debug, Default, Clone)]
+pub enum Direction {
+    North,
+    East,
+    #[default]
+    South,
+    West,
+}

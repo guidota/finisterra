@@ -15,7 +15,7 @@ pub struct Fonts;
 
 impl Fonts {
     pub fn load<E: GameEngine>(engine: &mut E) {
-        let texture_id = engine.add_texture("./assets/fonts/tahoma_bold_8_shadow.png");
+        let texture_id = engine.add_texture("./assets/fonts/tahoma_bold_8_soft_shadow.png");
         info!("texture_id {texture_id}");
         engine.add_font(
             TAHOMA_BOLD_8_SHADOW_ID,

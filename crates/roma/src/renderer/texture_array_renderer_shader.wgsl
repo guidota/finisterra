@@ -80,7 +80,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         default: {}
     }
 
-    output.position = camera_projection * vec4<f32>(position, input.z, 1.0);
+    output.position = camera_projection * vec4<f32>(position, 1.0, 1.0);
     output.position.z = input.z;
     output.color = input.color;
     output.index = input.index;
@@ -99,8 +99,7 @@ struct VertexOutput {
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let color = textureSample(texture_array[in.index], texture_sampler_array[in.index], in.texture_position);
 
-    
-    if color.a < 0.0001 {
+    if color.a < 0.001 {
         discard;
     }
 

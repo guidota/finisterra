@@ -1,7 +1,10 @@
-use std::fs::{self, File};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+};
 
-use engine::engine::GameEngine;
-use lorenzo::{
+use argentum::map::Map;
+use argentum::{
     animations::{Animation, ImageFrameMetadata},
     character::{
         animation::{CharacterAnimation, CharacterAnimations},
@@ -10,6 +13,10 @@ use lorenzo::{
     },
     image::Image,
 };
+use engine::engine::GameEngine;
+use nohash_hasher::IntMap;
+
+use crate::ui::textures::Textures;
 
 #[derive(Debug, Default)]
 pub struct Resources {
@@ -25,19 +32,66 @@ pub struct Resources {
     pub shields: Vec<Shield>,
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,
+
+    pub maps: IntMap<usize, Map>,
+
+    pub textures: Textures,
 }
 
 impl Resources {
     pub fn load<E: GameEngine>(engine: &mut E) -> Self {
         let mut resources = Resources::default();
 
+        resources.load_images(engine, "assets/finisterra/init/images.ron");
+        resources.load_maps("assets/finisterra/maps/");
         resources.load_body(engine, "assets/finisterra/human/ao-human/");
         resources.load_head(engine, "assets/finisterra/human/ao-human/");
         resources.load_shields(engine, "assets/finisterra/shields/ao-shields/");
         resources.load_helmets(engine, "assets/finisterra/helmets/ao-helmets/");
         resources.load_weapons(engine, "assets/finisterra/weapons/ao-weapons/");
+        resources.load_textures(engine);
 
         resources
+    }
+
+    fn load_textures<E: GameEngine>(&mut self, engine: &mut E) {
+        self.textures = Textures::load(engine);
+    }
+
+    fn load_images<E: GameEngine>(&mut self, engine: &mut E, path: &str) {
+        let file = File::open(path).expect("file to exist");
+        let reader = std::io::BufReader::new(file);
+
+        let images: HashMap<u32, Image> =
+            ron::de::from_reader(reader).expect("images to be correct");
+        let max_id = images.keys().max().expect("to be a max");
+
+        self.images
+            .resize_with((*max_id + 1) as usize, Image::default);
+        for (id, image) in images {
+            let file_num = image.file;
+            engine.set_texture(
+                &format!("assets/finisterra/images/{file_num}.png"),
+                file_num,
+            );
+            self.images[id as usize] = image;
+        }
+    }
+
+    fn load_maps(&mut self, folder: &str) {
+        let maps_folder = fs::read_dir(folder).expect("maps folder not present");
+        for map in maps_folder {
+            let map = map.expect("should be an entry");
+            let path = map.path();
+            let map_path = path.to_str();
+            if let Some(map_path) = map_path {
+                let (_, number) = map_path.split_once('_').expect("map number");
+                let number: usize = number.parse().expect("is a number");
+                if let Some(map) = Map::from_path(map_path) {
+                    self.maps.insert(number, map);
+                }
+            }
+        }
     }
 
     fn load_body<E: GameEngine>(&mut self, engine: &mut E, folder: &str) {

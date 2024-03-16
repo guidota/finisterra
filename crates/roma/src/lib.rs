@@ -122,7 +122,7 @@ impl GameEngine for Roma {
     }
 
     fn set_mouse_cursor(&mut self, cursor: winit::window::CursorIcon) {
-        self.state.window.set_cursor_icon(cursor)
+        self.state.window.set_cursor_icon(cursor);
     }
 
     fn add_texture(&mut self, path: &str) -> TextureID {

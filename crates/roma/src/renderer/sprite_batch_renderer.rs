@@ -30,6 +30,7 @@ pub struct SpriteBatchRenderer {
 
     draws_counter: usize,
     draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
+    draws_to_zero_world: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_world: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_ui: IntMap<TextureID, Vec<DrawImage>>,
 
@@ -55,10 +56,16 @@ impl Renderer for SpriteBatchRenderer {
         {
             match target {
                 Target::World => {
-                    self.draws_to_world
-                        .entry(index)
-                        .or_default()
-                        .append(&mut draws);
+                    for draw in draws {
+                        if draw.position.z == 0.0 {
+                            self.draws_to_zero_world
+                                .entry(index)
+                                .or_default()
+                                .push(draw);
+                        } else {
+                            self.draws_to_world.entry(index).or_default().push(draw);
+                        }
+                    }
                 }
                 Target::UI => {
                     self.draws_to_ui
@@ -83,7 +90,7 @@ impl Renderer for SpriteBatchRenderer {
                 }
             }
         } else {
-            log::error!("[draw_image] with invalid texture");
+            log::debug!("[draw_image] with invalid texture");
         }
     }
 
@@ -254,6 +261,7 @@ impl SpriteBatchRenderer {
 
             draws_counter: 0,
             draws_to_textures: IntMap::default(),
+            draws_to_zero_world: IntMap::default(),
             draws_to_world: IntMap::default(),
             draws_to_ui: IntMap::default(),
 
@@ -288,6 +296,11 @@ impl SpriteBatchRenderer {
         };
 
         let mut world_ranges = vec![];
+        prepare_draws(
+            &mut self.draws_to_zero_world,
+            &mut world_ranges,
+            &mut offset,
+        );
         prepare_draws(&mut self.draws_to_world, &mut world_ranges, &mut offset);
 
         let mut ui_ranges = vec![];

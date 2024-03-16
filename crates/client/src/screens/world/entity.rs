@@ -1,8 +1,16 @@
 use std::{
+    collections::VecDeque,
     ops::{AddAssign, Deref, DerefMut},
     time::Duration,
 };
 
+use argentum::{
+    animations::ImageFrameMetadata,
+    character::{
+        animation::CharacterAnimation, animator::Animator, direction::Direction, AnimatedCharacter,
+    },
+    Offset,
+};
 use engine::{
     draw::{
         image::DrawImage,
@@ -12,12 +20,10 @@ use engine::{
     engine::{FontID, GameEngine},
 };
 use interpolation::quad_bez;
-use lorenzo::{
-    animations::ImageFrameMetadata,
-    character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
-    Offset,
+use protocol::{
+    character::{self},
+    movement::Movement,
 };
-use protocol::character::{self};
 use rand::seq::SliceRandom;
 
 use crate::{
@@ -26,7 +32,7 @@ use crate::{
     ui::{colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
 
-use super::TILE_SIZE;
+use super::calculate_z;
 
 pub enum Entity {
     Character(Character),
@@ -56,7 +62,7 @@ pub struct Character {
 
     dialog: Option<Dialog>,
 
-    pub render_position: (f64, f64),
+    pub movement: Movement,
 }
 
 struct Dialog {
@@ -84,7 +90,7 @@ impl Dialog {
         };
         let color = shade(self.color, fade);
 
-        let y_offset = quad_bez(&0, &19, &23, &fade) as u16;
+        let y_offset = quad_bez(&0, &14, &20, &fade) as u16;
         position.y += y_offset;
 
         engine.draw_text(
@@ -128,10 +134,7 @@ impl Character {
             .expect("can parse");
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
-        let render_position = (
-            (character.position.x * TILE_SIZE) as f64,
-            (character.position.y * TILE_SIZE) as f64,
-        );
+
         Self {
             name_text,
 
@@ -141,15 +144,22 @@ impl Character {
                 level: character.level,
                 exp: character.exp,
                 gold: character.gold,
-                position: character.position,
+                position: character.position.clone(),
                 class: character.class,
                 race: character.race,
                 look: character.look,
                 equipment: character.equipment,
                 ..Default::default()
             },
-            render_position,
             dialog: None,
+            movement: Movement {
+                input: VecDeque::new(),
+                predictions: vec![],
+                velocity: 5., // tiles per second
+                moving: None,
+                position: character.position.clone(),
+                moving_position: (0.0, 0.0),
+            },
 
             animation,
         }
@@ -161,15 +171,19 @@ impl Character {
             .expect("can parse");
         let mut animation = Self::random(context.resources);
         animation.change_animation(CharacterAnimation::Walk);
-        let render_position = (
-            (character.position.x * TILE_SIZE) as f64,
-            (character.position.y * TILE_SIZE) as f64,
-        );
+
         Self {
             name_text,
 
+            movement: Movement {
+                input: VecDeque::new(),
+                predictions: vec![],
+                velocity: 5., // tiles per second
+                moving: None,
+                position: character.position.clone(),
+                moving_position: (0.0, 0.0),
+            },
             inner: character,
-            render_position,
 
             dialog: None,
 
@@ -215,25 +229,47 @@ impl Character {
                 self.dialog = None;
             }
         }
+
+        self.movement.update(delta);
+        if let Some(direction) = self.movement.moving_direction() {
+            self.animation.change_direction(to_direction(direction));
+            self.animation.change_animation(CharacterAnimation::Walk);
+        } else {
+            self.animation.change_animation(CharacterAnimation::Idle);
+        }
     }
 
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
+        let render_position = self.movement.world_position();
 
-        let x = self.render_position.0.floor() as u16;
-        let y = self.render_position.1.floor() as u16;
-        context.engine.draw_text(
-            TAHOMA_BOLD_8_SHADOW_ID,
-            DrawText {
-                text: &self.name_text,
-                position: Position::new(x, y - 14, 0.5),
-                color: RED,
+        let x = (render_position.0 * 32.).floor() as u16;
+        let y = (render_position.1 * 32.).floor() as u16;
+        let z = calculate_z(2, render_position.0 as f32, render_position.1 as f32);
+
+        // draw shadow
+        context.engine.draw_image(
+            DrawImage {
+                position: Position::new(x - 16, y - 8, z - 0.001),
+                color: WHITE,
+                index: context.resources.textures.character_shadow,
+                ..Default::default()
             },
             Target::World,
         );
 
-        let x = self.render_position.0.floor() as u16 - body.base.x as u16;
-        let y = self.render_position.1.floor() as u16 - body.base.y as u16;
+        context.engine.draw_text(
+            TAHOMA_BOLD_8_SHADOW_ID,
+            DrawText {
+                text: &self.name_text,
+                position: Position::new(x, y - 14, z),
+                color: RED_0,
+            },
+            Target::World,
+        );
+
+        let x = x - body.base.x as u16;
+        let y = y - body.base.y as u16;
 
         let color = [255, 255, 255, 255];
 
@@ -243,7 +279,7 @@ impl Character {
 
                 let x = x + offset.x as u16 - metadata.offset.x as u16;
                 let y = y + offset.y as u16 - metadata.offset.y as u16;
-                let z = 0.5 + (metadata.priority as f32 * 0.0001); // TODO! calculate from position in map
+                let z = z + (metadata.priority as f32 * 0.0001); // TODO! calculate from position in map
                 let position = Position::new(x, y, z);
 
                 context.engine.draw_image(
@@ -267,9 +303,11 @@ impl Character {
         draw_image(self.animation.get_shield_frame(), body.left_hand);
 
         if let Some(dialog) = self.dialog.as_mut() {
-            let x = self.render_position.0.floor() as u16 - body.base.x as u16 + body.head.x as u16;
-            let y = self.render_position.1.floor() as u16 - body.base.y as u16 + body.head.y as u16;
-            dialog.draw(context.engine, Position::new(x, y, 0.5));
+            let x = x + body.head.x as u16;
+            let body_frame_metadata = self.animation.body.idle.south.frames[0];
+            let head_y = body_frame_metadata.head.y as u16;
+            let y = y + head_y;
+            dialog.draw(context.engine, Position::new(x, y, z));
         }
     }
 
@@ -288,6 +326,15 @@ impl Character {
             total_duration: Duration::from_secs(15),
             effect_duration: Duration::from_millis(150),
             time: Duration::ZERO,
-        })
+        });
+    }
+}
+
+fn to_direction(direction: protocol::world::Direction) -> Direction {
+    match direction {
+        protocol::world::Direction::North => Direction::North,
+        protocol::world::Direction::East => Direction::East,
+        protocol::world::Direction::South => Direction::South,
+        protocol::world::Direction::West => Direction::West,
     }
 }

@@ -1,6 +1,7 @@
 use crate::{
     character::{Character, CharacterPreview},
     networking::bincode::CONFIG,
+    world::WorldPosition,
     ProtocolMessage,
 };
 use bincode::{Decode, Encode};
@@ -43,7 +44,12 @@ pub enum Account {
 pub enum CharacterUpdate {
     Create,
     Remove,
-    Move,
+    Position {
+        entity_id: u32,
+        key_id: u8,
+        move_id: u8,
+        position: WorldPosition,
+    },
     Translate,
     Paralize,
     Info,

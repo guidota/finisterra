@@ -51,7 +51,7 @@ impl Widget for Image {
 
         context.engine.draw_image(
             DrawImage {
-                position: Position::new(x, y, 1.),
+                position: Position::new(x, y, 0.99),
                 color: self.color,
                 index: self.texture_id,
                 source: [0, 0, width, self.size.1],

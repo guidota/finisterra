@@ -1,14 +1,13 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "tooling/*"]
 resolver = "2"
 
 [workspace.dependencies]
 protocol = { path = "crates/protocol" }
-definitions = { path = "crates/definitions" }
 roma = { path = "crates/roma" }
-lorenzo = { path = "crates/lorenzo" }
 engine = { path = "crates/engine" }
 database = { path = "crates/database" }
+argentum = { path = "crates/argentum" }
 
 winit = "0.29"
 # async runtime
@@ -31,5 +30,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 webtransport = "0"
 wtransport = { version = "0.1", features = ["dangerous-configuration"] }
 
+bincode = { git = "https://github.com/bincode-org/bincode.git", tag = "v2.0.0-rc.3" }
 # [profile.release]
 # debug = true

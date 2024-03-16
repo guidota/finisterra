@@ -6,7 +6,7 @@ use crate::{
     networking::connection::ConnectionState,
     resources::Resources,
     screens::{home::HomeScreen, GameScreen, Screen},
-    ui::{self},
+    ui::fonts::Fonts,
 };
 
 pub struct Finisterra {
@@ -27,8 +27,8 @@ pub struct Context<'tick, E: GameEngine> {
 
 impl Game for Finisterra {
     fn initialize<E: GameEngine>(engine: &mut E) -> Self {
-        ui::load(engine);
         let resources = Resources::load(engine);
+        Fonts::load(engine);
         let screen_transition = channel();
         let mut connection = ConnectionState::new("https://[::1]:7666");
         let mut context = Context {

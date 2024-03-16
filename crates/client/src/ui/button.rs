@@ -12,7 +12,7 @@ use super::{
     Alignment, Widget,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Button {
     pub position: (u16, u16),
     pub z: f32,
@@ -28,11 +28,13 @@ pub struct Button {
     pub alignment: Alignment,
 
     pub selected_color: Option<Color>,
+    pub selected_texture: Option<TextureID>,
 
     mouse_in: bool,
+    target: Target,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub enum State {
     #[default]
     Normal,
@@ -58,8 +60,10 @@ impl Button {
             selected: false,
             alignment: Alignment::Center,
             selected_color: None,
+            selected_texture: None,
             mouse_in: false,
             z: 0.,
+            target: Target::UI,
         }
     }
 
@@ -83,8 +87,18 @@ impl Button {
 
 impl Widget for Button {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(size) = context.engine.texture_dimensions(self.texture_id) {
+        let index = if self.selected {
+            self.selected_texture.unwrap_or(self.texture_id)
+        } else {
+            self.texture_id
+        };
+        if let Some(size) = context.engine.texture_dimensions(index) {
             self.size = size;
+        } else {
+            tracing::error!(
+                "couldn't get texture dimension for texture {}",
+                self.texture_id
+            );
         }
         let zoom = match context.engine.get_camera_zoom() {
             engine::camera::Zoom::None => 1.,
@@ -121,14 +135,19 @@ impl Widget for Button {
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let button_rect = self.rect();
         let (x, y, _, _) = button_rect;
+        let index = if self.selected {
+            self.selected_texture.unwrap_or(self.texture_id)
+        } else {
+            self.texture_id
+        };
         context.engine.draw_image(
             DrawImage {
                 position: Position::new(x, y, self.z),
-                index: self.texture_id,
+                index,
                 color: self.color(),
                 ..Default::default()
             },
-            Target::UI,
+            self.target,
         );
 
         if let Some(label) = self.label.as_mut() {
@@ -238,6 +257,11 @@ impl ButtonBuilder {
         self
     }
 
+    pub fn selected_texture(mut self, texture_id: TextureID) -> Self {
+        self.button.selected_texture = Some(texture_id);
+        self
+    }
+
     pub fn alignment(mut self, alignment: Alignment) -> Self {
         self.button.alignment = alignment;
         self
@@ -245,6 +269,11 @@ impl ButtonBuilder {
 
     pub fn z(mut self, z: f32) -> Self {
         self.button.z = z;
+        self
+    }
+
+    pub fn target(mut self, target: Target) -> Self {
+        self.button.target = target;
         self
     }
 

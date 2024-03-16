@@ -10,6 +10,7 @@ use crate::game::Context;
 
 use super::{Alignment, Widget};
 
+#[derive(Debug)]
 pub struct Label {
     pub parsed_text: ParsedText,
     pub text: String,

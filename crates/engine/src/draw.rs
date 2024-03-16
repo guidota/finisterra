@@ -71,9 +71,12 @@ pub struct Dimensions {
     pub height: u16,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum Target {
+    #[default]
     World,
     UI,
-    Texture { id: TextureID },
+    Texture {
+        id: TextureID,
+    },
 }

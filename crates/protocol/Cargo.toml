@@ -7,7 +7,4 @@ edition = "2021"
 
 [dependencies]
 serde.workspace = true
-
-[dependencies.bincode]
-git = "https://github.com/bincode-org/bincode.git"
-tag = "v2.0.0-rc.3"
+bincode.workspace = true

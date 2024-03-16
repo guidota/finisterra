@@ -5,11 +5,10 @@ edition = "2021"
 
 [dependencies]
 wtransport.workspace = true
-definitions.workspace = true
-lorenzo.workspace = true
 roma.workspace = true
 engine.workspace = true
 protocol.workspace = true
+argentum.workspace = true
 serde.workspace = true
 toml.workspace = true
 ron.workspace = true
@@ -19,7 +18,7 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
-image = "0.24"
+image = "0.25"
 nohash-hasher = "0.2"
 tokio-util = "0.7"
 lazy_static = "1.4"

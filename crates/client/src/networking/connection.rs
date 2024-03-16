@@ -42,7 +42,7 @@ enum State {
 }
 
 struct Connection {
-    _inner: wtransport::Connection,
+    inner: wtransport::Connection,
 
     outgoing_messages_sender: Sender<ClientPacket>,
     incoming_messages_receiver: Receiver<ServerPacket>,
@@ -252,7 +252,7 @@ impl Connection {
         });
 
         Some(Self {
-            _inner: connection,
+            inner: connection,
             outgoing_messages_sender,
             incoming_messages_receiver,
             cancellation_token,
@@ -260,7 +260,7 @@ impl Connection {
     }
 
     pub fn ping(&self) -> u16 {
-        (self._inner.rtt().as_millis() / 2) as u16
+        (self.inner.rtt().as_millis() / 2) as u16
     }
 }
 

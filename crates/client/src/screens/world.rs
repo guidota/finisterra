@@ -1,5 +1,4 @@
-use std::collections::VecDeque;
-
+use argentum::image::Image;
 use engine::{
     camera::{self, Viewport, Zoom},
     draw::{image::DrawImage, Position, Target},
@@ -7,105 +6,64 @@ use engine::{
     input::keyboard::KeyCode,
     CursorIcon,
 };
-use lorenzo::character::{animation::CharacterAnimation, direction::Direction};
+use itertools::iproduct;
 use nohash_hasher::IntMap;
+use protocol::movement::{KeyPressed, KeyReleased};
 
 use crate::{
     game::Context,
-    ui::{
-        bar::Bar,
-        button::Button,
-        colors::*,
-        console::Console,
-        fonts::{TAHOMA_BOLD_8_SHADOW_ID, TAHOMA_REGULAR_10_ID, WIZARD_16_ID},
-        input_field::InputField,
-        inventory::Inventory,
-        label::Label,
-        spellbook::Spellbook,
-        textures::{
-            DV_BACKGROUND_ID, EXP_BAR_ID, INPUT_ID, INVENTORY_BUTTON_ID, MAIN_UI_ID,
-            SPELLS_BUTTON_ID,
-        },
-        Alignment, Widget, UI,
-    },
+    ui::{colors::*, input_field::InputField},
+    ui::{fonts::*, UI},
 };
 
-use self::entity::{Character, Entity};
+use self::{
+    entity::{Character, Entity},
+    hud::HUD,
+};
 
 use super::GameScreen;
 
 pub mod entity;
+pub mod hud;
 
 pub struct WorldScreen {
-    ui: WorldUI,
+    hud: HUD,
 
     entities: IntMap<u32, Entity>,
 
-    move_keys: VecDeque<Direction>,
-
     me: u32,
-}
-
-pub struct WorldUI {
-    x: u16,
-    y: u16,
-
-    // header
-    level: Label,
-    name: Label,
-    desc: Label,
-
-    // inventory
-    inventory_button: Button,
-    inventory: Inventory,
-
-    // spellbook
-    spells_button: Button,
-    spellbook: Spellbook,
-
-    // stats
-    exp_bar: Bar,
-    energy_bar: Bar,
-    mana_bar: Bar,
-    health_bar: Bar,
-    agility: Label,
-    strength: Label,
-    gold: Label,
-
-    // info
-    fps: Label,
-    ping: Label,
-
-    console: Console,
-    message_input: Option<InputField>,
+    key_counter: u8,
 }
 
 const SCREEN_WIDTH: u16 = 800;
 const SCREEN_HEIGHT: u16 = 540;
 
-const TILE_SIZE: u16 = 32;
-const WORLD_RENDER_WIDTH: u16 = 17 * TILE_SIZE; // 17 tiles
-const WORLD_RENDER_HEIGHT: u16 = 16 * TILE_SIZE; // 16 tiles
+const WORLD_RENDER_WIDTH: u16 = 549; //17 * TILE_SIZE; // 17 tiles
+const WORLD_RENDER_HEIGHT: u16 = 521; //16 * TILE_SIZE; // 16 tiles
 
 impl WorldScreen {
-    pub fn new<E: GameEngine>(engine: &mut E, entity_id: u32, mut character: Character) -> Self {
-        let ui = WorldUI::initialize(engine, &character);
+    pub fn new<E: GameEngine>(
+        context: &mut Context<E>,
+        entity_id: u32,
+        mut character: Character,
+    ) -> Self {
+        let ui = HUD::initialize(context, &character);
         let mut entities = IntMap::default();
         character.add_dialog(
-            engine,
+            context.engine,
             "Rahma Nañarak O'al",
             TAHOMA_BOLD_8_SHADOW_ID,
-            BLUE_3,
+            CYAN,
         );
         entities.insert(entity_id, Entity::Character(character));
 
-        engine.set_mouse_cursor(CursorIcon::Default);
+        context.engine.set_mouse_cursor(CursorIcon::Default);
 
         Self {
-            ui,
+            hud: ui,
             entities,
             me: entity_id,
-            move_keys: VecDeque::new(),
+            key_counter: 0,
         }
     }
 
@@ -121,8 +79,8 @@ impl WorldScreen {
 
         let x_start = std::cmp::max(0, (size.width / zoom - SCREEN_WIDTH) / 2);
         let y_start = std::cmp::max(0, (size.height / zoom - SCREEN_HEIGHT) / 2);
-        self.ui.x = x_start;
-        self.ui.y = y_start;
+        self.hud.x = x_start;
+        self.hud.y = y_start;
 
         engine.set_ui_camera_viewport(Viewport {
             x: 0.,
@@ -131,9 +89,10 @@ impl WorldScreen {
             height: size.height as f32,
         });
 
+        // TODO: Review
         let world_camera_viewport = Viewport {
-            x: (x_start as f32 + 14.) * zoom as f32,
-            y: (y_start as f32 + 14.) * zoom as f32,
+            x: (x_start as f32 + 9.) * zoom as f32,
+            y: (y_start as f32 + 9.) * zoom as f32,
             width: WORLD_RENDER_WIDTH as f32 * zoom as f32,
             height: WORLD_RENDER_HEIGHT as f32 * zoom as f32,
         };
@@ -144,31 +103,34 @@ impl WorldScreen {
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
             character.update(context.engine);
             // camera follows main character
+            let world_position = character.movement.world_position();
             context.engine.set_world_camera_position(camera::Position {
-                x: character.render_position.0.floor() as f32,
-                y: character.render_position.1.floor() as f32,
+                x: (world_position.0 * 32.).floor() as f32,
+                y: (world_position.1 * 32.).floor() as f32,
             });
 
-            self.ui.update_character(context, character);
+            self.hud.update_character(context, character);
         }
     }
 
     fn update_fps<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let fps = format!("{:.0}", 1. / context.engine.get_delta().as_secs_f64());
-        self.ui.fps.set_text(&fps, context.engine);
+        let fps = format!("{:.0} FPS", 1. / context.engine.get_delta().as_secs_f64());
+        self.hud.fps.set_text(&fps, context.engine);
     }
 
     fn update_ping<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let ping = context.connection.ping();
-        self.ui.ping.set_text(&format!("{ping}"), context.engine);
+        self.hud
+            .ping
+            .set_text(&format!("PING: {ping}ms"), context.engine);
     }
 
     fn update_message_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let message_input_open = self.ui.message_input.is_some();
+        let message_input_open = self.hud.message_input.is_some();
         let enter_pressed = context.engine.key_pressed(KeyCode::Enter);
         match (message_input_open, enter_pressed) {
             (true, true) => {
-                if let Some(input) = self.ui.message_input.as_mut() {
+                if let Some(input) = self.hud.message_input.as_mut() {
                     let message = input.text();
                     if !message.is_empty() {
                         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me)
@@ -182,7 +144,7 @@ impl WorldScreen {
                         }
                     }
                 }
-                self.ui.message_input = None;
+                self.hud.message_input = None;
             }
             (false, true) => {
                 let mut input_field = InputField::new(
@@ -191,11 +153,11 @@ impl WorldScreen {
                     (0, 0),
                     (200, 30),
                     TAHOMA_BOLD_8_SHADOW_ID,
-                    INPUT_ID,
+                    context.resources.textures.input,
                     context,
                 );
                 input_field.focused = true;
-                self.ui.message_input = Some(input_field);
+                self.hud.message_input = Some(input_field);
             }
             _ => {}
         }
@@ -208,65 +170,119 @@ impl WorldScreen {
     }
 
     fn draw_map<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        // TODO!
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            let position = &character.movement.tile_position();
+            if let Some(map) = context.resources.maps.get(&(position.map as usize)) {
+                let extra_tiles = 5;
+                let x_start = (position.x - (17 / 2) - extra_tiles) as usize;
+                let x_end = (position.x + (17 / 2) + extra_tiles) as usize;
+                let y_start = (position.y - (16 / 2) - extra_tiles) as usize;
+                let y_end = (position.y + (16 / 2) + extra_tiles) as usize;
+
+                for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
+                    let tile = &map.tiles[x][y];
+
+                    let world_x = (x * 32) as u16;
+                    let world_y = ((y * 32) - 32) as u16;
+
+                    for layer in [0, 1, 2, 3].iter() {
+                        if tile.graphics[*layer] != 0 {
+                            let z = calculate_z(*layer, x as f32, y as f32);
+                            let position = Position::new(world_x, world_y, z);
+                            self.draw_grh(
+                                context,
+                                tile.graphics[*layer] as u32,
+                                position,
+                                Target::World,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn draw_grh<E: GameEngine>(
+        &self,
+        context: &mut Context<E>,
+        image_id: u32,
+        position: engine::draw::Position,
+        target: Target,
+    ) {
+        let image = &context.resources.images[image_id as usize];
+        self.draw_image(context, image, position, target);
+    }
+
+    fn draw_image<E: GameEngine>(
+        &self,
+        context: &mut Context<E>,
+        image: &Image,
+        mut position: engine::draw::Position,
+        target: Target,
+    ) {
+        let image_num = image.file;
+        position.x -= image.width / 2;
+
         context.engine.draw_image(
             DrawImage {
-                position: Position::new(40 * 32, 40 * 32, 0.),
-                index: DV_BACKGROUND_ID,
-                ..Default::default()
+                position,
+                color: [255, 255, 255, 255],
+                source: [image.x, image.y, image.width, image.height],
+                index: image_num,
             },
-            Target::World,
+            target,
         );
     }
 
     fn process_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if context.engine.key_pressed(KeyCode::ArrowUp)
-            && !self.move_keys.contains(&Direction::North)
-        {
-            self.move_keys.push_front(Direction::North);
-        } else if context.engine.key_pressed(KeyCode::ArrowDown)
-            && !self.move_keys.contains(&Direction::South)
-        {
-            self.move_keys.push_front(Direction::South);
-        } else if context.engine.key_pressed(KeyCode::ArrowRight)
-            && !self.move_keys.contains(&Direction::East)
-        {
-            self.move_keys.push_front(Direction::East);
-        } else if context.engine.key_pressed(KeyCode::ArrowLeft)
-            && !self.move_keys.contains(&Direction::West)
-        {
-            self.move_keys.push_front(Direction::West);
-        } else if context.engine.key_released(KeyCode::ArrowUp) {
-            self.move_keys
-                .retain(|direction| direction != &Direction::North);
-        } else if context.engine.key_released(KeyCode::ArrowDown) {
-            self.move_keys
-                .retain(|direction| direction != &Direction::South);
-        } else if context.engine.key_released(KeyCode::ArrowLeft) {
-            self.move_keys
-                .retain(|direction| direction != &Direction::West);
-        } else if context.engine.key_released(KeyCode::ArrowRight) {
-            self.move_keys
-                .retain(|direction| direction != &Direction::East);
-        }
-
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            if let Some(direction) = self.move_keys.front() {
-                let distance = context.engine.get_delta().as_secs_f64() * 4. * 32.;
-                match direction {
-                    Direction::South => character.render_position.1 -= distance,
-                    Direction::North => character.render_position.1 += distance,
-                    Direction::East => character.render_position.0 += distance,
-                    Direction::West => character.render_position.0 -= distance,
-                }
-                character.animation.change_direction(*direction);
-                character
-                    .animation
-                    .change_animation(CharacterAnimation::Walk);
-            } else {
-                character
-                    .animation
-                    .change_animation(CharacterAnimation::Idle);
+            if context.engine.key_pressed(KeyCode::ArrowUp) {
+                self.key_counter += 1;
+                character.movement.key_pressed(KeyPressed {
+                    key_id: self.key_counter,
+                    direction: protocol::world::Direction::North,
+                });
+            }
+            if context.engine.key_pressed(KeyCode::ArrowDown) {
+                self.key_counter += 1;
+                character.movement.key_pressed(KeyPressed {
+                    key_id: self.key_counter,
+                    direction: protocol::world::Direction::South,
+                });
+            }
+            if context.engine.key_pressed(KeyCode::ArrowRight) {
+                self.key_counter += 1;
+                character.movement.key_pressed(KeyPressed {
+                    key_id: self.key_counter,
+                    direction: protocol::world::Direction::East,
+                });
+            }
+            if context.engine.key_pressed(KeyCode::ArrowLeft) {
+                self.key_counter += 1;
+                character.movement.key_pressed(KeyPressed {
+                    key_id: self.key_counter,
+                    direction: protocol::world::Direction::West,
+                });
+            }
+            if context.engine.key_released(KeyCode::ArrowUp) {
+                character.movement.key_released(KeyReleased {
+                    direction: protocol::world::Direction::North,
+                });
+            }
+            if context.engine.key_released(KeyCode::ArrowDown) {
+                character.movement.key_released(KeyReleased {
+                    direction: protocol::world::Direction::South,
+                });
+            }
+            if context.engine.key_released(KeyCode::ArrowLeft) {
+                character.movement.key_released(KeyReleased {
+                    direction: protocol::world::Direction::West,
+                });
+            }
+            if context.engine.key_released(KeyCode::ArrowRight) {
+                character.movement.key_released(KeyReleased {
+                    direction: protocol::world::Direction::East,
+                });
             }
         }
 
@@ -275,8 +291,8 @@ impl WorldScreen {
                 character.add_dialog(
                     context.engine,
                     "Rahma Nañarak O'al",
-                    TAHOMA_REGULAR_10_ID,
-                    BLUE_3,
+                    TAHOMA_BOLD_8_SHADOW_ID,
+                    CYAN,
                 );
             }
         }
@@ -288,7 +304,7 @@ impl GameScreen for WorldScreen {
         self.process_input(context);
 
         self.prepare_viewports(context.engine);
-        self.ui.update(context);
+        self.hud.update(context);
 
         self.update_fps(context);
         self.update_ping(context);
@@ -297,244 +313,17 @@ impl GameScreen for WorldScreen {
     }
 
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.ui.draw(context);
+        self.hud.draw(context);
 
         self.draw_map(context);
         self.draw_entities(context);
     }
 }
 
-impl WorldUI {
-    pub fn initialize<E: GameEngine>(engine: &mut E, character: &Character) -> Self {
-        let level = Label::from(
-            &character.level.to_string(),
-            TAHOMA_BOLD_8_SHADOW_ID,
-            GRAY_4,
-            engine,
-        );
-
-        let mut name = Label::from(&character.name, WIZARD_16_ID, GRAY_4, engine);
-        name.alignment = Alignment::Right;
-
-        let mut desc = Label::from(
-            &format!("{} {}", character.class, character.race),
-            TAHOMA_BOLD_8_SHADOW_ID,
-            GRAY_3,
-            engine,
-        );
-        desc.alignment = Alignment::Right;
-
-        let energy_bar = Bar::new(engine, YELLOW);
-        let mana_bar = Bar::new(engine, BLUE);
-        let health_bar = Bar::new(engine, RED);
-        let exp_bar = Bar::with(engine, EXP_BAR_ID, [0, 0, 0, 0]);
-
-        let celerity = Label::from(
-            &character.attributes.agility.to_string(),
-            TAHOMA_BOLD_8_SHADOW_ID,
-            tint(YELLOW, 0.1),
-            engine,
-        );
-        let strength = Label::from(
-            &character.attributes.strength.to_string(),
-            TAHOMA_BOLD_8_SHADOW_ID,
-            tint(GREEN, 0.2),
-            engine,
-        );
-        let mut gold = Label::from(
-            &character.gold.to_string(),
-            TAHOMA_BOLD_8_SHADOW_ID,
-            GRAY_4,
-            engine,
-        );
-        gold.alignment = Alignment::Left;
-
-        let mut fps = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
-        fps.alignment = Alignment::Right;
-
-        let mut ping = Label::from("0", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, engine);
-        ping.alignment = Alignment::Right;
-
-        let mut inventory_button = Button::from(INVENTORY_BUTTON_ID);
-        inventory_button.select();
-        let inventory = Inventory::initialize(engine);
-
-        let spells_button = Button::from(SPELLS_BUTTON_ID);
-        let spellbook = Spellbook::initialize(engine);
-
-        let console = Console::initialize(engine);
-
-        Self {
-            x: 0,
-            y: 0,
-
-            name,
-            desc,
-            level,
-
-            exp_bar,
-            energy_bar,
-            mana_bar,
-            health_bar,
-
-            agility: celerity,
-            strength,
-            gold,
-
-            fps,
-            ping,
-
-            inventory_button,
-            inventory,
-
-            spells_button,
-            spellbook,
-
-            console,
-            message_input: None,
-        }
-    }
-
-    pub fn update_character<E: GameEngine>(
-        &mut self,
-        context: &mut Context<E>,
-        character: &Character,
-    ) {
-        let stats = &character.stats;
-        self.energy_bar
-            .set_values(context.engine, (stats.stamina.current, stats.stamina.max));
-        self.health_bar
-            .set_values(context.engine, (stats.health.current, stats.health.max));
-        self.mana_bar
-            .set_values(context.engine, (stats.mana.current, stats.mana.max));
-        self.exp_bar
-            .set_values(context.engine, (character.exp.current, character.exp.max));
-        self.strength
-            .set_text(&character.attributes.strength.to_string(), context.engine);
-        self.agility
-            .set_text(&character.attributes.agility.to_string(), context.engine);
-        let gold = character
-            .gold
-            .to_string()
-            .as_bytes()
-            .rchunks(3)
-            .rev()
-            .map(std::str::from_utf8)
-            .collect::<Result<Vec<&str>, _>>()
-            .unwrap()
-            .join(".");
-        self.gold.set_text(&gold, context.engine);
-    }
-
-    fn recalculate_positions(&mut self) {
-        let right_panel_x_start = self.x + 14 + WORLD_RENDER_WIDTH;
-        self.level.position = (right_panel_x_start + 42, self.y + SCREEN_HEIGHT - 24);
-        self.name.position = (self.x + SCREEN_WIDTH - 30, self.y + SCREEN_HEIGHT - 18);
-        self.desc.position = (self.x + SCREEN_WIDTH - 30, self.y + SCREEN_HEIGHT - 32);
-        self.exp_bar
-            .set_position(right_panel_x_start + 120, self.y + SCREEN_HEIGHT - 25);
-
-        self.inventory_button.position =
-            (right_panel_x_start + 10 + 53, self.y + SCREEN_HEIGHT - 75);
-        self.inventory.position = (right_panel_x_start + 22, self.y + SCREEN_HEIGHT - 76);
-        self.spells_button.position = (
-            right_panel_x_start + 20 + 100 + 53,
-            self.y + SCREEN_HEIGHT - 75,
-        );
-        self.spellbook.position = (right_panel_x_start + 22, self.y + SCREEN_HEIGHT - 76);
-
-        let bars_x = right_panel_x_start + 130;
-        self.energy_bar.set_position(bars_x, self.y + 193);
-        self.health_bar.set_position(bars_x, self.y + 164);
-        self.mana_bar.set_position(bars_x, self.y + 135);
-
-        self.agility.position = (self.x + WORLD_RENDER_WIDTH + 167, self.y + 229);
-        self.strength.position = (self.x + WORLD_RENDER_WIDTH + 207, self.y + 229);
-        self.gold.position = (self.x + WORLD_RENDER_WIDTH + 60, self.y + 229);
-        self.fps.position = (self.x + SCREEN_WIDTH - 100, self.y + 32);
-        self.ping.position = (self.x + SCREEN_WIDTH - 50, self.y + 32);
-
-        self.console.position = (self.x + 20, self.y + 10 + WORLD_RENDER_HEIGHT);
-
-        if let Some(input) = self.message_input.as_mut() {
-            let x = self.x + 14 + WORLD_RENDER_WIDTH / 2;
-            let y = self.y + 20;
-            input.position = (x, y);
-        }
-    }
-}
-
-impl UI for WorldUI {
-    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        // recalculate positions (we can avoid doing every frame)
-        self.recalculate_positions();
-
-        // updates
-        self.inventory_button.update(context);
-        self.spells_button.update(context);
-        if self.inventory_button.clicked() {
-            self.inventory_button.select();
-            self.inventory.show();
-            self.spells_button.unselect();
-            self.spellbook.hide();
-        } else if self.spells_button.clicked() {
-            self.inventory_button.unselect();
-            self.inventory.hide();
-            self.spells_button.select();
-            self.spellbook.show();
-        }
-
-        self.inventory.update(context);
-        self.spellbook.update(context);
-
-        self.exp_bar.update(context);
-        self.energy_bar.update(context);
-        self.health_bar.update(context);
-        self.mana_bar.update(context);
-
-        self.console.update(context);
-
-        if let Some(input) = self.message_input.as_mut() {
-            input.update(context)
-        }
-    }
-
-    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        context.engine.draw_image(
-            DrawImage {
-                position: Position::new(self.x, self.y, 0.),
-                index: MAIN_UI_ID,
-                ..Default::default()
-            },
-            Target::UI,
-        );
-
-        self.exp_bar.draw(context);
-        self.level.draw(context);
-        self.desc.draw(context);
-        self.name.draw(context);
-
-        self.inventory_button.draw(context);
-        self.inventory.draw(context);
-
-        self.spells_button.draw(context);
-        self.spellbook.draw(context);
-
-        self.strength.draw(context);
-        self.agility.draw(context);
-        self.gold.draw(context);
-
-        self.energy_bar.draw(context);
-        self.health_bar.draw(context);
-        self.mana_bar.draw(context);
-
-        self.fps.draw(context);
-        self.ping.draw(context);
-
-        self.console.draw(context);
-
-        if let Some(input) = self.message_input.as_mut() {
-            input.draw(context)
-        }
+fn calculate_z(layer: usize, x: f32, y: f32) -> f32 {
+    match layer {
+        0 => 0.,
+        3 => 1.,
+        i => (i as f32 * 1000. + (100. - y) * 10. - x) / 4000.,
     }
 }
