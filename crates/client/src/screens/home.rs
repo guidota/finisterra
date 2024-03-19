@@ -3,7 +3,7 @@ use engine::{
     engine::GameEngine,
     input::keyboard::KeyCode,
 };
-use protocol::{
+use shared::protocol::{
     client::{self, ClientPacket},
     server::{self, ServerPacket},
 };

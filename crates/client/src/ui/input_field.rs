@@ -209,7 +209,7 @@ impl Widget for InputField {
         // draw background
         context.engine.draw_image(
             DrawImage {
-                position: Position::new(self.position.0 - self.size.0 / 2, self.position.1, 0.9),
+                position: Position::new(self.position.0 - self.size.0 / 2, self.position.1, 0.999),
                 color: self.background_color,
                 index: self.background_texture_id,
                 ..Default::default()

@@ -1,22 +1,24 @@
+use shared::world::Map;
 use std::{
     collections::HashMap,
     fs::{self, File},
 };
 
-use argentum::map::Map;
-use argentum::{
-    animations::{Animation, ImageFrameMetadata},
-    character::{
-        animation::{CharacterAnimation, CharacterAnimations},
-        direction::Direction,
-        Armor, Body, Eyes, Face, Hair, Head, Helmet, Shield, Skin, Weapon,
-    },
-    image::Image,
-};
 use engine::engine::GameEngine;
 use nohash_hasher::IntMap;
+use shared::world::Direction;
 
-use crate::ui::textures::Textures;
+use crate::{
+    argentum::{
+        animations::{Animation, ImageFrameMetadata},
+        character::{
+            animation::{CharacterAnimation, CharacterAnimations},
+            *,
+        },
+        Image,
+    },
+    ui::textures::Textures,
+};
 
 #[derive(Debug, Default)]
 pub struct Resources {

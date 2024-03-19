@@ -1,14 +1,11 @@
 use std::{
-    collections::VecDeque,
     ops::{AddAssign, Deref, DerefMut},
     time::Duration,
 };
 
-use argentum::{
+use crate::argentum::{
     animations::ImageFrameMetadata,
-    character::{
-        animation::CharacterAnimation, animator::Animator, direction::Direction, AnimatedCharacter,
-    },
+    character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
     Offset,
 };
 use engine::{
@@ -19,12 +16,12 @@ use engine::{
     },
     engine::{FontID, GameEngine},
 };
-use interpolation::quad_bez;
-use protocol::{
-    character::{self},
-    movement::Movement,
-};
+use interpolation::{lerp, quad_bez};
 use rand::seq::SliceRandom;
+use shared::{
+    character::{self},
+    world::{Direction, WorldPosition},
+};
 
 use crate::{
     game::Context,
@@ -32,7 +29,7 @@ use crate::{
     ui::{colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
 
-use super::calculate_z;
+use super::{calculate_z, get_direction};
 
 pub enum Entity {
     Character(Character),
@@ -57,12 +54,16 @@ impl Entity {
 pub struct Character {
     inner: character::Character,
 
+    // store 3 last known positions
+    just_finished_moving: bool,
+    interpolation_time: Duration,
+    pub position_buffer: Vec<WorldPosition>,
+    pub render_position: (f32, f32),
+
     name_text: ParsedText,
     pub animation: AnimatedCharacter,
 
     dialog: Option<Dialog>,
-
-    pub movement: Movement,
 }
 
 struct Dialog {
@@ -73,40 +74,6 @@ struct Dialog {
     total_duration: Duration,
     effect_duration: Duration,
     time: Duration,
-}
-
-impl Dialog {
-    pub fn update(&mut self, delta: Duration) {
-        self.time.add_assign(delta);
-    }
-
-    pub fn draw<E: GameEngine>(&self, engine: &mut E, mut position: Position) {
-        let fade = {
-            if self.time > self.effect_duration {
-                1.
-            } else {
-                self.time.as_millis() as f32 / self.effect_duration.as_millis() as f32
-            }
-        };
-        let color = shade(self.color, fade);
-
-        let y_offset = quad_bez(&0, &14, &20, &fade) as u16;
-        position.y += y_offset;
-
-        engine.draw_text(
-            self.font_id,
-            DrawText {
-                text: &self.text,
-                color,
-                position,
-            },
-            Target::World,
-        );
-    }
-
-    pub fn finished(&self) -> bool {
-        self.time.ge(&self.total_duration)
-    }
 }
 
 impl Deref for Character {
@@ -144,7 +111,7 @@ impl Character {
                 level: character.level,
                 exp: character.exp,
                 gold: character.gold,
-                position: character.position.clone(),
+                position: character.position,
                 class: character.class,
                 race: character.race,
                 look: character.look,
@@ -152,14 +119,13 @@ impl Character {
                 ..Default::default()
             },
             dialog: None,
-            movement: Movement {
-                input: VecDeque::new(),
-                predictions: vec![],
-                velocity: 5., // tiles per second
-                moving: None,
-                position: character.position.clone(),
-                moving_position: (0.0, 0.0),
-            },
+            interpolation_time: Duration::ZERO,
+            just_finished_moving: false,
+            position_buffer: vec![],
+            render_position: (
+                character.position.x as f32 * 32.,
+                character.position.y as f32 * 32.,
+            ),
 
             animation,
         }
@@ -175,14 +141,15 @@ impl Character {
         Self {
             name_text,
 
-            movement: Movement {
-                input: VecDeque::new(),
-                predictions: vec![],
-                velocity: 5., // tiles per second
-                moving: None,
-                position: character.position.clone(),
-                moving_position: (0.0, 0.0),
-            },
+            interpolation_time: Duration::ZERO,
+
+            position_buffer: vec![],
+            render_position: (
+                character.position.x as f32 * 32.,
+                character.position.y as f32 * 32.,
+            ),
+            just_finished_moving: false,
+
             inner: character,
 
             dialog: None,
@@ -222,6 +189,16 @@ impl Character {
 
     pub fn update<E: GameEngine>(&mut self, engine: &mut E) {
         let delta = engine.get_delta();
+        if self.moving() {
+            self.animation.change_animation(CharacterAnimation::Walk);
+            self.interpolate(delta);
+        } else {
+            if self.animation.finished() {
+                self.animation.change_animation(CharacterAnimation::Idle);
+            }
+            self.just_finished_moving = false;
+        }
+
         self.animation.update_animation(delta);
         if let Some(dialog) = self.dialog.as_mut() {
             dialog.update(delta);
@@ -229,23 +206,76 @@ impl Character {
                 self.dialog = None;
             }
         }
+    }
 
-        self.movement.update(delta);
-        if let Some(direction) = self.movement.moving_direction() {
-            self.animation.change_direction(to_direction(direction));
-            self.animation.change_animation(CharacterAnimation::Walk);
-        } else {
-            self.animation.change_animation(CharacterAnimation::Idle);
+    pub fn moving(&self) -> bool {
+        !self.position_buffer.is_empty()
+    }
+
+    pub fn just_finished_moving(&self) -> bool {
+        self.just_finished_moving
+    }
+
+    /// use position buffer to set current position
+    pub fn interpolate(&mut self, delta: Duration) {
+        if let Some(target) = self.position_buffer.first().cloned() {
+            if self.interpolation_time.as_millis() as f32 - delta.as_millis() as f32 <= 0. {
+                self.just_finished_moving = true;
+                self.position.x = target.x;
+                self.position.y = target.y;
+                self.position_buffer.remove(0);
+            } else {
+                self.just_finished_moving = false;
+            }
+            self.interpolation_time = self
+                .interpolation_time
+                .checked_sub(delta)
+                .unwrap_or(Duration::ZERO);
+            let interpolation_progress = 1. - self.interpolation_time.as_millis() as f32 / 200.;
+            let x = lerp(
+                &(self.position.x as f32),
+                &(target.x as f32),
+                &interpolation_progress,
+            );
+            let y = lerp(
+                &(self.position.y as f32),
+                &(target.y as f32),
+                &interpolation_progress,
+            );
+            self.render_position = (x * 32., y * 32.);
+
+            if self.just_finished_moving && !self.position_buffer.is_empty() {
+                self.interpolation_time = Duration::from_millis(200);
+                let direction = get_direction(&self.position, &self.position_buffer[0]);
+                self.change_direction(direction);
+            }
+        }
+    }
+
+    pub fn change_direction(&mut self, direction: Direction) {
+        self.animation.change_direction(direction);
+    }
+
+    pub fn move_to(&mut self, position: WorldPosition) {
+        if self.position_buffer.is_empty() {
+            self.interpolation_time = Duration::from_millis(200);
+            let direction = get_direction(&self.position, &position);
+            self.change_direction(direction);
+        }
+        self.position_buffer.push(position);
+        if self.position_buffer.len() >= 3 {
+            self.position_buffer.remove(0);
         }
     }
 
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let body = self.animation.get_body_frame();
-        let render_position = self.movement.world_position();
 
-        let x = (render_position.0 * 32.).floor() as u16;
-        let y = (render_position.1 * 32.).floor() as u16;
-        let z = calculate_z(2, render_position.0 as f32, render_position.1 as f32);
+        let render_position = self.render_position;
+
+        let x = render_position.0.floor() as u16;
+        let y = render_position.1.floor() as u16;
+        let z = calculate_z(2, render_position.0 / 32., render_position.1 / 32.);
 
         // draw shadow
         context.engine.draw_image(
@@ -328,13 +358,42 @@ impl Character {
             time: Duration::ZERO,
         });
     }
+
+    pub fn render_position(&self) -> (f32, f32) {
+        self.render_position
+    }
 }
 
-fn to_direction(direction: protocol::world::Direction) -> Direction {
-    match direction {
-        protocol::world::Direction::North => Direction::North,
-        protocol::world::Direction::East => Direction::East,
-        protocol::world::Direction::South => Direction::South,
-        protocol::world::Direction::West => Direction::West,
+impl Dialog {
+    pub fn update(&mut self, delta: Duration) {
+        self.time.add_assign(delta);
+    }
+
+    pub fn draw<E: GameEngine>(&self, engine: &mut E, mut position: Position) {
+        let fade = {
+            if self.time > self.effect_duration {
+                1.
+            } else {
+                self.time.as_millis() as f32 / self.effect_duration.as_millis() as f32
+            }
+        };
+        let color = shade(self.color, fade);
+
+        let y_offset = quad_bez(&0, &14, &20, &fade) as u16;
+        position.y += y_offset;
+
+        engine.draw_text(
+            self.font_id,
+            DrawText {
+                text: &self.text,
+                color,
+                position,
+            },
+            Target::World,
+        );
+    }
+
+    pub fn finished(&self) -> bool {
+        self.time.ge(&self.total_duration)
     }
 }

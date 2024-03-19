@@ -1,19 +1,19 @@
 [workspace]
-members = ["crates/*", "tooling/*"]
+members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-protocol = { path = "crates/protocol" }
 roma = { path = "crates/roma" }
 engine = { path = "crates/engine" }
 database = { path = "crates/database" }
-argentum = { path = "crates/argentum" }
+shared = { path = "crates/shared" }
 
 winit = "0.29"
 # async runtime
 tokio = { version = "1", features = ["full"] }
 
 # serializetion
+bincode = { git = "https://github.com/bincode-org/bincode.git", tag = "v2.0.0-rc.3" }
 serde = { version = "1.0", features = ["derive"] }
 serde_with = "3.4"
 toml = "0.8"
@@ -30,6 +30,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 webtransport = "0"
 wtransport = { version = "0.1", features = ["dangerous-configuration"] }
 
-bincode = { git = "https://github.com/bincode-org/bincode.git", tag = "v2.0.0-rc.3" }
 # [profile.release]
 # debug = true

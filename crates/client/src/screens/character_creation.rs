@@ -3,9 +3,10 @@ use engine::{
     engine::GameEngine,
     CursorIcon,
 };
-use protocol::{
-    character::{Class, Gender, Race},
-    client, server,
+use shared::character::{Class, Gender, Race};
+use shared::protocol::{
+    client::{self, ClientPacket},
+    server::{self, ServerPacket},
 };
 use tracing::info;
 
@@ -79,36 +80,43 @@ impl GameScreen for CharacterCreationScreen {
             let name = self.ui.name_input.text();
             context
                 .connection
-                .send(protocol::client::ClientPacket::Account(
-                    client::Account::CreateCharacter {
-                        name: name.to_string(),
-                        class: Class::VALUES[self.ui.selected_class].clone(),
-                        race: Race::VALUES[self.ui.selected_race].clone(),
-                        gender: Gender::VALUES[self.ui.selected_gender].clone(),
-                    },
-                ))
+                .send(ClientPacket::Account(client::Account::CreateCharacter {
+                    name: name.to_string(),
+                    class: Class::VALUES[self.ui.selected_class].clone(),
+                    race: Race::VALUES[self.ui.selected_race].clone(),
+                    gender: Gender::VALUES[self.ui.selected_gender].clone(),
+                }))
         } else {
             for message in messages {
-                match message {
-                    protocol::server::ServerPacket::Account(
-                        server::Account::CreateCharacterOk { character },
-                    ) => {
+                let mut remaining_messages = vec![];
+                let world = match message {
+                    ServerPacket::Account(server::Account::CreateCharacterOk {
+                        entity_id,
+                        character,
+                    }) => {
                         let character = entity::Character::from(context, character);
 
-                        context
-                            .screen_transition_sender
-                            .send(Screen::World(Box::new(WorldScreen::new(
-                                context, 0, character,
-                            ))))
-                            .expect("poisoned")
+                        let world = WorldScreen::new(context, entity_id, character);
+                        Some(world)
                     }
-                    protocol::server::ServerPacket::Account(
-                        server::Account::CreateCharacterFailed { reason },
-                    ) => {
+                    ServerPacket::Account(server::Account::CreateCharacterFailed { reason }) => {
                         info!("couldn't create character: {reason}");
                         self.creating = false;
+                        None
                     }
-                    _ => {}
+                    message => {
+                        remaining_messages.push(message);
+                        None
+                    }
+                };
+                if let Some(mut world) = world {
+                    for message in remaining_messages {
+                        world.process_message(message, context);
+                    }
+                    context
+                        .screen_transition_sender
+                        .send(Screen::World(Box::new(world)))
+                        .expect("poisoned");
                 }
             }
         }

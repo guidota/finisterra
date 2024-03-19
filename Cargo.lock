@@ -196,20 +196,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "argentum"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "byteorder",
- "ron",
- "rust-ini",
- "rustc-hash",
- "serde",
- "serde_with",
- "toml 0.8.2",
-]
-
-[[package]]
 name = "arrayref"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -825,20 +811,20 @@ checksum = "702fc72eb24e5a1e48ce58027a675bc24edd52096d5397d4aea7c6dd9eca0bd1"
 name = "client"
 version = "0.1.0"
 dependencies = [
- "argentum",
  "engine",
  "image 0.25.0",
  "interpolation",
  "itertools 0.12.1",
  "lazy_static",
  "nohash-hasher",
- "protocol",
  "rand",
  "random_name_generator",
  "roma",
  "ron",
  "rustc-hash",
  "serde",
+ "serde_with",
+ "shared",
  "tokio",
  "tokio-util",
  "toml 0.8.2",
@@ -1140,7 +1126,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "futures",
- "protocol",
+ "shared",
  "sqlx",
 ]
 
@@ -2260,17 +2246,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "map-migrator"
-version = "0.1.0"
-dependencies = [
- "argentum",
- "bincode",
- "ron",
- "serde",
- "toml 0.8.2",
-]
-
-[[package]]
 name = "matchers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2927,14 +2902,6 @@ checksum = "8021cf59c8ec9c432cfc2526ac6b8aa508ecaf29cd415f271b8406c1b851c3fd"
 dependencies = [
  "quote",
  "syn 2.0.52",
-]
-
-[[package]]
-name = "protocol"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "serde",
 ]
 
 [[package]]
@@ -3683,7 +3650,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "database",
- "protocol",
+ "nohash-hasher",
+ "shared",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -3719,6 +3687,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "byteorder",
+ "ron",
+ "rust-ini",
+ "rustc-hash",
+ "serde",
+ "serde_with",
+ "toml 0.8.2",
 ]
 
 [[package]]

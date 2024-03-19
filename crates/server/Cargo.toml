@@ -6,8 +6,9 @@ edition = "2021"
 [dependencies]
 wtransport.workspace = true
 database.workspace = true
-protocol.workspace = true
+shared.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 anyhow = "1.0"
+nohash-hasher = "0.2"

@@ -6,9 +6,9 @@ pub mod bar;
 pub mod button;
 pub mod colors;
 pub mod fonts;
-pub mod image;
 pub mod input_field;
 pub mod label;
+pub mod texture;
 pub mod textures;
 
 #[derive(Default, Debug)]

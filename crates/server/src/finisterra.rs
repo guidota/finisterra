@@ -2,11 +2,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use database::{model::CreateCharacter, Database};
-use protocol::{
+use shared::protocol::{
     client::{self, ClientPacket},
     server::{self, ServerPacket},
 };
-use tokio::sync::mpsc::{channel, Sender};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
 use crate::{
     accounts::{AccountEvent, Accounts},
@@ -21,21 +21,18 @@ pub struct Finisterra {
 
     users: HashMap<u32, User>,
 
-    outcoming_messages_sender: Sender<(u32, ServerPacket)>,
+    outcoming_messages_sender: UnboundedSender<(u32, ServerPacket)>,
 }
 
-pub struct User {
-    state: UserState,
-}
-
-pub enum UserState {
+pub enum User {
     Connected,
     InAccount {
         account_name: String,
         character_names: Vec<String>,
     },
     InWorld {
-        character: String,
+        // character: String,
+        entity_id: u32,
     },
 }
 
@@ -45,7 +42,7 @@ impl Finisterra {
 
         // world will produce ServerPackets to be send to the users and the server will consume
         // and send them to the corresponding users
-        let (sender, receiver) = channel(3000);
+        let (sender, receiver) = unbounded_channel();
 
         let server = Server::initialize(receiver).await?;
         let world = World::initialize(sender.clone());
@@ -70,17 +67,21 @@ impl Finisterra {
         }
     }
 
+    async fn send(&mut self, connection_id: u32, packet: ServerPacket) {
+        self.outcoming_messages_sender
+            .send((connection_id, packet))
+            .expect("poisoned")
+    }
+
     async fn update_connections(&mut self) {
         let (connections, disconnections) = self.server.update_connections().await;
         for connection_id in connections {
-            self.users.insert(
-                connection_id,
-                User {
-                    state: UserState::Connected,
-                },
-            );
+            self.users.insert(connection_id, User::Connected);
         }
         for connection_id in disconnections {
+            if let Some(User::InWorld { entity_id }) = self.users.get(&connection_id) {
+                self.world.remove_character(entity_id).await;
+            }
             self.users.remove(&connection_id);
         }
 
@@ -93,32 +94,26 @@ impl Finisterra {
                 } => {
                     self.users.insert(
                         connection_id,
-                        User {
-                            state: UserState::InAccount {
-                                account_name: account_name.clone(),
-                                character_names: vec![],
-                            },
+                        User::InAccount {
+                            account_name: account_name.clone(),
+                            character_names: vec![],
                         },
                     );
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::Created { account_name }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                    self.send(
+                        connection_id,
+                        ServerPacket::Account(server::Account::Created { account_name }),
+                    )
+                    .await;
                 }
                 AccountEvent::CreateFailed {
                     connection_id,
                     reason,
                 } => {
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::CreateFailed { reason }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                    self.send(
+                        connection_id,
+                        ServerPacket::Account(server::Account::CreateFailed { reason }),
+                    )
+                    .await;
                 }
                 AccountEvent::LoginAccountOk {
                     connection_id,
@@ -131,11 +126,9 @@ impl Finisterra {
                         .collect();
                     self.users.insert(
                         connection_id,
-                        User {
-                            state: UserState::InAccount {
-                                account_name,
-                                character_names,
-                            },
+                        User::InAccount {
+                            account_name,
+                            character_names,
                         },
                     );
 
@@ -143,180 +136,164 @@ impl Finisterra {
                     for character in characters {
                         account_characters.push(character.into());
                     }
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::LoginOk {
-                                characters: account_characters,
-                            }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                    self.send(
+                        connection_id,
+                        ServerPacket::Account(server::Account::LoginOk {
+                            characters: account_characters,
+                        }),
+                    )
+                    .await;
                 }
                 AccountEvent::LoginAccountFailed { connection_id } => {
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::LoginFailed),
-                        ))
-                        .await
-                        .expect("poisoned");
+                    self.send(
+                        connection_id,
+                        ServerPacket::Account(server::Account::LoginFailed),
+                    )
+                    .await;
                 }
                 AccountEvent::LoginCharacterOk {
                     connection_id,
                     character,
                 } => {
-                    self.users.insert(
+                    let character = character.into();
+                    let entity_id = self.world.create_character(&character);
+                    self.users
+                        .insert(connection_id, User::InWorld { entity_id });
+                    self.send(
                         connection_id,
-                        User {
-                            state: UserState::InWorld {
-                                character: character.name.to_string(),
-                            },
-                        },
-                    );
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::LoginCharacterOk {
-                                character: character.into(),
-                            }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                        ServerPacket::Account(server::Account::LoginCharacterOk {
+                            entity_id,
+                            character: character.clone(),
+                        }),
+                    )
+                    .await;
+                    self.world.notify_new_character(entity_id, &character).await;
                 }
                 AccountEvent::LoginCharacterFailed { connection_id } => {
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::LoginCharacterFailed {
-                                reason: "Invalid character".to_string(),
-                            }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                    self.send(
+                        connection_id,
+                        ServerPacket::Account(server::Account::LoginCharacterFailed {
+                            reason: "Invalid character".to_string(),
+                        }),
+                    )
+                    .await;
                 }
                 AccountEvent::CreateCharacterOk {
                     connection_id,
                     character,
                 } => {
-                    self.users.insert(
+                    let character = character.into();
+                    let entity_id = self.world.create_character(&character);
+                    self.users
+                        .insert(connection_id, User::InWorld { entity_id });
+                    self.send(
                         connection_id,
-                        User {
-                            state: UserState::InWorld {
-                                character: character.name.to_string(),
-                            },
-                        },
-                    );
-                    self.outcoming_messages_sender
-                        .send((
-                            connection_id,
-                            ServerPacket::Account(server::Account::CreateCharacterOk {
-                                character: character.into(),
-                            }),
-                        ))
-                        .await
-                        .expect("poisoned");
+                        ServerPacket::Account(server::Account::CreateCharacterOk {
+                            entity_id,
+                            character: character.clone(),
+                        }),
+                    )
+                    .await;
+                    self.world.notify_new_character(entity_id, &character).await;
                 }
                 AccountEvent::CreateCharacterFailed {
                     connection_id,
                     reason,
-                } => self
-                    .outcoming_messages_sender
-                    .send((
+                } => {
+                    self.send(
                         connection_id,
                         ServerPacket::Account(server::Account::CreateCharacterFailed { reason }),
-                    ))
+                    )
                     .await
-                    .expect("poisoned"),
+                }
             }
         }
     }
 
     async fn process_incoming_messages(&mut self) {
-        let incoming_messages = self.server.poll_incoming_messages().await;
+        let incoming_messages = self.server.read_incoming_messages().await;
 
         for (connection_id, message) in incoming_messages {
-            match message {
-                ClientPacket::Account(message) => match message {
-                    client::Account::CreateAccount {
-                        name,
-                        email,
-                        password,
-                        pin,
-                    } => {
-                        self.accounts
-                            .create(connection_id, &name, &email, &password, pin)
-                            .await
-                    }
-                    client::Account::LoginAccount { name, password } => {
-                        self.accounts.login(connection_id, &name, &password).await
-                    }
-                    client::Account::LoginCharacter { character } => {
-                        if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount {
-                                character_names, ..
-                            } = &user.state
-                            {
-                                if character_names.contains(&character) {
-                                    self.accounts.enter(connection_id, &character).await
-                                }
-                            }
-                        }
-                    }
-                    client::Account::CreateCharacter {
-                        name,
-                        class,
-                        race,
-                        gender,
-                    } => {
-                        if let Some(user) = self.users.get(&connection_id) {
-                            if let UserState::InAccount { account_name, .. } = &user.state {
-                                let create_character = CreateCharacter {
-                                    name,
-                                    class_id: class.id() as i32,
-                                    race_id: race.id() as i32,
-                                    gender_id: gender.id() as i32,
-                                    // TODO: hardcoded
-                                    map: 1,
-                                    x: 50,
-                                    y: 50,
-                                    attributes: database::model::Attributes {
-                                        strength: 18,
-                                        agility: 18,
-                                        intelligence: 18,
-                                        charisma: 18,
-                                        constitution: 18,
-                                    },
-                                    statistics: database::model::Statistics {
-                                        health: 20,
-                                        mana: 100,
-                                        stamina: 100,
-                                        max_health: 20,
-                                        max_mana: 100,
-                                        max_stamina: 100,
-                                    },
-                                    look: database::model::Look::default(),
-                                    equipment: database::model::Equipment::default(),
-                                };
-                                self.accounts
-                                    .create_character(connection_id, account_name, create_character)
-                                    .await
-                            }
-                        }
-                    }
-                    client::Account::DeleteCharacter { .. } => todo!(),
-                },
-                ClientPacket::UserAction(_) => todo!(),
-                ClientPacket::Bank(_) => todo!(),
-                ClientPacket::Commerce(_) => todo!(),
-                ClientPacket::Pet(_) => todo!(),
-                ClientPacket::Request(_) => todo!(),
+            if let ClientPacket::Account(message) = message {
+                self.process_account_event(connection_id, message).await;
+            } else if let Some(User::InWorld { entity_id }) = self.users.get(&connection_id) {
+                self.world
+                    .process_incoming_message(*entity_id, message)
+                    .await;
             }
         }
     }
 
+    async fn process_account_event(&mut self, connection_id: u32, message: client::Account) {
+        match message {
+            client::Account::CreateAccount {
+                name,
+                email,
+                password,
+                pin,
+            } => {
+                self.accounts
+                    .create(connection_id, &name, &email, &password, pin)
+                    .await
+            }
+            client::Account::LoginAccount { name, password } => {
+                self.accounts.login(connection_id, &name, &password).await
+            }
+            client::Account::LoginCharacter { character } => {
+                if let Some(User::InAccount {
+                    character_names, ..
+                }) = self.users.get(&connection_id)
+                {
+                    if character_names.contains(&character) {
+                        self.accounts.enter(connection_id, &character).await
+                    }
+                }
+            }
+            client::Account::CreateCharacter {
+                name,
+                class,
+                race,
+                gender,
+            } => {
+                if let Some(User::InAccount { account_name, .. }) = self.users.get(&connection_id) {
+                    let create_character = CreateCharacter {
+                        name,
+                        class_id: class.id() as i32,
+                        race_id: race.id() as i32,
+                        gender_id: gender.id() as i32,
+                        // TODO: hardcoded
+                        map: 1,
+                        x: 50,
+                        y: 50,
+                        attributes: database::model::Attributes {
+                            strength: 18,
+                            agility: 18,
+                            intelligence: 18,
+                            charisma: 18,
+                            constitution: 18,
+                        },
+                        statistics: database::model::Statistics {
+                            health: 20,
+                            mana: 100,
+                            stamina: 100,
+                            max_health: 20,
+                            max_mana: 100,
+                            max_stamina: 100,
+                        },
+                        look: database::model::Look::default(),
+                        equipment: database::model::Equipment::default(),
+                    };
+                    self.accounts
+                        .create_character(connection_id, account_name, create_character)
+                        .await
+                }
+            }
+            client::Account::DeleteCharacter { .. } => todo!(),
+        }
+    }
+
     async fn update_world(&mut self) {
-        self.world.tick();
+        self.world.tick().await;
     }
 
     async fn send_outcoming_messages(&mut self) {

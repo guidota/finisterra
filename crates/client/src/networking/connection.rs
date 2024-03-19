@@ -2,14 +2,14 @@ use std::{
     fmt::Display,
     ops::{Add, Sub},
     sync::mpsc::{channel, Receiver, Sender, TryRecvError},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use engine::{
     draw::{text::DrawText, Position, Target},
     engine::GameEngine,
 };
-use protocol::{client::ClientPacket, server::ServerPacket, ProtocolMessage};
+use shared::protocol::{client::ClientPacket, server::ServerPacket, ProtocolMessage};
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
 use wtransport::{ClientConfig, Endpoint};
@@ -46,6 +46,8 @@ struct Connection {
 
     outgoing_messages_sender: Sender<ClientPacket>,
     incoming_messages_receiver: Receiver<ServerPacket>,
+
+    last_recv: Instant,
 
     cancellation_token: CancellationToken,
 }
@@ -122,6 +124,11 @@ impl ConnectionState {
 
         if let State::Connected { connection } = &mut self.state {
             loop {
+                let now = Instant::now();
+                if now - connection.last_recv < Duration::from_millis(0) {
+                    break;
+                }
+                connection.last_recv = now;
                 match connection.incoming_messages_receiver.try_recv() {
                     Ok(message) => messages.push(message),
                     Err(TryRecvError::Disconnected) => {
@@ -136,6 +143,8 @@ impl ConnectionState {
             self.close();
             self.state = State::Disconnected;
         }
+
+        messages.reverse();
 
         messages
     }
@@ -207,7 +216,8 @@ impl Connection {
                     match connection_receiver.read(&mut buffer).await {
                         Ok(Some(bytes_read)) => {
                             if let Some(message) = ServerPacket::decode(&buffer[..bytes_read]) {
-                                info!("server <= {message:#?}");
+                                info!("server <= \n {message:?}");
+
                                 if incoming_messages_sender.send(message).is_err() {
                                     error!("poisoned");
                                 }
@@ -229,12 +239,19 @@ impl Connection {
         tokio::spawn({
             let token = cancellation_token.clone();
             async move {
+                let mut last_send = Instant::now();
                 loop {
                     if token.is_cancelled() {
                         break;
                     }
+                    let now = Instant::now();
+                    if now - last_send < Duration::from_millis(0) {
+                        continue;
+                    }
+                    last_send = now;
+
                     if let Ok(message) = outgoing_messages_receiver.recv() {
-                        info!("server => {message:#?}");
+                        info!("server => \n {message:?}");
                         if let Some(bytes) = message.encode() {
                             if connection_sender.write_all(&bytes).await.is_err() {
                                 error!("failed to send message to server");
@@ -256,6 +273,8 @@ impl Connection {
             outgoing_messages_sender,
             incoming_messages_receiver,
             cancellation_token,
+
+            last_recv: Instant::now(),
         })
     }
 

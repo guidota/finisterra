@@ -2,6 +2,7 @@ use engine::game::run_game;
 use game::Finisterra;
 use roma::Roma;
 
+mod argentum;
 mod game;
 pub mod networking;
 pub mod resources;

@@ -1,4 +1,9 @@
-use argentum::image::Image;
+use std::{
+    cmp::Ordering,
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
+
 use engine::{
     camera::{self, Viewport, Zoom},
     draw::{image::DrawImage, Position, Target},
@@ -8,9 +13,17 @@ use engine::{
 };
 use itertools::iproduct;
 use nohash_hasher::IntMap;
-use protocol::movement::{KeyPressed, KeyReleased};
+use shared::{
+    protocol::{
+        client::{Action, ClientPacket},
+        movement::{next_position, MoveRequest},
+        server::{CharacterUpdate, ServerPacket},
+    },
+    world::{Direction, WorldPosition},
+};
 
 use crate::{
+    argentum::Image,
     game::Context,
     ui::{colors::*, input_field::InputField},
     ui::{fonts::*, UI},
@@ -31,8 +44,14 @@ pub struct WorldScreen {
 
     entities: IntMap<u32, Entity>,
 
-    me: u32,
-    key_counter: u8,
+    // client entity
+    entity_id: u32,
+
+    // client side prediction
+    input: VecDeque<Direction>,
+    movement_sequence: u8,
+    predictions: Vec<(u8, WorldPosition)>,
+    last_move: Instant,
 }
 
 const SCREEN_WIDTH: u16 = 800;
@@ -62,8 +81,131 @@ impl WorldScreen {
         Self {
             hud: ui,
             entities,
-            me: entity_id,
-            key_counter: 0,
+            entity_id,
+            movement_sequence: 0,
+            predictions: vec![],
+            input: VecDeque::new(),
+            last_move: Instant::now(),
+        }
+    }
+
+    fn process_messages<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let messages = context.connection.read();
+        for message in messages {
+            self.process_message(message, context);
+        }
+    }
+
+    pub fn process_message<E: GameEngine>(
+        &mut self,
+        message: ServerPacket,
+        context: &mut Context<E>,
+    ) {
+        match message {
+            ServerPacket::Intervals => todo!(),
+            ServerPacket::Connection(_) => todo!(),
+            ServerPacket::Account(_) => todo!(),
+            ServerPacket::CharacterUpdate(update) => match update {
+                CharacterUpdate::Create {
+                    entity_id,
+                    character,
+                } => {
+                    let entity = Entity::Character(Character::from(context, character));
+                    self.entities.insert(entity_id, entity);
+                }
+                CharacterUpdate::Remove { entity_id } => {
+                    self.entities.remove(&entity_id);
+                }
+                CharacterUpdate::Move {
+                    entity_id,
+                    position,
+                } => {
+                    let Some(Entity::Character(character)) = self.entities.get_mut(&entity_id)
+                    else {
+                        return;
+                    };
+
+                    character.move_to(position);
+                }
+                CharacterUpdate::MoveResponse {
+                    request_id,
+                    position,
+                } => {
+                    let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id)
+                    else {
+                        return;
+                    };
+                    // remove old predictions
+                    let mut to_remove = vec![];
+                    for (i, prediction) in self.predictions.iter().enumerate() {
+                        match prediction.0.cmp(&request_id) {
+                            Ordering::Less => {
+                                to_remove.push(i);
+                            }
+                            Ordering::Equal => {
+                                let predicted_position = prediction.1;
+                                if predicted_position != position {
+                                    tracing::error!("move {request_id} prediction was wrong");
+                                    tracing::info!(
+                                        "prediction {predicted_position:?} - server say {position:?}"
+                                    );
+
+                                    let do_correct = {
+                                        if let Some(move_to) = character.position_buffer.first() {
+                                            if move_to == &predicted_position {
+                                                character.position_buffer[0] = position;
+                                                false
+                                            } else {
+                                                true
+                                            }
+                                        } else {
+                                            true
+                                        }
+                                    };
+
+                                    if do_correct {
+                                        if predicted_position.x < position.x {
+                                            character.position.x += 1;
+                                            character.render_position.0 += 1.;
+                                        } else if predicted_position.x > position.x {
+                                            character.position.x -= 1;
+                                            character.render_position.0 -= 1.;
+                                        } else if predicted_position.y < position.y {
+                                            character.position.y += 1;
+                                            character.render_position.1 += 1.;
+                                        } else if predicted_position.y > position.y {
+                                            character.position.y -= 1;
+                                            character.render_position.1 -= 1.;
+                                        }
+                                    }
+                                } else {
+                                    tracing::info!("move prediction was ok");
+                                }
+                                to_remove.push(i);
+                            }
+                            Ordering::Greater => {}
+                        }
+                    }
+                    for i in to_remove.iter().rev() {
+                        self.predictions.remove(*i);
+                    }
+                }
+                CharacterUpdate::Heading {
+                    entity_id,
+                    direction,
+                } => {
+                    let Some(Entity::Character(character)) = self.entities.get_mut(&entity_id)
+                    else {
+                        return;
+                    };
+                    character.animation.change_direction(direction);
+                }
+                _ => {}
+            },
+            ServerPacket::UserUpdate(_) => todo!(),
+            ServerPacket::Event(_) => todo!(),
+            ServerPacket::Object(_) => todo!(),
+            ServerPacket::Message(_) => todo!(),
         }
     }
 
@@ -100,16 +242,22 @@ impl WorldScreen {
     }
 
     fn update_character<E: GameEngine>(&mut self, context: &mut Context<'_, E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            character.update(context.engine);
+        for (_, entity) in self.entities.iter_mut() {
+            entity.update(context.engine);
+        }
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
             // camera follows main character
-            let world_position = character.movement.world_position();
-            context.engine.set_world_camera_position(camera::Position {
-                x: (world_position.0 * 32.).floor() as f32,
-                y: (world_position.1 * 32.).floor() as f32,
-            });
+            let x = character.render_position.0.floor();
+            let y = character.render_position.1.floor();
+            context
+                .engine
+                .set_world_camera_position(camera::Position { x, y });
 
             self.hud.update_character(context, character);
+            if !character.moving() && !self.input.is_empty() || character.just_finished_moving() {
+                // check input and start new move
+                self.start_move(context);
+            }
         }
     }
 
@@ -133,7 +281,8 @@ impl WorldScreen {
                 if let Some(input) = self.hud.message_input.as_mut() {
                     let message = input.text();
                     if !message.is_empty() {
-                        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me)
+                        if let Some(Entity::Character(character)) =
+                            self.entities.get_mut(&self.entity_id)
                         {
                             character.add_dialog(
                                 context.engine,
@@ -164,14 +313,18 @@ impl WorldScreen {
     }
 
     fn draw_entities<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            character.draw(context);
+        for (_, entity) in self.entities.iter_mut() {
+            match entity {
+                Entity::Character(character) => {
+                    character.draw(context);
+                }
+            }
         }
     }
 
     fn draw_map<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            let position = &character.movement.tile_position();
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
+            let position = &character.position;
             if let Some(map) = context.resources.maps.get(&(position.map as usize)) {
                 let extra_tiles = 5;
                 let x_start = (position.x - (17 / 2) - extra_tiles) as usize;
@@ -235,59 +388,39 @@ impl WorldScreen {
     }
 
     fn process_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
-            if context.engine.key_pressed(KeyCode::ArrowUp) {
-                self.key_counter += 1;
-                character.movement.key_pressed(KeyPressed {
-                    key_id: self.key_counter,
-                    direction: protocol::world::Direction::North,
-                });
+        let mut push = |direction| {
+            if !self.input.contains(&direction) {
+                self.input.push_front(direction);
             }
-            if context.engine.key_pressed(KeyCode::ArrowDown) {
-                self.key_counter += 1;
-                character.movement.key_pressed(KeyPressed {
-                    key_id: self.key_counter,
-                    direction: protocol::world::Direction::South,
-                });
-            }
-            if context.engine.key_pressed(KeyCode::ArrowRight) {
-                self.key_counter += 1;
-                character.movement.key_pressed(KeyPressed {
-                    key_id: self.key_counter,
-                    direction: protocol::world::Direction::East,
-                });
-            }
-            if context.engine.key_pressed(KeyCode::ArrowLeft) {
-                self.key_counter += 1;
-                character.movement.key_pressed(KeyPressed {
-                    key_id: self.key_counter,
-                    direction: protocol::world::Direction::West,
-                });
-            }
-            if context.engine.key_released(KeyCode::ArrowUp) {
-                character.movement.key_released(KeyReleased {
-                    direction: protocol::world::Direction::North,
-                });
-            }
-            if context.engine.key_released(KeyCode::ArrowDown) {
-                character.movement.key_released(KeyReleased {
-                    direction: protocol::world::Direction::South,
-                });
-            }
-            if context.engine.key_released(KeyCode::ArrowLeft) {
-                character.movement.key_released(KeyReleased {
-                    direction: protocol::world::Direction::West,
-                });
-            }
-            if context.engine.key_released(KeyCode::ArrowRight) {
-                character.movement.key_released(KeyReleased {
-                    direction: protocol::world::Direction::East,
-                });
-            }
+        };
+
+        if context.engine.key_pressed(KeyCode::ArrowUp) {
+            push(Direction::North);
+        }
+        if context.engine.key_pressed(KeyCode::ArrowDown) {
+            push(Direction::South);
+        }
+        if context.engine.key_pressed(KeyCode::ArrowRight) {
+            push(Direction::East);
+        }
+        if context.engine.key_pressed(KeyCode::ArrowLeft) {
+            push(Direction::West);
+        }
+        if context.engine.key_released(KeyCode::ArrowUp) {
+            self.input.retain(|dir| dir != &Direction::North);
+        }
+        if context.engine.key_released(KeyCode::ArrowDown) {
+            self.input.retain(|dir| dir != &Direction::South);
+        }
+        if context.engine.key_released(KeyCode::ArrowRight) {
+            self.input.retain(|dir| dir != &Direction::East);
+        }
+        if context.engine.key_released(KeyCode::ArrowLeft) {
+            self.input.retain(|dir| dir != &Direction::West);
         }
 
         if context.engine.key_pressed(KeyCode::KeyH) {
-            if let Some(Entity::Character(character)) = self.entities.get_mut(&self.me) {
+            if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
                 character.add_dialog(
                     context.engine,
                     "Rahma Nañarak O'al",
@@ -297,10 +430,43 @@ impl WorldScreen {
             }
         }
     }
+
+    fn start_move<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
+            let elapsed_since_last_move = Instant::now() - self.last_move;
+            let latency = context.connection.ping();
+            let was_idle_but_wants_to_move = !character.moving() && !self.input.is_empty();
+
+            if (was_idle_but_wants_to_move || character.just_finished_moving())
+                && elapsed_since_last_move >= Duration::from_millis(200 - latency as u64)
+            {
+                if let Some(direction) = self.input.front() {
+                    tracing::info!(
+                        "starting move {}, last move was {}ms ago",
+                        self.movement_sequence,
+                        elapsed_since_last_move.as_millis()
+                    );
+                    let position = next_position(&character.position, *direction);
+                    character.change_direction(*direction);
+                    character.move_to(position);
+                    self.last_move = Instant::now();
+                    self.predictions.push((self.movement_sequence, position));
+                    context
+                        .connection
+                        .send(ClientPacket::UserAction(Action::Move(MoveRequest {
+                            id: self.movement_sequence,
+                            direction: *direction,
+                        })));
+                    self.movement_sequence += 1;
+                }
+            }
+        }
+    }
 }
 
 impl GameScreen for WorldScreen {
     fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.process_messages(context);
         self.process_input(context);
 
         self.prepare_viewports(context.engine);
@@ -323,7 +489,19 @@ impl GameScreen for WorldScreen {
 fn calculate_z(layer: usize, x: f32, y: f32) -> f32 {
     match layer {
         0 => 0.,
-        3 => 1.,
+        3 => 0.99,
         i => (i as f32 * 1000. + (100. - y) * 10. - x) / 4000.,
+    }
+}
+
+fn get_direction(pos_1: &WorldPosition, pos_2: &WorldPosition) -> Direction {
+    if pos_2.x > pos_1.x {
+        Direction::East
+    } else if pos_2.x < pos_1.x {
+        Direction::West
+    } else if pos_2.y > pos_1.y {
+        Direction::North
+    } else {
+        Direction::South
     }
 }

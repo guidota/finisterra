@@ -2,20 +2,21 @@ use engine::engine::GameEngine;
 
 use crate::game::Context;
 
+use crate::ui::fonts::TAHOMA_REGULAR_8_ID;
 use crate::ui::{
-    colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID, image::Image, label::Label, Alignment, Widget,
+    colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID, label::Label, texture::Texture, Alignment, Widget,
 };
 
 pub struct Inventory {
-    background: Image,
+    background: Texture,
     slots: Vec<InventorySlot>,
     pub position: (u16, u16), // top left
     visible: bool,
 }
 
 pub struct InventorySlot {
-    background: Image,
-    item: Option<Image>,
+    background: Texture,
+    item: Option<Texture>,
     amount: Label,
     equipped: Label,
     position: (u16, u16),
@@ -28,7 +29,7 @@ const GRID_SIZE: usize = 6;
 
 impl Inventory {
     pub fn initialize<E: GameEngine>(context: &mut Context<E>) -> Self {
-        let background = Image::new(context.resources.textures.inventory_list, WHITE, (0, 0));
+        let background = Texture::new(context.resources.textures.inventory_list, WHITE, (0, 0));
 
         let mut slots = vec![];
         for _ in 0..(GRID_SIZE * GRID_SIZE) {
@@ -94,8 +95,8 @@ impl InventorySlot {
         let mut color = GRAY_2;
         color[3] = 0;
 
-        let background = Image::new(context.resources.textures.inventory_slot, color, (0, 0));
-        let amount = Label::from("9999", TAHOMA_BOLD_8_SHADOW_ID, GRAY_4, context.engine);
+        let background = Texture::new(context.resources.textures.inventory_slot, color, (0, 0));
+        let amount = Label::from("123", TAHOMA_REGULAR_8_ID, GRAY_4, context.engine);
         let equipped = Label::from("+", TAHOMA_BOLD_8_SHADOW_ID, YELLOW, context.engine);
         let position = (0, 0);
         Self {
@@ -120,13 +121,13 @@ impl Widget for InventorySlot {
 
         self.amount.position = (
             self.position.0 + SLOT_SIZE - 3,
-            self.position.1 + self.amount.parsed_text.height - 3,
+            self.position.1 + SLOT_SIZE - 4,
         );
         self.amount.alignment = Alignment::Right;
 
         self.equipped.position = (
             self.position.0 + SLOT_SIZE - 3,
-            self.position.1 + SLOT_SIZE - 4,
+            self.position.1 + self.amount.parsed_text.height - 3,
         );
         self.equipped.alignment = Alignment::Right;
     }

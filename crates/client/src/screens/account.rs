@@ -3,11 +3,10 @@ use engine::draw::Position;
 use engine::draw::Target;
 use engine::engine::GameEngine;
 use engine::CursorIcon;
-use protocol::character;
-use protocol::client;
-use protocol::client::ClientPacket;
-use protocol::server;
-use protocol::server::ServerPacket;
+use shared::character;
+use shared::protocol::client::{self, ClientPacket};
+use shared::protocol::server::{self, ServerPacket};
+use tracing::error;
 use tracing::info;
 
 use crate::game::Context;
@@ -100,23 +99,36 @@ impl GameScreen for AccountScreen {
                     }));
             }
         } else {
+            let mut remaining_messages = vec![];
+            let mut world: Option<WorldScreen> = None;
             for message in messages {
                 match message {
-                    ServerPacket::Account(server::Account::LoginCharacterOk { character }) => {
+                    ServerPacket::Account(server::Account::LoginCharacterOk {
+                        entity_id,
+                        character,
+                    }) => {
                         let character = entity::Character::from(context, character);
-                        context
-                            .screen_transition_sender
-                            .send(Screen::World(Box::new(WorldScreen::new(
-                                context, 0, character,
-                            ))))
-                            .expect("poisoned")
+                        world = Some(WorldScreen::new(context, entity_id, character));
                     }
                     ServerPacket::Account(server::Account::LoginCharacterFailed { reason }) => {
                         info!("login character failed {reason}");
                         self.connecting = false;
                     }
-                    _ => {}
+                    message => {
+                        error!("remaining message {message:?}");
+                        remaining_messages.push(message);
+                    }
+                };
+            }
+            if let Some(mut world) = world {
+                for message in remaining_messages {
+                    error!("processing missing message {message:?}");
+                    world.process_message(message, context);
                 }
+                context
+                    .screen_transition_sender
+                    .send(Screen::World(Box::new(world)))
+                    .expect("poisoned");
             }
         }
     }
@@ -188,10 +200,8 @@ impl UI for AccountUI {
             slot.button().update(context);
 
             if let Slot::Char { character, .. } = slot {
-                character.movement.position.x = 0;
-                character.movement.position.y = 0;
-                character.movement.moving_position.0 = x as f64 / 32.;
-                character.movement.moving_position.1 = (center_y + 2) as f64 / 32.;
+                character.render_position.0 = x as f32;
+                character.render_position.1 = (center_y + 2) as f32;
                 if slot.button().clicked() {
                     slot.button().select();
                     self.selected = Some(i);

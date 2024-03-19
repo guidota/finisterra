@@ -1,12 +1,13 @@
-use protocol::{
+use shared::character;
+use shared::protocol::ProtocolMessage;
+use shared::{
     character::{Class, Inventory, Race, Skills, Stat, Stats},
     world::WorldPosition,
-    ProtocolMessage,
 };
 
 use crate::model::{self};
 
-impl From<model::Character> for protocol::character::Character {
+impl From<model::Character> for character::Character {
     fn from(character: model::Character) -> Self {
         Self {
             name: character.name,
@@ -47,7 +48,7 @@ impl From<model::Character> for protocol::character::Character {
     }
 }
 
-impl From<model::Attributes> for protocol::character::Attributes {
+impl From<model::Attributes> for character::Attributes {
     fn from(value: model::Attributes) -> Self {
         Self {
             strength: value.strength as u16,
@@ -59,7 +60,7 @@ impl From<model::Attributes> for protocol::character::Attributes {
     }
 }
 
-impl From<model::Equipment> for protocol::character::Equipment {
+impl From<model::Equipment> for character::Equipment {
     fn from(value: model::Equipment) -> Self {
         Self {
             weapon: value.weapon.map(|value| value as u8),
@@ -70,7 +71,7 @@ impl From<model::Equipment> for protocol::character::Equipment {
     }
 }
 
-impl From<model::Look> for protocol::character::Look {
+impl From<model::Look> for character::Look {
     fn from(value: model::Look) -> Self {
         Self {
             body: value.body as u8,
@@ -81,7 +82,7 @@ impl From<model::Look> for protocol::character::Look {
     }
 }
 
-impl From<model::CharacterPreview> for protocol::character::CharacterPreview {
+impl From<model::CharacterPreview> for character::CharacterPreview {
     fn from(character: model::CharacterPreview) -> Self {
         Self {
             name: character.name,

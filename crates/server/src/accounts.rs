@@ -188,11 +188,12 @@ impl Accounts {
                         })
                         .await
                         .expect("poisoned");
+                } else {
+                    account_events_sender
+                        .send(AccountEvent::LoginCharacterFailed { connection_id })
+                        .await
+                        .expect("poisoned");
                 }
-                account_events_sender
-                    .send(AccountEvent::LoginCharacterFailed { connection_id })
-                    .await
-                    .expect("poisoned");
             }
         });
     }

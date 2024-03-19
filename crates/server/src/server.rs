@@ -1,9 +1,9 @@
 use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 use anyhow::Result;
-use protocol::{client::ClientPacket, server::ServerPacket, ProtocolMessage};
+use shared::protocol::{client::ClientPacket, server::ServerPacket, ProtocolMessage};
 use tokio::sync::{
-    mpsc::{channel, Receiver},
+    mpsc::{channel, Receiver, UnboundedReceiver},
     Mutex,
 };
 use tracing::{error, info};
@@ -22,14 +22,14 @@ enum ConnectionEvent {
 pub struct Server {
     connection_events_receiver: Receiver<ConnectionEvent>,
     incoming_messages_receiver: Receiver<(u32, ClientPacket)>,
-    outcoming_messages_receiver: Receiver<(u32, ServerPacket)>,
+    outcoming_messages_receiver: UnboundedReceiver<(u32, ServerPacket)>,
 
     streams: Arc<Mutex<HashMap<u32, SendStream>>>,
 }
 
 impl Server {
     pub async fn initialize(
-        outcoming_messages_receiver: Receiver<(u32, ServerPacket)>,
+        outcoming_messages_receiver: UnboundedReceiver<(u32, ServerPacket)>,
     ) -> Result<Self> {
         let args: Vec<String> = env::args().collect();
 
@@ -40,7 +40,7 @@ impl Server {
 
         let certificate = Certificate::self_signed(["localhost"]);
         let config = ServerConfig::builder()
-            .with_bind_config(IpBindConfig::LocalDual, port)
+            .with_bind_config(IpBindConfig::InAddrAnyV4, port)
             .with_certificate(certificate)
             .keep_alive_interval(Some(Duration::from_secs(3)))
             .build();
@@ -132,7 +132,7 @@ impl Server {
         (connections, disconnections)
     }
 
-    pub async fn poll_incoming_messages(&mut self) -> Vec<(u32, ClientPacket)> {
+    pub async fn read_incoming_messages(&mut self) -> Vec<(u32, ClientPacket)> {
         let mut messages = vec![];
         while let Ok(incoming_message) = self.incoming_messages_receiver.try_recv() {
             messages.push(incoming_message);
@@ -160,6 +160,8 @@ impl Server {
                         } else {
                             error!("failed to encode message before sending to client");
                         }
+                    } else {
+                        error!("couldn't get lock for stream {connection_id}");
                     }
                 }
             }

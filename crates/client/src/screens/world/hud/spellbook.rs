@@ -15,7 +15,7 @@ use crate::game::Context;
 use crate::ui::button::{Button, ButtonBuilder};
 use crate::ui::colors::*;
 use crate::ui::fonts::*;
-use crate::ui::image::Image;
+use crate::ui::texture::Texture;
 use crate::ui::{Alignment, Widget};
 
 const LIST_HEIGHT: u16 = 195;
@@ -25,7 +25,7 @@ const SPELLS_TO_SHOW: u16 = LIST_HEIGHT / LINE_HEIGHT;
 const TOTAL_SPELLS: usize = 30;
 
 pub struct Spellbook {
-    background: Image,
+    background: Texture,
 
     visible: bool,
     cast_button: Button,
@@ -47,7 +47,7 @@ pub struct Spell {
 
 impl Spellbook {
     pub fn initialize<E: GameEngine>(context: &mut Context<E>) -> Self {
-        let background = Image::new(context.resources.textures.spells_list, WHITE, (0, 0));
+        let background = Texture::new(context.resources.textures.spells_list, WHITE, (0, 0));
         let cast_button = ButtonBuilder::new()
             .texture_id(context.resources.textures.lanzar_button)
             .alignment(Alignment::Left)
