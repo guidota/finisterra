@@ -151,8 +151,8 @@ impl Server {
 
             async move {
                 for (connection_id, message) in outcoming_messages {
-                    info!("connection {connection_id} => {message:#?}");
                     if let Some(stream) = streams.lock().await.get_mut(&connection_id) {
+                        info!("connection {connection_id} => {message:#?}");
                         if let Some(bytes) = message.encode() {
                             if stream.write_all(&bytes).await.is_err() {
                                 error!("failed to send message to client");
@@ -161,7 +161,7 @@ impl Server {
                             error!("failed to encode message before sending to client");
                         }
                     } else {
-                        error!("couldn't get lock for stream {connection_id}");
+                        error!("couldn't get connection for {connection_id}");
                     }
                 }
             }

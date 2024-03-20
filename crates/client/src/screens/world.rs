@@ -1,43 +1,43 @@
-use std::{
-    cmp::Ordering,
-    collections::VecDeque,
-    time::{Duration, Instant},
-};
+use std::{cmp::Ordering, collections::VecDeque, time::Instant};
 
 use engine::{
     camera::{self, Viewport, Zoom},
     draw::{image::DrawImage, Position, Target},
     engine::GameEngine,
-    input::keyboard::KeyCode,
     CursorIcon,
 };
 use itertools::iproduct;
 use nohash_hasher::IntMap;
 use shared::{
-    protocol::{
-        client::{Action, ClientPacket},
-        movement::{next_position, MoveRequest},
-        server::{CharacterUpdate, ServerPacket},
-    },
+    protocol::server::{CharacterUpdate, DialogKind, ServerPacket},
     world::{Direction, WorldPosition},
 };
 
-use crate::{
-    argentum::Image,
-    game::Context,
-    ui::{colors::*, input_field::InputField},
-    ui::{fonts::*, UI},
-};
+use crate::{argentum::Image, game::Context, ui::colors::*, ui::fonts::*};
 
 use self::{
+    depth::Z,
     entity::{Character, Entity},
     hud::HUD,
 };
 
 use super::GameScreen;
 
+mod depth;
 pub mod entity;
 pub mod hud;
+pub mod input;
+pub mod movement;
+
+const TILE_SIZE: u16 = 32;
+const TILE_SIZE_F: f32 = TILE_SIZE as f32;
+
+const SCREEN_WIDTH: u16 = 800;
+const SCREEN_HEIGHT: u16 = 540;
+const WORLD_RENDER_WIDTH: u16 = 549; // It's around 17 tiles
+const WORLD_RENDER_HEIGHT: u16 = 521; // It's around 16 tiles
+const HORIZONTAL_TILES: u16 = 17;
+const VERTICAL_TILES: u16 = 16;
 
 pub struct WorldScreen {
     hud: HUD,
@@ -53,12 +53,6 @@ pub struct WorldScreen {
     predictions: Vec<(u8, WorldPosition)>,
     last_move: Instant,
 }
-
-const SCREEN_WIDTH: u16 = 800;
-const SCREEN_HEIGHT: u16 = 540;
-
-const WORLD_RENDER_WIDTH: u16 = 549; //17 * TILE_SIZE; // 17 tiles
-const WORLD_RENDER_HEIGHT: u16 = 521; //16 * TILE_SIZE; // 16 tiles
 
 impl WorldScreen {
     pub fn new<E: GameEngine>(
@@ -214,6 +208,23 @@ impl WorldScreen {
                     };
                     character.animation.change_direction(direction);
                 }
+                CharacterUpdate::DialogAdd {
+                    entity_id,
+                    text,
+                    kind,
+                } => {
+                    let Some(Entity::Character(character)) = self.entities.get_mut(&entity_id)
+                    else {
+                        return;
+                    };
+                    let (font_id, color) = match kind {
+                        DialogKind::Normal => (TAHOMA_BOLD_8_SHADOW_ID, WHITE),
+                        DialogKind::MagicWords => (TAHOMA_BOLD_8_SHADOW_ID, CYAN),
+                        DialogKind::Shout => (TAHOMA_BOLD_8_SHADOW_ID, RED),
+                        DialogKind::Role => (TAHOMA_BOLD_8_SHADOW_ID, YELLOW),
+                    };
+                    character.add_dialog(context.engine, &text, font_id, color);
+                }
                 _ => {}
             },
             ServerPacket::UserUpdate(_) => todo!(),
@@ -255,23 +266,17 @@ impl WorldScreen {
         engine.set_world_camera_viewport(world_camera_viewport);
     }
 
-    fn update_character<E: GameEngine>(&mut self, context: &mut Context<'_, E>) {
+    fn update_character<E: GameEngine>(&mut self, context: &mut Context<E>) {
         for (id, entity) in self.entities.iter_mut() {
             match entity {
                 Entity::Character(character) => {
                     if character.just_started_moving() {
                         let old_position = character.position;
                         if let Some(new_position) = character.position_buffer.first() {
-                            tracing::info!(
-                                "entity {id} swapping position {old_position:?} {new_position:?}"
-                            );
-                            if let Some(map) = context.resources.maps.get_mut(&old_position.map) {
-                                map.tile_mut(old_position.x, old_position.y).user = None;
-                            }
-                            if let Some(map) = context.resources.maps.get_mut(&new_position.map) {
-                                map.tile_mut(new_position.x, new_position.y).user =
-                                    Some(self.entity_id);
-                            }
+                            let map = context.maps.get(&old_position.map);
+                            map.tile_mut(old_position.x, old_position.y).user = None;
+                            let map = context.maps.get(&new_position.map);
+                            map.tile_mut(new_position.x, new_position.y).user = Some(*id);
                         }
                     }
                 }
@@ -306,88 +311,42 @@ impl WorldScreen {
             .set_text(&format!("PING: {ping}ms"), context.engine);
     }
 
-    fn update_message_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let message_input_open = self.hud.message_input.is_some();
-        let enter_pressed = context.engine.key_pressed(KeyCode::Enter);
-        match (message_input_open, enter_pressed) {
-            (true, true) => {
-                if let Some(input) = self.hud.message_input.as_mut() {
-                    let message = input.text();
-                    if !message.is_empty() {
-                        if let Some(Entity::Character(character)) =
-                            self.entities.get_mut(&self.entity_id)
-                        {
-                            character.add_dialog(
-                                context.engine,
-                                message,
-                                TAHOMA_BOLD_8_SHADOW_ID,
-                                GRAY_6,
-                            );
+    fn draw_world<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let Some(Entity::Character(character)) = self.entities.get(&self.entity_id) else {
+            return;
+        };
+        let position = &character.position;
+        let map = context.maps.get(&position.map);
+        let (x_start, x_end, y_start, y_end) = get_range(position);
+
+        for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
+            let tile = &map.tiles[x][y];
+
+            let world_x = (x as u16 * TILE_SIZE) + TILE_SIZE;
+            let world_y = (y as u16 * TILE_SIZE) + TILE_SIZE;
+
+            for layer in [0, 1, 2, 3].iter() {
+                if tile.graphics[*layer] != 0 {
+                    let z = Z[*layer][x][y];
+                    let image = &context.resources.images[tile.graphics[*layer]];
+                    let position = Position::new(world_x - image.width / 2, world_y, z);
+                    let color = self.layer_4_color(position, image);
+
+                    context.engine.draw_image(
+                        DrawImage {
+                            position,
+                            color,
+                            source: [image.x, image.y, image.width, image.height],
+                            index: image.file,
+                        },
+                        Target::World,
+                    );
+                };
+                if layer == &2 {
+                    if let Some(entity_id) = tile.user {
+                        if let Some(Entity::Character(character)) = self.entities.get(&entity_id) {
+                            character.draw(context.engine, context.resources);
                         }
-                    }
-                }
-                self.hud.message_input = None;
-            }
-            (false, true) => {
-                let mut input_field = InputField::new(
-                    GRAY_6,
-                    GRAY_1,
-                    (0, 0),
-                    (200, 30),
-                    TAHOMA_BOLD_8_SHADOW_ID,
-                    context.resources.textures.input,
-                    context,
-                );
-                input_field.focused = true;
-                self.hud.message_input = Some(input_field);
-            }
-            _ => {}
-        }
-    }
-
-    fn draw_entities<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        for (_, entity) in self.entities.iter_mut() {
-            match entity {
-                Entity::Character(character) => {
-                    character.draw(context);
-                }
-            }
-        }
-    }
-
-    fn draw_map<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
-            let position = &character.position;
-            if let Some(map) = context.resources.maps.get(&position.map) {
-                let extra_tiles = 5;
-                let x_start = (position.x - (17 / 2) - extra_tiles) as usize;
-                let x_end = (position.x + (17 / 2) + extra_tiles) as usize;
-                let y_start = (position.y - (16 / 2) - extra_tiles) as usize;
-                let y_end = (position.y + (16 / 2) + extra_tiles) as usize;
-
-                for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
-                    let tile = &map.tiles[x][y];
-
-                    let world_x = (x * 32) as u16 + 32;
-                    let world_y = (y * 32) as u16 + 32;
-
-                    for layer in [0, 1, 2, 3].iter() {
-                        if tile.graphics[*layer] != 0 {
-                            let z = calculate_z(*layer, x as f32, y as f32);
-                            let image = &context.resources.images[tile.graphics[*layer]];
-                            let position = Position::new(world_x - image.width / 2, world_y, z);
-                            let color = self.layer_4_color(position, image);
-
-                            context.engine.draw_image(
-                                DrawImage {
-                                    position,
-                                    color,
-                                    source: [image.x, image.y, image.width, image.height],
-                                    index: image.file,
-                                },
-                                Target::World,
-                            );
-                        };
                     }
                 }
             }
@@ -408,86 +367,17 @@ impl WorldScreen {
         }
         WHITE
     }
+}
 
-    fn process_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let mut push = |direction| {
-            if !self.input.contains(&direction) {
-                self.input.push_front(direction);
-            }
-        };
-
-        if context.engine.key_pressed(KeyCode::ArrowUp) {
-            push(Direction::North);
-        }
-        if context.engine.key_pressed(KeyCode::ArrowDown) {
-            push(Direction::South);
-        }
-        if context.engine.key_pressed(KeyCode::ArrowRight) {
-            push(Direction::East);
-        }
-        if context.engine.key_pressed(KeyCode::ArrowLeft) {
-            push(Direction::West);
-        }
-        if context.engine.key_released(KeyCode::ArrowUp) {
-            self.input.retain(|dir| dir != &Direction::North);
-        }
-        if context.engine.key_released(KeyCode::ArrowDown) {
-            self.input.retain(|dir| dir != &Direction::South);
-        }
-        if context.engine.key_released(KeyCode::ArrowRight) {
-            self.input.retain(|dir| dir != &Direction::East);
-        }
-        if context.engine.key_released(KeyCode::ArrowLeft) {
-            self.input.retain(|dir| dir != &Direction::West);
-        }
-
-        if context.engine.key_pressed(KeyCode::KeyH) {
-            if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
-                character.add_dialog(
-                    context.engine,
-                    "Rahma Nañarak O'al",
-                    TAHOMA_BOLD_8_SHADOW_ID,
-                    CYAN,
-                );
-            }
-        }
-    }
-
-    fn start_move<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
-            let elapsed_since_last_move = Instant::now() - self.last_move;
-            let latency = context.connection.ping();
-            let was_idle_but_wants_to_move = !character.moving() && !self.input.is_empty();
-
-            if (was_idle_but_wants_to_move || character.just_finished_moving())
-                && elapsed_since_last_move >= Duration::from_millis(200 - latency as u64)
-            {
-                if let Some(direction) = self.input.front() {
-                    tracing::info!(
-                        "starting move {}, last move was {}ms ago",
-                        self.movement_sequence,
-                        elapsed_since_last_move.as_millis()
-                    );
-                    let Some(map) = context.resources.maps.get(&character.position.map) else {
-                        return;
-                    };
-                    let position = next_position(map, &character.position, *direction);
-                    character.change_direction(*direction);
-                    character.move_to(position);
-
-                    self.last_move = Instant::now();
-                    self.predictions.push((self.movement_sequence, position));
-                    context
-                        .connection
-                        .send(ClientPacket::UserAction(Action::Move(MoveRequest {
-                            id: self.movement_sequence,
-                            direction: *direction,
-                        })));
-                    self.movement_sequence += 1;
-                }
-            }
-        }
-    }
+fn get_range(position: &WorldPosition) -> (usize, usize, usize, usize) {
+    const EXTRA_TILES: u16 = 5;
+    const HORIZONTAL_EXTRA_TILES: u16 = ((HORIZONTAL_TILES + 1) / 2) + EXTRA_TILES;
+    const VERTICAL_EXTRA_TILES: u16 = (VERTICAL_TILES / 2) + EXTRA_TILES;
+    let x_start = (position.x - HORIZONTAL_EXTRA_TILES) as usize;
+    let x_end = (position.x + HORIZONTAL_EXTRA_TILES) as usize;
+    let y_start = (position.y - VERTICAL_EXTRA_TILES) as usize;
+    let y_end = (position.y + VERTICAL_EXTRA_TILES) as usize;
+    (x_start, x_end, y_start, y_end)
 }
 
 impl GameScreen for WorldScreen {
@@ -496,8 +386,8 @@ impl GameScreen for WorldScreen {
         self.process_input(context);
 
         self.prepare_viewports(context.engine);
-        self.hud.update(context);
 
+        self.update_hud(context);
         self.update_fps(context);
         self.update_ping(context);
         self.update_character(context);
@@ -505,31 +395,7 @@ impl GameScreen for WorldScreen {
     }
 
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.hud.draw(context);
-
-        self.draw_map(context);
-        self.draw_entities(context);
-    }
-}
-
-fn calculate_z(layer: usize, x: f32, y: f32) -> f32 {
-    match layer {
-        0 => 0.,
-        3 => 0.99,
-        i => (i as f32 * 1000. + (100. - y) * 10. - (100. - x)) / 4000.,
-    }
-}
-
-fn get_direction(pos_1: &WorldPosition, pos_2: &WorldPosition) -> Option<Direction> {
-    if pos_2.x > pos_1.x {
-        Some(Direction::East)
-    } else if pos_2.x < pos_1.x {
-        Some(Direction::West)
-    } else if pos_2.y > pos_1.y {
-        Some(Direction::North)
-    } else if pos_2.y < pos_1.y {
-        Some(Direction::South)
-    } else {
-        None
+        self.draw_hud(context);
+        self.draw_world(context);
     }
 }

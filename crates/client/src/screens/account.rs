@@ -232,7 +232,7 @@ impl UI for AccountUI {
         for slot in self.slots.iter_mut() {
             slot.button().draw(context);
             if let Slot::Char { character, .. } = slot {
-                character.draw(context);
+                character.draw(context.engine, context.resources);
             }
         }
         self.enter_button.draw(context);

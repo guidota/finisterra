@@ -43,54 +43,47 @@ impl Renderer for SpriteBatchRenderer {
         self.depth_texture_view = create_depth_texture(state, size);
     }
 
-    fn draw_images(&mut self, state: &State, mut draws: Vec<DrawImage>, target: Target) {
-        if draws.is_empty() {
-            return;
-        }
-        self.draws_counter += draws.len();
-
-        let index = draws[0].index;
-        if self
-            .textures
-            .load_texture(&state.device, &state.queue, index)
-        {
-            match target {
-                Target::World => {
-                    for draw in draws {
-                        if draw.position.z == 0.0 {
-                            self.draws_to_zero_world
-                                .entry(index)
-                                .or_default()
-                                .push(draw);
-                        } else {
-                            self.draws_to_world.entry(index).or_default().push(draw);
-                        }
-                    }
-                }
-                Target::UI => {
-                    self.draws_to_ui
-                        .entry(index)
-                        .or_default()
-                        .append(&mut draws);
-                }
-                Target::Texture {
-                    id: target_texture_id,
-                } => {
-                    self.draws_to_textures
-                        .entry(target_texture_id)
-                        .or_default()
-                        .append(&mut draws);
-                }
-            }
-
-            if let Entry::Vacant(e) = self.bind_groups.entry(index) {
-                if let Some(texture) = self.textures.get(index).flatten() {
+    fn ensure_texture(&mut self, state: &State, id: TextureID, _target: Target) -> bool {
+        if self.textures.load_texture(&state.device, &state.queue, id) {
+            if let Entry::Vacant(e) = self.bind_groups.entry(id) {
+                if let Some(texture) = self.textures.get(id).flatten() {
                     let bind_group = create_bind_group(state, &self.bind_group_layout, texture);
                     e.insert(bind_group);
                 }
             }
+            true
         } else {
-            log::debug!("[draw_image] with invalid texture");
+            false
+        }
+    }
+
+    fn push_draw_image(&mut self, draw: DrawImage, target: Target) {
+        self.draws_counter += 1;
+        match target {
+            Target::World => {
+                if draw.position.z == 0.0 {
+                    self.draws_to_zero_world
+                        .entry(draw.index)
+                        .or_default()
+                        .push(draw);
+                } else {
+                    self.draws_to_world
+                        .entry(draw.index)
+                        .or_default()
+                        .push(draw);
+                }
+            }
+            Target::UI => {
+                self.draws_to_ui.entry(draw.index).or_default().push(draw);
+            }
+            Target::Texture {
+                id: target_texture_id,
+            } => {
+                self.draws_to_textures
+                    .entry(target_texture_id)
+                    .or_default()
+                    .push(draw);
+            }
         }
     }
 

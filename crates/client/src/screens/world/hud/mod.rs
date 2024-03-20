@@ -1,8 +1,10 @@
+use engine::input::keyboard::KeyCode;
 use engine::{
     draw::Position,
     draw::{image::DrawImage, Target},
     engine::GameEngine,
 };
+use shared::protocol::client::{Action, ClientPacket};
 
 use crate::{
     game::Context,
@@ -20,7 +22,8 @@ use crate::{
 use self::{console::Console, inventory::Inventory, spellbook::Spellbook};
 
 use super::{
-    entity::Character, SCREEN_HEIGHT, SCREEN_WIDTH, WORLD_RENDER_HEIGHT, WORLD_RENDER_WIDTH,
+    entity::Character, WorldScreen, SCREEN_HEIGHT, SCREEN_WIDTH, WORLD_RENDER_HEIGHT,
+    WORLD_RENDER_WIDTH,
 };
 
 pub mod console;
@@ -270,7 +273,7 @@ impl UI for HUD {
         self.console.update(context);
 
         if let Some(input) = self.message_input.as_mut() {
-            input.update(context)
+            input.update(context);
         }
     }
 
@@ -319,5 +322,49 @@ impl UI for HUD {
             },
             Target::UI,
         );
+    }
+}
+
+impl WorldScreen {
+    pub fn draw_hud<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.hud.draw(context);
+    }
+
+    pub fn update_hud<E: GameEngine>(&mut self, context: &mut Context<'_, E>) {
+        self.hud.update(context);
+    }
+
+    pub fn update_message_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        let message_input_open = self.hud.message_input.is_some();
+        let enter_pressed = context.engine.key_pressed(KeyCode::Enter);
+        match (message_input_open, enter_pressed) {
+            (true, true) => {
+                if let Some(input) = self.hud.message_input.as_mut() {
+                    let message = input.text();
+                    if !message.is_empty() {
+                        context
+                            .connection
+                            .send(ClientPacket::UserAction(Action::Talk {
+                                text: message.to_string(),
+                            }));
+                    }
+                }
+                self.hud.message_input = None;
+            }
+            (false, true) => {
+                let mut input_field = InputField::new(
+                    GRAY_6,
+                    GRAY_1,
+                    (0, 0),
+                    (200, 30),
+                    TAHOMA_BOLD_8_SHADOW_ID,
+                    context.resources.textures.input,
+                    context,
+                );
+                input_field.focused = true;
+                self.hud.message_input = Some(input_field);
+            }
+            _ => {}
+        }
     }
 }

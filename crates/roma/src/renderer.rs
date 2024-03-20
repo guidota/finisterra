@@ -24,7 +24,8 @@ pub trait Renderer {
     fn add_texture(&mut self, texture: Texture) -> TextureID;
     fn texture_dimensions(&mut self, texture_id: TextureID) -> Option<(u16, u16)>;
 
-    fn draw_images(&mut self, state: &State, parameters: Vec<DrawImage>, target: Target);
+    fn ensure_texture(&mut self, state: &State, id: TextureID, target: Target) -> bool;
+    fn push_draw_image(&mut self, draw: DrawImage, target: Target);
 
     fn render(&mut self, state: &State, world_camera: &Camera, ui_camera: &Camera);
 }

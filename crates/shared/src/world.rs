@@ -9,6 +9,22 @@ pub struct WorldPosition {
     pub y: u16,
 }
 
+impl WorldPosition {
+    pub fn get_direction(&self, other: &WorldPosition) -> Option<Direction> {
+        if other.x > self.x {
+            Some(Direction::East)
+        } else if other.x < self.x {
+            Some(Direction::West)
+        } else if other.y > self.y {
+            Some(Direction::North)
+        } else if other.y < self.y {
+            Some(Direction::South)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Encode, Decode, PartialEq, Debug, Default, Clone, Copy)]
 pub enum Direction {
     North,
@@ -145,5 +161,40 @@ impl Map {
         let file = std::fs::File::open(path).ok()?;
         let reader = std::io::BufReader::new(file);
         bincode::decode_from_reader(reader, Self::CONFIG).ok()
+    }
+
+    pub fn next_position(&self, position: &WorldPosition, direction: Direction) -> WorldPosition {
+        if position.x <= 1 || position.x >= 99 || position.y <= 1 || position.y >= 99 {
+            return *position;
+        }
+        let target = match direction {
+            Direction::North => WorldPosition {
+                map: position.map,
+                x: position.x,
+                y: position.y + 1,
+            },
+            Direction::East => WorldPosition {
+                map: position.map,
+                x: position.x + 1,
+                y: position.y,
+            },
+            Direction::South => WorldPosition {
+                map: position.map,
+                x: position.x,
+                y: position.y - 1,
+            },
+            Direction::West => WorldPosition {
+                map: position.map,
+                x: position.x - 1,
+                y: position.y,
+            },
+        };
+
+        let tile = self.tile(target.x, target.y);
+        if tile.blocked != 0 || tile.user.is_some() {
+            *position
+        } else {
+            target
+        }
     }
 }

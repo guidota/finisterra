@@ -42,49 +42,45 @@ impl Renderer for TextureArrayRenderer {
         self.depth_texture_view = create_depth_texture(state, size);
     }
 
-    fn draw_images(&mut self, state: &State, mut draws: Vec<DrawImage>, target: Target) {
-        if draws.is_empty() {
-            return;
-        }
-        let index = draws[0].index;
-        if self
-            .textures
-            .load_texture(&state.device, &state.queue, index)
-        {
+    fn ensure_texture(&mut self, state: &State, id: TextureID, target: Target) -> bool {
+        if self.textures.load_texture(&state.device, &state.queue, id) {
             let texture_array = match target {
                 Target::World | Target::UI => &mut self.main.texture_array,
                 _ => &mut self.offscreen.texture_array,
             };
-            if !texture_array.has_texture(index) {
-                let texture = self.textures.get(index).unwrap().unwrap();
+            if !texture_array.has_texture(id) {
+                let texture = self.textures.get(id).unwrap().unwrap();
                 let view = texture.view.clone();
                 let sampler = texture.sampler.clone();
 
-                texture_array.push(index, view, sampler);
+                texture_array.push(id, view, sampler);
             }
-            match target {
-                Target::World => {
-                    for draw in draws {
-                        if draw.position.z == 0.0 {
-                            self.draws_to_zero_world.push(draw);
-                        } else if draw.position.z == 0.99 {
-                            self.draws_to_roof_world.push(draw);
-                        } else {
-                            self.draws_to_world.push(draw);
-                        }
-                    }
+            return true;
+        }
+        false
+    }
+
+    fn push_draw_image(&mut self, draw: DrawImage, target: Target) {
+        match target {
+            Target::World => {
+                if draw.position.z == 0.0 {
+                    self.draws_to_zero_world.push(draw);
+                } else if draw.position.z == 0.99 {
+                    self.draws_to_roof_world.push(draw);
+                } else {
+                    self.draws_to_world.push(draw);
                 }
-                Target::UI => {
-                    self.draws_to_ui.append(&mut draws);
-                }
-                Target::Texture {
-                    id: target_texture_id,
-                } => {
-                    self.draws_to_textures
-                        .entry(target_texture_id)
-                        .or_default()
-                        .append(&mut draws);
-                }
+            }
+            Target::UI => {
+                self.draws_to_ui.push(draw);
+            }
+            Target::Texture {
+                id: target_texture_id,
+            } => {
+                self.draws_to_textures
+                    .entry(target_texture_id)
+                    .or_default()
+                    .push(draw);
             }
         }
     }

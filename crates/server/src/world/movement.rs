@@ -1,10 +1,7 @@
 use std::time::{Duration, Instant};
 
 use shared::{
-    protocol::{
-        movement::next_position,
-        server::{CharacterUpdate, ServerPacket},
-    },
+    protocol::server::{CharacterUpdate, ServerPacket},
     world::{Direction, WorldPosition},
 };
 
@@ -42,15 +39,13 @@ impl World {
             *last_move = now;
 
             let old_position = character.position;
-            let next_position = next_position(map, &character.position, move_request.direction);
+            let next_position = map.next_position(&character.position, move_request.direction);
             let result = if next_position == old_position {
                 MoveOutput::Heading {
                     direction: move_request.direction,
                 }
-            } else if next_position.map != old_position.map {
-                MoveOutput::Translate {
-                    position: next_position,
-                }
+            } else if let Some(position) = map.tile(next_position.x, next_position.y).exit {
+                MoveOutput::Translate { position }
             } else {
                 MoveOutput::Move {
                     position: next_position,
@@ -64,7 +59,6 @@ impl World {
             }
 
             match result {
-                MoveOutput::TooSoon => {}
                 MoveOutput::Heading { direction } => {
                     let position = character.position;
                     self.send(
@@ -121,7 +115,6 @@ impl World {
 }
 
 enum MoveOutput {
-    TooSoon,
     Heading { direction: Direction },
     Move { position: WorldPosition },
     Translate { position: WorldPosition },

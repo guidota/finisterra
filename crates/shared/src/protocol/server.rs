@@ -86,8 +86,20 @@ pub enum CharacterUpdate {
     Meditate,
     Invisible,
     Attacked,
-    DialogAdd,
-    DialogRemove,
+    DialogAdd {
+        entity_id: u32,
+        text: String,
+        kind: DialogKind,
+    },
+    // DialogRemove,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum DialogKind {
+    Normal,
+    MagicWords,
+    Shout,
+    Role,
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
@@ -114,7 +126,6 @@ pub enum Event {
     Hit,
     Kill,
     FX,
-    MapChanged,
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
@@ -134,8 +145,9 @@ pub enum Response {
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum Message {
-    CantUseWhileMeditating,
-    ConsoleMessage,
+    See { entity_id: u32 },
+    SeeNothing,
+    // TODO
 }
 
 impl ProtocolMessage for ServerPacket {

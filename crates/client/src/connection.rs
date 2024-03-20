@@ -6,7 +6,10 @@ use std::{
 };
 
 use engine::{
-    draw::{text::DrawText, Position, Target},
+    draw::{
+        text::{DrawText, ParsedText},
+        Position, Target,
+    },
     engine::GameEngine,
 };
 use shared::protocol::{client::ClientPacket, server::ServerPacket, ProtocolMessage};
@@ -19,10 +22,10 @@ use crate::ui::{
     fonts::TAHOMA_BOLD_8_SHADOW_ID,
 };
 
-#[derive(Default)]
 pub struct ConnectionState {
     url: String,
     state: State,
+    text: ParsedText,
 }
 
 #[derive(Default)]
@@ -53,10 +56,13 @@ struct Connection {
 }
 
 impl ConnectionState {
-    pub fn new(url: &str) -> Self {
+    pub fn new<E: GameEngine>(url: &str, engine: &mut E) -> Self {
         Self {
             url: url.to_string(),
             state: State::Disconnected,
+            text: engine
+                .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format!("{}", State::Disconnected))
+                .expect("can parse"),
         }
     }
 
@@ -77,7 +83,8 @@ impl ConnectionState {
         }
     }
 
-    pub fn update(&mut self, delta: Duration) {
+    pub fn update<E: GameEngine>(&mut self, engine: &mut E) {
+        let delta = engine.get_delta();
         match &mut self.state {
             State::Disconnected => self.connect(),
             State::Retry {
@@ -86,13 +93,13 @@ impl ConnectionState {
             } => {
                 *elapsed = elapsed.add(delta);
                 if elapsed.ge(&time) {
-                    self.state = State::Disconnected;
+                    self.change_state(State::Disconnected, engine);
                 }
             }
             State::Connecting {
                 connection_receiver,
             } => match connection_receiver.try_recv() {
-                Ok(connection) => self.state = State::Connected { connection },
+                Ok(connection) => self.change_state(State::Connected { connection }, engine),
                 Err(TryRecvError::Disconnected) => {
                     self.state = State::Retry {
                         elapsed: Duration::ZERO,
@@ -103,6 +110,13 @@ impl ConnectionState {
             },
             State::Connected { .. } => {}
         }
+    }
+
+    fn change_state<E: GameEngine>(&mut self, state: State, engine: &mut E) {
+        self.state = state;
+        self.text = engine
+            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format!("{}", self.state))
+            .expect("can parse");
     }
 
     pub fn send(&self, message: ClientPacket) {
@@ -168,16 +182,18 @@ impl ConnectionState {
     }
 
     pub fn draw_state<E: GameEngine>(&mut self, engine: &mut E) {
-        let text = engine
-            .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format!("{}", self))
-            .expect("can parse text");
+        if let State::Retry { .. } = self.state {
+            self.text = engine
+                .parse_text(TAHOMA_BOLD_8_SHADOW_ID, &format!("{}", self.state))
+                .expect("can parse text");
+        }
 
         engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
-                text: &text,
+                text: &self.text,
                 position: Position {
-                    x: 5 + text.total_width / 2,
+                    x: 5 + self.text.total_width / 2,
                     y: 5,
                     z: 1.,
                 },
@@ -286,6 +302,20 @@ impl Connection {
 impl Display for ConnectionState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.state {
+            State::Disconnected => f.write_str("Disconnected"),
+            State::Retry { elapsed, time } => f.write_str(&format!(
+                "Retrying in {:.1}s...",
+                time.sub(*elapsed).as_secs_f32()
+            )),
+            State::Connecting { .. } => f.write_str("Connecting..."),
+            State::Connected { .. } => f.write_str("Connected"),
+        }
+    }
+}
+
+impl Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
             State::Disconnected => f.write_str("Disconnected"),
             State::Retry { elapsed, time } => f.write_str(&format!(
                 "Retrying in {:.1}s...",

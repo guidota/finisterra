@@ -76,10 +76,6 @@ impl Textures {
                     return false;
                 };
 
-                if texture.width == 0 || texture.height == 0 {
-                    log::error!("texture {id} with size 0");
-                }
-
                 self.textures[id as usize] = Texture::Present(texture);
 
                 true

@@ -29,7 +29,7 @@ use crate::{
     ui::{colors::*, fonts::TAHOMA_BOLD_8_SHADOW_ID},
 };
 
-use super::{calculate_z, get_direction};
+use super::{depth::Z, TILE_SIZE_F};
 
 pub enum Entity {
     Character(Character),
@@ -45,7 +45,7 @@ impl Entity {
     }
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         match self {
-            Entity::Character(character) => character.draw(context),
+            Entity::Character(character) => character.draw(context.engine, context.resources),
             // Entity::Npc(_) => todo!(),
         }
     }
@@ -54,7 +54,6 @@ impl Entity {
 pub struct Character {
     inner: character::Character,
 
-    // store 3 last known positions
     just_finished_moving: bool,
     just_started_moving: bool,
     interpolation_time: Duration,
@@ -125,8 +124,8 @@ impl Character {
             just_started_moving: false,
             position_buffer: vec![],
             render_position: (
-                character.position.x as f32 * 32.,
-                character.position.y as f32 * 32.,
+                character.position.x as f32 * TILE_SIZE_F,
+                character.position.y as f32 * TILE_SIZE_F,
             ),
 
             animation,
@@ -147,8 +146,8 @@ impl Character {
 
             position_buffer: vec![],
             render_position: (
-                character.position.x as f32 * 32.,
-                character.position.y as f32 * 32.,
+                character.position.x as f32 * TILE_SIZE_F,
+                character.position.y as f32 * TILE_SIZE_F,
             ),
 
             just_started_moving: false,
@@ -256,7 +255,7 @@ impl Character {
 
             if self.just_finished_moving && !self.position_buffer.is_empty() {
                 self.interpolation_time = Duration::from_millis(200);
-                if let Some(direction) = get_direction(&self.position, &self.position_buffer[0]) {
+                if let Some(direction) = self.position.get_direction(&self.position_buffer[0]) {
                     self.change_direction(direction);
                 }
                 self.just_started_moving = true;
@@ -270,7 +269,7 @@ impl Character {
 
     pub fn move_to(&mut self, position: WorldPosition) {
         if self.position_buffer.is_empty() {
-            if let Some(direction) = get_direction(&self.position, &position) {
+            if let Some(direction) = self.position.get_direction(&position) {
                 self.change_direction(direction);
             }
             if self.position == position {
@@ -292,27 +291,30 @@ impl Character {
         self.just_finished_moving = false;
     }
 
-    pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+    // pub fn draw<E: GameEngine>(&self, context: &mut Context<E>) {
+    pub fn draw<E: GameEngine>(&self, engine: &mut E, resources: &Resources) {
         let body = self.animation.get_body_frame();
 
         let render_position = self.render_position;
 
         let x = render_position.0.floor() as u16;
         let y = render_position.1.floor() as u16;
-        let z = calculate_z(2, render_position.0 / 32., render_position.1 / 32.);
+        // let z = calculate_z(2, render_position.0 / 32., render_position.1 / 32.);
+        let z = Z[2][(render_position.0 / 32.).round() as usize]
+            [(render_position.1 / 32.).round() as usize];
 
         // draw shadow
-        context.engine.draw_image(
+        engine.draw_image(
             DrawImage {
                 position: Position::new(x - 16, y - 8, z - 0.001),
                 color: WHITE,
-                index: context.resources.textures.character_shadow,
+                index: resources.textures.character_shadow,
                 ..Default::default()
             },
             Target::World,
         );
 
-        context.engine.draw_text(
+        engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
@@ -329,14 +331,14 @@ impl Character {
 
         let mut draw_image = |metadata: Option<&ImageFrameMetadata>, offset: Offset| {
             if let Some(metadata) = metadata {
-                let image = &context.resources.images[metadata.image as usize];
+                let image = &resources.images[metadata.image as usize];
 
                 let x = x + offset.x as u16 - metadata.offset.x as u16;
                 let y = y + offset.y as u16 - metadata.offset.y as u16;
                 let z = z + (metadata.priority as f32 * 0.0001); // TODO! calculate from position in map
                 let position = Position::new(x, y, z);
 
-                context.engine.draw_image(
+                engine.draw_image(
                     DrawImage {
                         position,
                         source: [image.x, image.y, image.width, image.height],
@@ -356,12 +358,12 @@ impl Character {
         draw_image(self.animation.get_weapon_frame(), body.right_hand);
         draw_image(self.animation.get_shield_frame(), body.left_hand);
 
-        if let Some(dialog) = self.dialog.as_mut() {
+        if let Some(dialog) = self.dialog.as_ref() {
             let x = x + body.head.x as u16;
             let body_frame_metadata = self.animation.body.idle.south.frames[0];
             let head_y = body_frame_metadata.head.y as u16;
             let y = y + head_y;
-            dialog.draw(context.engine, Position::new(x, y, z));
+            dialog.draw(engine, Position::new(x, y, z));
         }
     }
 

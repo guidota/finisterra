@@ -45,10 +45,11 @@ impl Fonts {
             return None;
         };
 
+        let len = text.len();
         let chars = font.bmfont.parse(text);
-        Some(chars.into_iter().fold(
+        Some(chars.fold(
             ParsedText {
-                chars: vec![],
+                chars: Vec::with_capacity(len),
                 total_width: 0,
                 height: 0,
             },

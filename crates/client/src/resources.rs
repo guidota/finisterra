@@ -1,11 +1,9 @@
-use shared::world::Map;
 use std::{
     collections::HashMap,
     fs::{self, File},
 };
 
 use engine::engine::GameEngine;
-use nohash_hasher::IntMap;
 use shared::world::Direction;
 
 use crate::{
@@ -35,8 +33,6 @@ pub struct Resources {
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,
 
-    pub maps: IntMap<u16, Map>,
-
     pub textures: Textures,
 }
 
@@ -45,7 +41,6 @@ impl Resources {
         let mut resources = Resources::default();
 
         resources.load_images(engine, "assets/finisterra/init/images.ron");
-        resources.load_maps("assets/finisterra/maps/");
         resources.load_body(engine, "assets/finisterra/human/ao-human/");
         resources.load_head(engine, "assets/finisterra/human/ao-human/");
         resources.load_shields(engine, "assets/finisterra/shields/ao-shields/");
@@ -77,22 +72,6 @@ impl Resources {
                 file_num,
             );
             self.images[id as usize] = image;
-        }
-    }
-
-    fn load_maps(&mut self, folder: &str) {
-        let maps_folder = fs::read_dir(folder).expect("maps folder not present");
-        for map in maps_folder {
-            let map = map.expect("should be an entry");
-            let path = map.path();
-            let map_path = path.to_str();
-            if let Some(map_path) = map_path {
-                let (_, number) = map_path.split_once('_').expect("map number");
-                let number: u16 = number.parse().expect("is a number");
-                if let Some(map) = Map::from_path(map_path) {
-                    self.maps.insert(number, map);
-                }
-            }
         }
     }
 

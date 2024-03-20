@@ -1,5 +1,6 @@
 use bincode::{Decode, Encode};
 
+use crate::world::WorldPosition;
 use crate::{bincode::CONFIG, protocol::ProtocolMessage};
 
 use crate::character::{Class, Gender, Race};
@@ -45,29 +46,54 @@ pub enum Account {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Action {
-    Talk { text: String },
+    Talk {
+        text: String,
+    },
     Move(MoveRequest),
     Attack,
-    LeftClick,
-    DoubleClick,
+    LeftClick {
+        position: WorldPosition,
+    },
+    DoubleClick {
+        position: WorldPosition,
+    },
     Meditate,
 
-    UseItem,
-    MoveItem,
-    EquipItem,
+    UseItem {
+        slot: u8,
+    },
+    MoveItem {
+        from: u8,
+        to: u8,
+    },
+    EquipItem {
+        slot: u8,
+    },
     PickUpItem,
-    DropItem,
+    DropItem {
+        position: WorldPosition,
+        slot: u8,
+        amount: u16,
+    },
 
-    MoveSpell,
-    CastSpell,
+    MoveSpell {
+        from: u8,
+        to: u8,
+    },
+    CastSpell {
+        slot: u8,
+        position: WorldPosition,
+    },
 
-    LevelUpSkill,
+    LevelUpSkill {
+        skill_id: u8,
+    },
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum Commerce {
-    CommerceBuy,
-    CommerceSell,
+    Buy,
+    Sell,
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]

@@ -180,7 +180,6 @@ impl Widget for Spellbook {
                         self.selection = self.offset + selection as usize;
                     }
                 }
-                println!("selection {} - offset {}", self.selection, self.offset);
             } else {
                 self.mouse_dragging = false;
                 self.mouse_dragging_timer = Duration::ZERO;

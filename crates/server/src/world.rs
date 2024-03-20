@@ -1,4 +1,7 @@
-use shared::world::{Map, WorldPosition};
+use shared::{
+    protocol::server::DialogKind,
+    world::{Map, WorldPosition},
+};
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},
@@ -82,7 +85,30 @@ impl World {
                         }
                     }
                 }
-                client::Action::Talk { .. } => todo!(),
+                client::Action::Talk { mut text } => {
+                    if let Some(Entity::Character { character, .. }) =
+                        self.entities.get_mut(&entity_id)
+                    {
+                        let position = character.position;
+                        let kind = if text.starts_with('*') {
+                            text.remove(0);
+                            DialogKind::Shout
+                        } else if text.starts_with('.') {
+                            text.remove(0);
+                            DialogKind::Role
+                        } else {
+                            DialogKind::Normal
+                        };
+                        self.send(
+                            ServerPacket::CharacterUpdate(CharacterUpdate::DialogAdd {
+                                entity_id,
+                                text,
+                                kind,
+                            }),
+                            Target::Area { position },
+                        );
+                    }
+                }
                 _ => {}
             },
             ClientPacket::Bank(_) => todo!(),

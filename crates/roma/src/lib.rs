@@ -142,13 +142,13 @@ impl GameEngine for Roma {
         self.renderer.texture_dimensions(texture_id)
     }
 
-    fn draw_image(
-        &mut self,
-        parameters: engine::draw::image::DrawImage,
-        target: engine::draw::Target,
-    ) {
-        self.renderer
-            .draw_images(&self.state, vec![parameters], target);
+    fn draw_image(&mut self, draw: engine::draw::image::DrawImage, target: engine::draw::Target) {
+        if self
+            .renderer
+            .ensure_texture(&self.state, draw.index, target)
+        {
+            self.renderer.push_draw_image(draw, target);
+        }
     }
 
     fn add_font(&mut self, id: FontID, path: &str, texture_id: TextureID) {
@@ -164,10 +164,15 @@ impl GameEngine for Roma {
             log::error!("[draw_text] texture id for font {id} not found");
             return;
         };
+        if !self
+            .renderer
+            .ensure_texture(&self.state, texture_id, target)
+        {
+            return;
+        }
 
         let offset_x = (parameters.text.total_width as f32 / 2.).round() as u16 - 1;
 
-        let mut draws = vec![];
         for char in &parameters.text.chars {
             let mut position = parameters.position;
 
@@ -184,14 +189,16 @@ impl GameEngine for Roma {
             position.x -= offset_x;
             position.y += y as u16;
 
-            draws.push(DrawImage {
-                position,
-                source,
-                color: parameters.color,
-                index: texture_id,
-            });
+            self.renderer.push_draw_image(
+                DrawImage {
+                    position,
+                    source,
+                    color: parameters.color,
+                    index: texture_id,
+                },
+                target,
+            );
         }
-        self.renderer.draw_images(&self.state, draws, target);
     }
 
     fn add_sound(&mut self, _path: &str) -> SoundID {

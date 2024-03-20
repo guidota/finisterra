@@ -3,8 +3,9 @@ use game::Finisterra;
 use roma::Roma;
 
 mod argentum;
+pub mod connection;
 mod game;
-pub mod networking;
+pub mod maps;
 pub mod resources;
 pub mod screens;
 pub mod ui;
