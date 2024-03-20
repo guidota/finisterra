@@ -50,6 +50,7 @@ impl Texture {
             height: size.height as u16,
         }
     }
+
     pub fn from_path(
         device: &wgpu::Device,
         queue: &wgpu::Queue,

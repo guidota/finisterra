@@ -812,7 +812,7 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "engine",
- "image 0.25.0",
+ "image",
  "interpolation",
  "itertools 0.12.1",
  "lazy_static",
@@ -1889,21 +1889,6 @@ checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
 dependencies = [
  "unicode-bidi",
  "unicode-normalization",
-]
-
-[[package]]
-name = "image"
-version = "0.24.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f3dfdbdd72063086ff443e297b61695500514b1e41095b6fb9a5ab48a70a711"
-dependencies = [
- "bytemuck",
- "byteorder",
- "color_quant",
- "jpeg-decoder",
- "num-rational",
- "num-traits",
- "png",
 ]
 
 [[package]]
@@ -3276,7 +3261,7 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "engine",
- "image 0.24.7",
+ "image",
  "log",
  "nohash-hasher",
  "rustc-hash",

@@ -133,7 +133,10 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn tile(&mut self, (x, y): (u16, u16)) -> &mut Tile {
+    pub fn tile(&self, x: u16, y: u16) -> &Tile {
+        &self.tiles[(x - 1) as usize][(y - 1) as usize]
+    }
+    pub fn tile_mut(&mut self, x: u16, y: u16) -> &mut Tile {
         &mut self.tiles[(x - 1) as usize][(y - 1) as usize]
     }
 

@@ -127,6 +127,20 @@ impl WorldScreen {
 
                     character.move_to(position);
                 }
+                CharacterUpdate::Translate {
+                    entity_id,
+                    position,
+                } => {
+                    if entity_id == self.entity_id {
+                        self.predictions.clear();
+                    }
+
+                    let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id)
+                    else {
+                        return;
+                    };
+                    character.translate(position);
+                }
                 CharacterUpdate::MoveResponse {
                     request_id,
                     position,
@@ -242,7 +256,26 @@ impl WorldScreen {
     }
 
     fn update_character<E: GameEngine>(&mut self, context: &mut Context<'_, E>) {
-        for (_, entity) in self.entities.iter_mut() {
+        for (id, entity) in self.entities.iter_mut() {
+            match entity {
+                Entity::Character(character) => {
+                    if character.just_started_moving() {
+                        let old_position = character.position;
+                        if let Some(new_position) = character.position_buffer.first() {
+                            tracing::info!(
+                                "entity {id} swapping position {old_position:?} {new_position:?}"
+                            );
+                            if let Some(map) = context.resources.maps.get_mut(&old_position.map) {
+                                map.tile_mut(old_position.x, old_position.y).user = None;
+                            }
+                            if let Some(map) = context.resources.maps.get_mut(&new_position.map) {
+                                map.tile_mut(new_position.x, new_position.y).user =
+                                    Some(self.entity_id);
+                            }
+                        }
+                    }
+                }
+            }
             entity.update(context.engine);
         }
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
@@ -254,8 +287,8 @@ impl WorldScreen {
                 .set_world_camera_position(camera::Position { x, y });
 
             self.hud.update_character(context, character);
-            if !character.moving() && !self.input.is_empty() || character.just_finished_moving() {
-                // check input and start new move
+
+            if !self.input.is_empty() && (!character.moving() || character.just_finished_moving()) {
                 self.start_move(context);
             }
         }
@@ -325,7 +358,7 @@ impl WorldScreen {
     fn draw_map<E: GameEngine>(&mut self, context: &mut Context<E>) {
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
             let position = &character.position;
-            if let Some(map) = context.resources.maps.get(&(position.map as usize)) {
+            if let Some(map) = context.resources.maps.get(&position.map) {
                 let extra_tiles = 5;
                 let x_start = (position.x - (17 / 2) - extra_tiles) as usize;
                 let x_end = (position.x + (17 / 2) + extra_tiles) as usize;
@@ -335,56 +368,45 @@ impl WorldScreen {
                 for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
                     let tile = &map.tiles[x][y];
 
-                    let world_x = (x * 32) as u16;
-                    let world_y = ((y * 32) - 32) as u16;
+                    let world_x = (x * 32) as u16 + 32;
+                    let world_y = (y * 32) as u16 + 32;
 
                     for layer in [0, 1, 2, 3].iter() {
                         if tile.graphics[*layer] != 0 {
                             let z = calculate_z(*layer, x as f32, y as f32);
-                            let position = Position::new(world_x, world_y, z);
-                            self.draw_grh(
-                                context,
-                                tile.graphics[*layer] as u32,
-                                position,
+                            let image = &context.resources.images[tile.graphics[*layer]];
+                            let position = Position::new(world_x - image.width / 2, world_y, z);
+                            let color = self.layer_4_color(position, image);
+
+                            context.engine.draw_image(
+                                DrawImage {
+                                    position,
+                                    color,
+                                    source: [image.x, image.y, image.width, image.height],
+                                    index: image.file,
+                                },
                                 Target::World,
                             );
-                        }
+                        };
                     }
                 }
             }
         }
     }
 
-    fn draw_grh<E: GameEngine>(
-        &self,
-        context: &mut Context<E>,
-        image_id: u32,
-        position: engine::draw::Position,
-        target: Target,
-    ) {
-        let image = &context.resources.images[image_id as usize];
-        self.draw_image(context, image, position, target);
-    }
-
-    fn draw_image<E: GameEngine>(
-        &self,
-        context: &mut Context<E>,
-        image: &Image,
-        mut position: engine::draw::Position,
-        target: Target,
-    ) {
-        let image_num = image.file;
-        position.x -= image.width / 2;
-
-        context.engine.draw_image(
-            DrawImage {
-                position,
-                color: [255, 255, 255, 255],
-                source: [image.x, image.y, image.width, image.height],
-                index: image_num,
-            },
-            target,
-        );
+    fn layer_4_color(&self, position: Position, image: &Image) -> [u8; 4] {
+        if position.z == 0.99 {
+            if let Some(Entity::Character(character)) = self.entities.get(&self.entity_id) {
+                if character.render_position.0 as u16 + 32 > position.x - image.width / 2
+                    && (character.render_position.0 as u16) - 32 < position.x + image.width / 2
+                    && (character.render_position.1 as u16) + 64 > position.y
+                    && (character.render_position.1 as u16) < position.y + image.height
+                {
+                    return [255, 255, 255, 50];
+                }
+            }
+        }
+        WHITE
     }
 
     fn process_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
@@ -446,9 +468,13 @@ impl WorldScreen {
                         self.movement_sequence,
                         elapsed_since_last_move.as_millis()
                     );
-                    let position = next_position(&character.position, *direction);
+                    let Some(map) = context.resources.maps.get(&character.position.map) else {
+                        return;
+                    };
+                    let position = next_position(map, &character.position, *direction);
                     character.change_direction(*direction);
                     character.move_to(position);
+
                     self.last_move = Instant::now();
                     self.predictions.push((self.movement_sequence, position));
                     context
@@ -490,18 +516,20 @@ fn calculate_z(layer: usize, x: f32, y: f32) -> f32 {
     match layer {
         0 => 0.,
         3 => 0.99,
-        i => (i as f32 * 1000. + (100. - y) * 10. - x) / 4000.,
+        i => (i as f32 * 1000. + (100. - y) * 10. - (100. - x)) / 4000.,
     }
 }
 
-fn get_direction(pos_1: &WorldPosition, pos_2: &WorldPosition) -> Direction {
+fn get_direction(pos_1: &WorldPosition, pos_2: &WorldPosition) -> Option<Direction> {
     if pos_2.x > pos_1.x {
-        Direction::East
+        Some(Direction::East)
     } else if pos_2.x < pos_1.x {
-        Direction::West
+        Some(Direction::West)
     } else if pos_2.y > pos_1.y {
-        Direction::North
+        Some(Direction::North)
+    } else if pos_2.y < pos_1.y {
+        Some(Direction::South)
     } else {
-        Direction::South
+        None
     }
 }

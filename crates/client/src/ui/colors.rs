@@ -11,7 +11,7 @@ pub const GRAY_5: Color = [224, 224, 224, 255];
 pub const GRAY_6: Color = [242, 242, 242, 255];
 
 pub const CYAN: Color = [0, 255, 255, 255];
-pub const RED_0: Color = [231, 76, 60, 255];
+pub const RED_0: Color = [255, 0, 0, 255];
 pub const BLUE_0: Color = [52, 152, 219, 255];
 
 pub const RED: Color = [235, 87, 87, 255];

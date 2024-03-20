@@ -35,7 +35,7 @@ pub struct Resources {
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,
 
-    pub maps: IntMap<usize, Map>,
+    pub maps: IntMap<u16, Map>,
 
     pub textures: Textures,
 }
@@ -88,7 +88,7 @@ impl Resources {
             let map_path = path.to_str();
             if let Some(map_path) = map_path {
                 let (_, number) = map_path.split_once('_').expect("map number");
-                let number: usize = number.parse().expect("is a number");
+                let number: u16 = number.parse().expect("is a number");
                 if let Some(map) = Map::from_path(map_path) {
                     self.maps.insert(number, map);
                 }

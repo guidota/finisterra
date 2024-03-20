@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-use crate::world::{Direction, WorldPosition};
+use crate::world::{Direction, Map, WorldPosition};
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone, Copy)]
 pub struct MoveRequest {
@@ -14,8 +14,8 @@ pub struct MoveResponse {
     pub position: WorldPosition,
 }
 
-pub fn next_position(position: &WorldPosition, direction: Direction) -> WorldPosition {
-    match direction {
+pub fn next_position(map: &Map, position: &WorldPosition, direction: Direction) -> WorldPosition {
+    let target = match direction {
         Direction::North => WorldPosition {
             map: position.map,
             x: position.x,
@@ -36,6 +36,13 @@ pub fn next_position(position: &WorldPosition, direction: Direction) -> WorldPos
             x: position.x - 1,
             y: position.y,
         },
+    };
+
+    let tile = map.tile(target.x, target.y);
+    if tile.blocked != 0 || tile.user.is_some() {
+        *position
+    } else {
+        target
     }
 }
 // pub struct Movement {

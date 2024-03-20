@@ -1,3 +1,4 @@
+use shared::world::{Map, WorldPosition};
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},
@@ -14,17 +15,17 @@ use shared::{
 };
 use tokio::sync::mpsc::UnboundedSender;
 
-use self::networking::Target;
+use self::{maps::load_maps, networking::Target};
 
+mod maps;
 mod movement;
 
 pub struct World {
     outcoming_messages_sender: UnboundedSender<(u32, ServerPacket)>,
 
+    maps: IntMap<u16, Map>,
     entities: IntMap<u32, Entity>,
     next_entity_id: u32,
-
-    last_tick: Instant,
 }
 
 pub enum Entity {
@@ -39,11 +40,13 @@ pub enum Entity {
 
 impl World {
     pub fn initialize(outcoming_messages_sender: UnboundedSender<(u32, ServerPacket)>) -> Self {
+        let maps = load_maps("assets/finisterra/maps/");
+        let entities = IntMap::default();
         Self {
             outcoming_messages_sender,
-            entities: IntMap::default(),
+            entities,
             next_entity_id: 0,
-            last_tick: Instant::now(),
+            maps,
         }
     }
 
@@ -101,6 +104,11 @@ impl World {
         self.entities.insert(id, entity);
         self.next_entity_id += 1;
 
+        let WorldPosition { map, x, y } = character.position;
+        if let Some(map) = self.maps.get_mut(&map) {
+            map.tile_mut(x, y).user = Some(id);
+        }
+
         id
     }
 
@@ -129,6 +137,12 @@ impl World {
     }
 
     pub async fn remove_character(&mut self, entity_id: &u32) {
+        if let Some(Entity::Character { character, .. }) = self.entities.get(entity_id) {
+            let WorldPosition { map, x, y } = character.position;
+            if let Some(map) = self.maps.get_mut(&map) {
+                map.tile_mut(x, y).user = None;
+            }
+        }
         let character_remove = ServerPacket::CharacterUpdate(CharacterUpdate::Remove {
             entity_id: *entity_id,
         });
@@ -142,23 +156,18 @@ impl World {
     }
 
     pub async fn tick(&mut self) {
-        let now = Instant::now();
-        let delta = now - self.last_tick;
-        if delta >= Duration::from_millis(16) {
-            self.last_tick = now;
-            self.process_pending_moves();
-        }
+        self.process_pending_moves();
     }
 }
 
 mod networking {
-    use shared::protocol::server::ServerPacket;
+    use shared::{protocol::server::ServerPacket, world::WorldPosition};
 
     use super::World;
 
     pub enum Target {
         User { entity_id: u32 },
-        Area { entity_id: u32 },
+        Area { position: WorldPosition },
         AreaButUser { entity_id: u32 },
         // TODO
     }

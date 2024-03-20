@@ -20,6 +20,7 @@ pub struct TextureArrayRenderer {
     draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_zero_world: Vec<DrawImage>,
     draws_to_world: Vec<DrawImage>,
+    draws_to_roof_world: Vec<DrawImage>,
     draws_to_ui: Vec<DrawImage>,
 
     depth_texture_view: wgpu::TextureView,
@@ -66,6 +67,8 @@ impl Renderer for TextureArrayRenderer {
                     for draw in draws {
                         if draw.position.z == 0.0 {
                             self.draws_to_zero_world.push(draw);
+                        } else if draw.position.z == 0.99 {
+                            self.draws_to_roof_world.push(draw);
                         } else {
                             self.draws_to_world.push(draw);
                         }
@@ -220,6 +223,7 @@ impl TextureArrayRenderer {
             draws_to_textures: IntMap::default(),
             draws_to_zero_world: vec![],
             draws_to_world: vec![],
+            draws_to_roof_world: vec![],
             draws_to_ui: vec![],
 
             offscreen: Node::initialize(&state.device, &state.config, 1),
@@ -257,14 +261,19 @@ impl TextureArrayRenderer {
         }
         self.offscreen.prepare(device, config);
 
-        let main_draws_len =
-            self.draws_to_zero_world.len() + self.draws_to_world.len() + self.draws_to_ui.len();
+        let main_draws_len = self.draws_to_zero_world.len()
+            + self.draws_to_world.len()
+            + self.draws_to_roof_world.len()
+            + self.draws_to_ui.len();
         self.main.ensure_buffer_size(device, main_draws_len);
         self.main.update_draws(&mut self.draws_to_zero_world);
         self.main.update_draws(&mut self.draws_to_world);
+        self.main.update_draws(&mut self.draws_to_roof_world);
         self.main.update_draws(&mut self.draws_to_ui);
 
-        let world_draws = self.draws_to_zero_world.len() + self.draws_to_world.len();
+        let world_draws = self.draws_to_zero_world.len()
+            + self.draws_to_world.len()
+            + self.draws_to_roof_world.len();
         let world_range = 0..world_draws;
         let ui_range = world_draws..(world_draws + self.draws_to_ui.len());
 
@@ -277,13 +286,21 @@ impl TextureArrayRenderer {
         );
         self.main.write_buffer(
             queue,
-            &self.draws_to_ui[..],
+            &self.draws_to_roof_world[..],
             self.draws_to_zero_world.len() + self.draws_to_world.len(),
+        );
+        self.main.write_buffer(
+            queue,
+            &self.draws_to_ui[..],
+            self.draws_to_zero_world.len()
+                + self.draws_to_world.len()
+                + self.draws_to_roof_world.len(),
         );
 
         self.draws_to_textures.clear();
         self.draws_to_zero_world.clear();
         self.draws_to_world.clear();
+        self.draws_to_roof_world.clear();
         self.draws_to_ui.clear();
 
         self.main.prepare(device, config);

@@ -76,7 +76,10 @@ pub enum CharacterUpdate {
         entity_id: u32,
         direction: Direction,
     },
-    Translate,
+    Translate {
+        entity_id: u32,
+        position: WorldPosition,
+    },
     Paralize,
     Info,
     Change,

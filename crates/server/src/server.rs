@@ -40,7 +40,7 @@ impl Server {
 
         let certificate = Certificate::self_signed(["localhost"]);
         let config = ServerConfig::builder()
-            .with_bind_config(IpBindConfig::InAddrAnyV4, port)
+            .with_bind_config(IpBindConfig::InAddrAnyDual, port)
             .with_certificate(certificate)
             .keep_alive_interval(Some(Duration::from_secs(3)))
             .build();

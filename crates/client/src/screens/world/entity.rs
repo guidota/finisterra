@@ -56,6 +56,7 @@ pub struct Character {
 
     // store 3 last known positions
     just_finished_moving: bool,
+    just_started_moving: bool,
     interpolation_time: Duration,
     pub position_buffer: Vec<WorldPosition>,
     pub render_position: (f32, f32),
@@ -121,6 +122,7 @@ impl Character {
             dialog: None,
             interpolation_time: Duration::ZERO,
             just_finished_moving: false,
+            just_started_moving: false,
             position_buffer: vec![],
             render_position: (
                 character.position.x as f32 * 32.,
@@ -148,6 +150,8 @@ impl Character {
                 character.position.x as f32 * 32.,
                 character.position.y as f32 * 32.,
             ),
+
+            just_started_moving: false,
             just_finished_moving: false,
 
             inner: character,
@@ -181,7 +185,7 @@ impl Character {
             helmet,
             weapon,
             animator: Animator {
-                duration: Duration::from_millis(300),
+                duration: Duration::from_millis(200),
                 ..Default::default()
             },
         }
@@ -212,6 +216,10 @@ impl Character {
         !self.position_buffer.is_empty()
     }
 
+    pub fn just_started_moving(&self) -> bool {
+        self.just_started_moving
+    }
+
     pub fn just_finished_moving(&self) -> bool {
         self.just_finished_moving
     }
@@ -224,8 +232,10 @@ impl Character {
                 self.position.x = target.x;
                 self.position.y = target.y;
                 self.position_buffer.remove(0);
+                // check tile exit
             } else {
                 self.just_finished_moving = false;
+                self.just_started_moving = false;
             }
             self.interpolation_time = self
                 .interpolation_time
@@ -246,8 +256,10 @@ impl Character {
 
             if self.just_finished_moving && !self.position_buffer.is_empty() {
                 self.interpolation_time = Duration::from_millis(200);
-                let direction = get_direction(&self.position, &self.position_buffer[0]);
-                self.change_direction(direction);
+                if let Some(direction) = get_direction(&self.position, &self.position_buffer[0]) {
+                    self.change_direction(direction);
+                }
+                self.just_started_moving = true;
             }
         }
     }
@@ -258,14 +270,26 @@ impl Character {
 
     pub fn move_to(&mut self, position: WorldPosition) {
         if self.position_buffer.is_empty() {
+            if let Some(direction) = get_direction(&self.position, &position) {
+                self.change_direction(direction);
+            }
+            if self.position == position {
+                return;
+            }
             self.interpolation_time = Duration::from_millis(200);
-            let direction = get_direction(&self.position, &position);
-            self.change_direction(direction);
+            self.just_started_moving = true;
         }
         self.position_buffer.push(position);
         if self.position_buffer.len() >= 3 {
             self.position_buffer.remove(0);
         }
+    }
+
+    pub fn translate(&mut self, position: WorldPosition) {
+        self.position = position;
+        self.position_buffer.clear();
+        self.just_started_moving = false;
+        self.just_finished_moving = false;
     }
 
     pub fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {

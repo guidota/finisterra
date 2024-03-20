@@ -73,6 +73,13 @@ impl AnimatedCharacter {
         self.animator.animation = animation;
         self.animator.time = Duration::ZERO;
         self.animator.current_frame = 0;
+
+        let frames = self.body[animation][self.animator.direction].frames.len();
+        if frames == 5 {
+            self.animator.duration = Duration::from_millis(200);
+        } else {
+            self.animator.duration = Duration::from_millis(270);
+        }
     }
 
     pub fn update_animation(&mut self, dt: Duration) {

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 use database::{model::CreateCharacter, Database};
@@ -19,9 +23,12 @@ pub struct Finisterra {
     world: World,
     accounts: Accounts,
 
+    /// connected users
     users: HashMap<u32, User>,
 
     outcoming_messages_sender: UnboundedSender<(u32, ServerPacket)>,
+
+    last_tick: Instant,
 }
 
 pub enum User {
@@ -44,9 +51,10 @@ impl Finisterra {
         // and send them to the corresponding users
         let (sender, receiver) = unbounded_channel();
 
-        let server = Server::initialize(receiver).await?;
         let world = World::initialize(sender.clone());
+        let server = Server::initialize(receiver).await?;
         let accounts = Accounts::initialize(database);
+
         let users = HashMap::default();
 
         Ok(Finisterra {
@@ -55,15 +63,22 @@ impl Finisterra {
             world,
             users,
             outcoming_messages_sender: sender,
+
+            last_tick: Instant::now(),
         })
     }
 
     pub async fn run(&mut self) -> Result<()> {
         loop {
-            self.update_connections().await;
-            self.process_incoming_messages().await;
-            self.update_world().await;
-            self.send_outcoming_messages().await;
+            let now = Instant::now();
+            let delta = now - self.last_tick;
+            if delta >= Duration::from_millis(16) {
+                self.update_connections().await;
+                self.process_incoming_messages().await;
+                self.update_world().await;
+                self.send_outcoming_messages().await;
+                self.last_tick = Instant::now();
+            }
         }
     }
 

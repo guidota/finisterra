@@ -48,7 +48,7 @@ impl Textures {
             spell_selection: engine.add_texture("./assets/interface/main/spell_selection.png"),
             spells_list: engine.add_texture("./assets/interface/main/spells_list.png"),
             inventory_slot: engine.add_texture("./assets/interface/main/inventory_slot.png"),
-            character_shadow: engine.add_texture("./assets/finisterra/images/shadow.png"),
+            character_shadow: engine.add_texture("./assets/finisterra/images/shadow-2.png"),
         }
     }
 }

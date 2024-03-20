@@ -22,19 +22,19 @@ pub struct Context<'tick, E: GameEngine> {
     pub engine: &'tick mut E,
     pub screen_transition_sender: &'tick Sender<Screen>,
     pub connection: &'tick mut ConnectionState,
-    pub resources: &'tick Resources,
+    pub resources: &'tick mut Resources,
 }
 
 impl Game for Finisterra {
     fn initialize<E: GameEngine>(engine: &mut E) -> Self {
-        let resources = Resources::load(engine);
+        let mut resources = Resources::load(engine);
         Fonts::load(engine);
         let screen_transition = channel();
         let mut connection = ConnectionState::new("https://[::1]:7666");
         let mut context = Context {
             screen_transition_sender: &screen_transition.0,
             connection: &mut connection,
-            resources: &resources,
+            resources: &mut resources,
             engine,
         };
         let home_screen = HomeScreen::new(&mut context);
@@ -54,7 +54,7 @@ impl Game for Finisterra {
         let mut context = Context {
             screen_transition_sender: &self.screen_transition.0,
             connection: &mut self.connection,
-            resources: &self.resources,
+            resources: &mut self.resources,
             engine,
         };
         self.screen.update(&mut context);

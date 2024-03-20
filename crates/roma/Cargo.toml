@@ -22,7 +22,7 @@ bmfont = { version = "0.3", default-features = false, features = [
   "serde_json",
 ] }
 
-image = { version = "0.24", default-features = false, features = [
+image = { version = "0.25", default-features = false, features = [
   "png",
   "jpeg",
 ] }

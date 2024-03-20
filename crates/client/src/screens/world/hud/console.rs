@@ -55,7 +55,7 @@ impl Console {
         };
 
         console.push(engine, "Test line 1", GRAY_2, TAHOMA_REGULAR_8_ID);
-        console.push(engine, "Test line 2", RED, TAHOMA_BOLD_8_SHADOW_ID);
+        console.push(engine, "Test line 2", RED_0, TAHOMA_BOLD_8_SHADOW_ID);
         console.push(engine, "Test line 3", YELLOW, TAHOMA_BOLD_8_ID);
 
         console
