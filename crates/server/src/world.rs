@@ -199,7 +199,6 @@ mod networking {
     }
 
     impl World {
-        // todo remove entity id and use target
         pub fn send(&self, packet: ServerPacket, target: Target) {
             match target {
                 Target::User { entity_id } => {

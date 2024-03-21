@@ -88,6 +88,9 @@ impl WorldScreen {
     ) -> Self {
         let ui = HUD::initialize(context, &character);
         let mut entities = IntMap::default();
+        let map = context.maps.get(&character.position.map);
+        map.tile_mut(character.position.x, character.position.y)
+            .user = Some(entity_id);
         entities.insert(entity_id, Entity::Character(character));
 
         context.engine.set_mouse_cursor(CursorIcon::Default);
@@ -125,7 +128,12 @@ impl WorldScreen {
                     entity_id,
                     character,
                 } => {
+                    let map = context.maps.get(&character.position.map);
+                    map.tile_mut(character.position.x, character.position.y)
+                        .user = Some(entity_id);
+
                     let entity = Entity::Character(Character::from(context, character));
+
                     self.entities.insert(entity_id, entity);
                 }
                 CharacterUpdate::Remove { entity_id } => {
@@ -160,7 +168,7 @@ impl WorldScreen {
                     request_id,
                     position,
                 } => {
-                    self.reconciliation(request_id, position);
+                    self.reconciliation(request_id, position, context);
                 }
                 CharacterUpdate::Heading {
                     entity_id,
@@ -265,8 +273,7 @@ impl WorldScreen {
 
     fn update_fps<E: GameEngine>(&mut self, context: &mut Context<E>) {
         self.fps.update(context.engine.get_delta());
-        let average_fps = self.fps.get();
-        let fps = format!("{:.0} FPS", average_fps);
+        let fps = format!("{:.0} FPS", self.fps.get());
         self.hud.fps.set_text(&fps, context.engine);
     }
 

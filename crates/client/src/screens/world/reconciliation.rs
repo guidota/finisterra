@@ -1,11 +1,19 @@
 use std::cmp::Ordering;
 
+use engine::engine::GameEngine;
 use shared::world::WorldPosition;
+
+use crate::game::Context;
 
 use super::{entity::Entity, WorldScreen};
 
 impl WorldScreen {
-    pub fn reconciliation(&mut self, request_id: u8, position: WorldPosition) {
+    pub fn reconciliation<E: GameEngine>(
+        &mut self,
+        request_id: u8,
+        position: WorldPosition,
+        context: &mut Context<E>,
+    ) {
         let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) else {
             return;
         };
@@ -29,6 +37,16 @@ impl WorldScreen {
                         }
 
                         correct_position(predicted_position, position, character);
+                        let map = context.maps.get(&predicted_position.map);
+                        let tile = map.tile_mut(predicted_position.x, predicted_position.y);
+                        if let Some(user) = tile.user {
+                            if user == self.entity_id {
+                                tile.user = None;
+                            }
+                        }
+                        let map = context.maps.get(&position.map);
+                        let tile = map.tile_mut(position.x, position.y);
+                        tile.user = Some(self.entity_id);
                     }
                 }
                 Ordering::Greater => {}

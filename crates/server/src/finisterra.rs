@@ -1,16 +1,16 @@
 use std::{
-    collections::HashMap,
     sync::Arc,
     time::{Duration, Instant},
 };
 
 use anyhow::Result;
 use database::{model::CreateCharacter, Database};
+use nohash_hasher::IntMap;
 use shared::protocol::{
     client::{self, ClientPacket},
     server::{self, ServerPacket},
 };
-use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
 use crate::{
     accounts::{AccountEvent, Accounts},
@@ -24,9 +24,11 @@ pub struct Finisterra {
     accounts: Accounts,
 
     /// connected users
-    users: HashMap<u32, User>,
+    users: IntMap<u32, User>,
+    connection_ids: IntMap<u32, u32>,
 
     outcoming_messages_sender: UnboundedSender<(u32, ServerPacket)>,
+    outcoming_messages_receiver: UnboundedReceiver<(u32, ServerPacket)>,
 
     last_tick: Instant,
 }
@@ -49,20 +51,26 @@ impl Finisterra {
 
         // world will produce ServerPackets to be send to the users and the server will consume
         // and send them to the corresponding users
-        let (sender, receiver) = unbounded_channel();
+        let (outcoming_messages_sender, receiver) = unbounded_channel();
 
-        let world = World::initialize(sender.clone());
         let server = Server::initialize(receiver).await?;
         let accounts = Accounts::initialize(database);
 
-        let users = HashMap::default();
+        let (sender, outcoming_messages_receiver) = unbounded_channel();
+        let world = World::initialize(sender.clone());
+
+        let users = IntMap::default();
+        let connection_ids = IntMap::default();
 
         Ok(Finisterra {
             accounts,
             server,
             world,
             users,
-            outcoming_messages_sender: sender,
+            connection_ids,
+
+            outcoming_messages_sender,
+            outcoming_messages_receiver,
 
             last_tick: Instant::now(),
         })
@@ -77,7 +85,7 @@ impl Finisterra {
                 self.process_incoming_messages().await;
                 self.update_world().await;
                 self.send_outcoming_messages().await;
-                self.last_tick = Instant::now();
+                self.last_tick = now;
             }
         }
     }
@@ -96,6 +104,7 @@ impl Finisterra {
         for connection_id in disconnections {
             if let Some(User::InWorld { entity_id }) = self.users.get(&connection_id) {
                 self.world.remove_character(entity_id).await;
+                self.connection_ids.remove(entity_id);
             }
             self.users.remove(&connection_id);
         }
@@ -114,11 +123,9 @@ impl Finisterra {
                             character_names: vec![],
                         },
                     );
-                    self.send(
-                        connection_id,
-                        ServerPacket::Account(server::Account::Created { account_name }),
-                    )
-                    .await;
+                    let account_created =
+                        ServerPacket::Account(server::Account::Created { account_name });
+                    self.send(connection_id, account_created).await;
                 }
                 AccountEvent::CreateFailed {
                     connection_id,
@@ -174,6 +181,7 @@ impl Finisterra {
                     let entity_id = self.world.create_character(&character);
                     self.users
                         .insert(connection_id, User::InWorld { entity_id });
+                    self.connection_ids.insert(entity_id, connection_id);
                     self.send(
                         connection_id,
                         ServerPacket::Account(server::Account::LoginCharacterOk {
@@ -201,6 +209,8 @@ impl Finisterra {
                     let entity_id = self.world.create_character(&character);
                     self.users
                         .insert(connection_id, User::InWorld { entity_id });
+
+                    self.connection_ids.insert(entity_id, connection_id);
                     self.send(
                         connection_id,
                         ServerPacket::Account(server::Account::CreateCharacterOk {
@@ -312,6 +322,11 @@ impl Finisterra {
     }
 
     async fn send_outcoming_messages(&mut self) {
+        while let Ok((entity_id, message)) = self.outcoming_messages_receiver.try_recv() {
+            if let Some(connection_id) = self.connection_ids.get(&entity_id) {
+                self.send(*connection_id, message).await;
+            }
+        }
         self.server.send_outcoming_messages().await;
     }
 }

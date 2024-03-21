@@ -259,7 +259,6 @@ impl Character {
 
         let x = render_position.0.floor() as u16;
         let y = render_position.1.floor() as u16;
-        // let z = calculate_z(2, render_position.0 / 32., render_position.1 / 32.);
         let z = Z[2][(render_position.0 / 32.).round() as usize]
             [(render_position.1 / 32.).round() as usize];
 
