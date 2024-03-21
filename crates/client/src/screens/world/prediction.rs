@@ -22,11 +22,6 @@ impl WorldScreen {
                 && elapsed_since_last_move >= Duration::from_millis(200 - latency as u64)
             {
                 if let Some(direction) = self.input.front() {
-                    tracing::info!(
-                        "starting move {}, last move was {}ms ago",
-                        self.movement_sequence,
-                        elapsed_since_last_move.as_millis()
-                    );
                     let map = context.maps.get(&character.position.map);
                     let position = map.next_position(&character.position, *direction);
                     character.change_direction(*direction);

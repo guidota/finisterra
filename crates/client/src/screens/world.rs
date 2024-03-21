@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::VecDeque, time::Instant};
+use std::{collections::VecDeque, time::Instant};
 
 use engine::{
     camera::{self, Viewport, Zoom},
@@ -18,6 +18,7 @@ use crate::{argentum::Image, game::Context, ui::colors::*, ui::fonts::*};
 use self::{
     depth::Z,
     entity::{Character, Entity},
+    fps::Fps,
     hud::HUD,
 };
 
@@ -25,9 +26,12 @@ use super::GameScreen;
 
 mod depth;
 pub mod entity;
+pub mod fps;
 pub mod hud;
 pub mod input;
-pub mod movement;
+pub mod interpolation;
+pub mod prediction;
+pub mod reconciliation;
 
 const TILE_SIZE: u16 = 32;
 const TILE_SIZE_F: f32 = TILE_SIZE as f32;
@@ -52,22 +56,38 @@ pub struct WorldScreen {
     movement_sequence: u8,
     predictions: Vec<(u8, WorldPosition)>,
     last_move: Instant,
+
+    fps: Fps,
+}
+
+impl GameScreen for WorldScreen {
+    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.process_messages(context);
+        self.process_input(context);
+
+        self.prepare_viewports(context.engine);
+
+        self.update_hud(context);
+        self.update_fps(context);
+        self.update_ping(context);
+        self.update_character(context);
+        self.update_message_input(context);
+    }
+
+    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
+        self.draw_hud(context);
+        self.draw_world(context);
+    }
 }
 
 impl WorldScreen {
     pub fn new<E: GameEngine>(
         context: &mut Context<E>,
         entity_id: u32,
-        mut character: Character,
+        character: Character,
     ) -> Self {
         let ui = HUD::initialize(context, &character);
         let mut entities = IntMap::default();
-        character.add_dialog(
-            context.engine,
-            "Rahma Nañarak O'al",
-            TAHOMA_BOLD_8_SHADOW_ID,
-            CYAN,
-        );
         entities.insert(entity_id, Entity::Character(character));
 
         context.engine.set_mouse_cursor(CursorIcon::Default);
@@ -80,6 +100,7 @@ impl WorldScreen {
             predictions: vec![],
             input: VecDeque::new(),
             last_move: Instant::now(),
+            fps: Fps::default(),
         }
     }
 
@@ -139,64 +160,7 @@ impl WorldScreen {
                     request_id,
                     position,
                 } => {
-                    let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id)
-                    else {
-                        return;
-                    };
-                    // remove old predictions
-                    let mut to_remove = vec![];
-                    for (i, prediction) in self.predictions.iter().enumerate() {
-                        match prediction.0.cmp(&request_id) {
-                            Ordering::Less => {
-                                to_remove.push(i);
-                            }
-                            Ordering::Equal => {
-                                let predicted_position = prediction.1;
-                                if predicted_position != position {
-                                    tracing::error!("move {request_id} prediction was wrong");
-                                    tracing::info!(
-                                        "prediction {predicted_position:?} - server say {position:?}"
-                                    );
-
-                                    let do_correct = {
-                                        if let Some(move_to) = character.position_buffer.first() {
-                                            if move_to == &predicted_position {
-                                                character.position_buffer[0] = position;
-                                                false
-                                            } else {
-                                                true
-                                            }
-                                        } else {
-                                            true
-                                        }
-                                    };
-
-                                    if do_correct {
-                                        if predicted_position.x < position.x {
-                                            character.position.x += 1;
-                                            character.render_position.0 += 1.;
-                                        } else if predicted_position.x > position.x {
-                                            character.position.x -= 1;
-                                            character.render_position.0 -= 1.;
-                                        } else if predicted_position.y < position.y {
-                                            character.position.y += 1;
-                                            character.render_position.1 += 1.;
-                                        } else if predicted_position.y > position.y {
-                                            character.position.y -= 1;
-                                            character.render_position.1 -= 1.;
-                                        }
-                                    }
-                                } else {
-                                    tracing::info!("move prediction was ok");
-                                }
-                                to_remove.push(i);
-                            }
-                            Ordering::Greater => {}
-                        }
-                    }
-                    for i in to_remove.iter().rev() {
-                        self.predictions.remove(*i);
-                    }
+                    self.reconciliation(request_id, position);
                 }
                 CharacterUpdate::Heading {
                     entity_id,
@@ -219,9 +183,9 @@ impl WorldScreen {
                     };
                     let (font_id, color) = match kind {
                         DialogKind::Normal => (TAHOMA_BOLD_8_SHADOW_ID, WHITE),
-                        DialogKind::MagicWords => (TAHOMA_BOLD_8_SHADOW_ID, CYAN),
                         DialogKind::Shout => (TAHOMA_BOLD_8_SHADOW_ID, RED),
                         DialogKind::Role => (TAHOMA_BOLD_8_SHADOW_ID, YELLOW),
+                        DialogKind::MagicWords => (TAHOMA_BOLD_8_SHADOW_ID, CYAN),
                     };
                     character.add_dialog(context.engine, &text, font_id, color);
                 }
@@ -300,15 +264,15 @@ impl WorldScreen {
     }
 
     fn update_fps<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let fps = format!("{:.0} FPS", 1. / context.engine.get_delta().as_secs_f64());
+        self.fps.update(context.engine.get_delta());
+        let average_fps = self.fps.get();
+        let fps = format!("{:.0} FPS", average_fps);
         self.hud.fps.set_text(&fps, context.engine);
     }
 
     fn update_ping<E: GameEngine>(&mut self, context: &mut Context<E>) {
         let ping = context.connection.ping();
-        self.hud
-            .ping
-            .set_text(&format!("PING: {ping}ms"), context.engine);
+        self.hud.ping.set_text(&format!("{ping}ms"), context.engine);
     }
 
     fn draw_world<E: GameEngine>(&mut self, context: &mut Context<E>) {
@@ -378,24 +342,4 @@ fn get_range(position: &WorldPosition) -> (usize, usize, usize, usize) {
     let y_start = (position.y - VERTICAL_EXTRA_TILES) as usize;
     let y_end = (position.y + VERTICAL_EXTRA_TILES) as usize;
     (x_start, x_end, y_start, y_end)
-}
-
-impl GameScreen for WorldScreen {
-    fn update<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.process_messages(context);
-        self.process_input(context);
-
-        self.prepare_viewports(context.engine);
-
-        self.update_hud(context);
-        self.update_fps(context);
-        self.update_ping(context);
-        self.update_character(context);
-        self.update_message_input(context);
-    }
-
-    fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        self.draw_hud(context);
-        self.draw_world(context);
-    }
 }

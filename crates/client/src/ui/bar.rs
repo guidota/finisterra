@@ -53,7 +53,7 @@ impl Bar {
     }
 
     pub fn set_position(&mut self, x: u16, y: u16) {
-        self.label.position = (x, y);
+        self.label.position = (x, y + 1);
         self.image.position = (x, y);
     }
 

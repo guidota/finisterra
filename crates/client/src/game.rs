@@ -34,7 +34,11 @@ impl Game for Finisterra {
         let mut maps = Maps::initialize("assets/finisterra/maps/");
         Fonts::load(engine);
         let screen_transition = channel();
-        let mut connection = ConnectionState::new("https://[::1]:7666", engine);
+
+        let args: Vec<String> = std::env::args().collect();
+        let localhost = "127.0.0.1".to_string();
+        let ip = args.get(1).unwrap_or(&localhost);
+        let mut connection = ConnectionState::new(&format!("https://{ip}:7666"), engine);
         let mut context = Context {
             screen_transition_sender: &screen_transition.0,
             connection: &mut connection,
