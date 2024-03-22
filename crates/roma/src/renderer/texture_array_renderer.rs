@@ -117,6 +117,7 @@ impl Renderer for TextureArrayRenderer {
                     width: texture.width,
                     height: texture.height,
                 };
+
                 let depth_texture_view = self
                     .depth_textures
                     .entry(size)
@@ -142,7 +143,7 @@ impl Renderer for TextureArrayRenderer {
                     width: size.width,
                     height: size.height,
                 };
-                let target_camera = Camera::initialize(dimensions, true);
+                let target_camera = Camera::initialize(dimensions, false);
                 self.offscreen.prepare_pass(&mut render_pass);
                 Self::render_range(&mut render_pass, range, &target_camera);
             }

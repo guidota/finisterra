@@ -1,9 +1,14 @@
+use std::time::Duration;
+
 use engine::{engine::GameEngine, input::keyboard::KeyCode};
 use shared::world::Direction;
 
 use crate::{
     game::Context,
-    ui::{colors::CYAN, fonts::TAHOMA_BOLD_8_SHADOW_ID},
+    ui::{
+        colors::{transparent, CYAN, YELLOW},
+        fonts::TAHOMA_BOLD_8_SHADOW_ID,
+    },
 };
 
 use super::{entity::Entity, WorldScreen};
@@ -50,6 +55,20 @@ impl WorldScreen {
                     TAHOMA_BOLD_8_SHADOW_ID,
                     CYAN,
                 );
+            }
+        }
+
+        if context.engine.key_pressed(KeyCode::KeyI) {
+            if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
+                if character.is_invisible() {
+                    character.remove_invisible();
+                } else {
+                    character.set_invisible(
+                        context.engine,
+                        Duration::from_secs(15),
+                        transparent(YELLOW, 128),
+                    );
+                }
             }
         }
     }

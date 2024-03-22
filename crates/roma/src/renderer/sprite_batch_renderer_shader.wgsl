@@ -96,7 +96,9 @@ struct VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let color = textureSample(texture, texture_sampler, in.texture_position);
-
+    if color.r == 0.0 && color.g == 0.0 && color.b == 0.0 {
+        discard;
+    }
     if color.a < 0.0001 {
         discard;
     }

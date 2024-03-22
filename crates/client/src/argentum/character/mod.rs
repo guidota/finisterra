@@ -12,7 +12,7 @@ use self::{
 pub mod animation;
 pub mod animator;
 
-pub type Armor = CharacterAnimations<ImageFrameMetadata>;
+pub type Clothing = CharacterAnimations<ImageFrameMetadata>;
 pub type Helmet = CharacterAnimations<ImageFrameMetadata>;
 pub type Shield = CharacterAnimations<ImageFrameMetadata>;
 pub type Weapon = CharacterAnimations<ImageFrameMetadata>;
@@ -40,7 +40,7 @@ pub struct BodyFrameMetadata {
     pub right_foot: Offset,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct AnimatedCharacter {
     pub body: Body,
     pub skin: Skin,
@@ -48,7 +48,7 @@ pub struct AnimatedCharacter {
     pub eyes: Option<Eyes>,
     pub face: Option<Face>,
     pub hair: Option<Hair>,
-    pub armor: Option<Armor>,
+    pub clothing: Option<Clothing>,
     pub shield: Option<Shield>,
     pub helmet: Option<Helmet>,
     pub weapon: Option<Weapon>,
@@ -73,13 +73,6 @@ impl AnimatedCharacter {
         self.animator.animation = animation;
         self.animator.time = Duration::ZERO;
         self.animator.current_frame = 0;
-
-        let frames = self.body[animation][self.animator.direction].frames.len();
-        if frames == 5 {
-            self.animator.duration = Duration::from_millis(200);
-        } else {
-            self.animator.duration = Duration::from_millis(270);
-        }
     }
 
     pub fn update_animation(&mut self, dt: Duration) {
@@ -216,6 +209,23 @@ impl AnimatedCharacter {
         } = self.animator;
 
         self.helmet.as_ref().map(|metadata| {
+            let animation = &metadata[animation][direction];
+            if animation.frames.len() == 1 {
+                return &animation[0];
+            }
+            &animation[current_frame]
+        })
+    }
+
+    pub fn get_clothing_frame(&self) -> Option<&ImageFrameMetadata> {
+        let Animator {
+            animation,
+            direction,
+            current_frame,
+            ..
+        } = self.animator;
+
+        self.clothing.as_ref().map(|metadata| {
             let animation = &metadata[animation][direction];
             if animation.frames.len() == 1 {
                 return &animation[0];

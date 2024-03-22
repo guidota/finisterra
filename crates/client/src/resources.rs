@@ -23,15 +23,14 @@ pub struct Resources {
     pub images: Vec<Image>,
     pub animations: Vec<Animation<ImageFrameMetadata>>,
 
-    pub bodies: Vec<Body>,
-    pub skins: Vec<Skin>,
+    pub bodies: Vec<(Body, Vec<Skin>)>,
     pub hairs: Vec<Hair>,
     pub eyes: Vec<Eyes>,
     pub faces: Vec<Face>,
     pub helmets: Vec<Helmet>,
     pub shields: Vec<Shield>,
     pub weapons: Vec<Weapon>,
-    pub armors: Vec<Armor>,
+    pub clothing: Vec<Clothing>,
 
     pub textures: Textures,
 }
@@ -41,11 +40,15 @@ impl Resources {
         let mut resources = Resources::default();
 
         resources.load_images(engine, "assets/finisterra/init/images.ron");
-        resources.load_body(engine, "assets/finisterra/human/ao-human/");
-        resources.load_head(engine, "assets/finisterra/human/ao-human/");
-        resources.load_shields(engine, "assets/finisterra/shields/ao-shields/");
-        resources.load_helmets(engine, "assets/finisterra/helmets/ao-helmets/");
-        resources.load_weapons(engine, "assets/finisterra/weapons/ao-weapons/");
+        resources.load_body(engine, "assets/finisterra/bodies/human/");
+        resources.load_body(engine, "assets/finisterra/bodies/elf/");
+        resources.load_body(engine, "assets/finisterra/bodies/drow/");
+        resources.load_body(engine, "assets/finisterra/bodies/dwarf/");
+        resources.load_cloth(engine, "assets/finisterra/clothing/");
+        resources.load_head(engine, "assets/finisterra/heads/");
+        resources.load_shields(engine, "assets/finisterra/shields/shields/");
+        resources.load_helmets(engine, "assets/finisterra/helmets/helmets/");
+        resources.load_weapons(engine, "assets/finisterra/weapons/dagas/");
         resources.load_textures(engine);
 
         resources
@@ -84,6 +87,8 @@ impl Resources {
         let file = File::open(skin_ron_path).expect("skin.ron not found");
         let base_skin: Skin = ron::de::from_reader(file).expect("invalid skin.ron");
 
+        let mut body_skins = vec![];
+
         // traverse skins folder
         let skins = fs::read_dir(format!("{folder}skins/")).expect("skins folder not present");
         for skin in skins {
@@ -103,10 +108,39 @@ impl Resources {
                 Layout::Rows,
             );
 
-            self.skins.push(skin);
+            body_skins.push(skin);
         }
 
-        self.bodies.push(body);
+        self.bodies.push((body, body_skins));
+    }
+
+    fn load_cloth<E: GameEngine>(&mut self, engine: &mut E, folder: &str) {
+        let cloth_ron_path = format!("{folder}cloth.ron");
+        let file = File::open(cloth_ron_path).expect("cloth.ron not found");
+        let base_cloth: Clothing = ron::de::from_reader(file).expect("invalid cloth.ron");
+
+        // traverse clothing folder
+        let clothing =
+            fs::read_dir(format!("{folder}clothing/")).expect("clothing folder not present");
+        for cloth in clothing {
+            let cloth = cloth.expect("should be an entry");
+            let cloth_path = cloth.path();
+            let img = image::open(cloth_path.clone()).expect("cloth file is not an image");
+            let width = img.width();
+            let height = img.height();
+
+            let file_num = engine.add_texture(cloth_path.to_str().expect("is a file"));
+            let cloth = from_images(
+                &mut self.images,
+                file_num,
+                &base_cloth,
+                width,
+                height,
+                Layout::Rows,
+            );
+
+            self.clothing.push(cloth);
+        }
     }
 
     fn load_head<E: GameEngine>(&mut self, engine: &mut E, folder: &str) {

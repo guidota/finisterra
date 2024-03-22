@@ -61,8 +61,9 @@ impl Textures {
     pub fn load_texture(&mut self, device: &Device, queue: &Queue, id: TextureID) -> bool {
         match self.textures[id as usize] {
             Texture::Uninitialized => {
-                if (id as usize) < self.next_texture_id {
-                    self.next_texture_id = id as usize;
+                if (id as usize) > self.next_texture_id {
+                    self.textures.push(Texture::Uninitialized);
+                    self.next_texture_id = 1 + id as usize;
                 }
                 let Some(path) = self.files.get(&id) else {
                     self.textures[id as usize] = Texture::NotFound;

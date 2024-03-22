@@ -300,7 +300,7 @@ impl WorldScreen {
                 if tile.graphics[*layer] != 0 {
                     let z = Z[*layer][x][y];
                     let image = &context.resources.images[tile.graphics[*layer]];
-                    let position = Position::new(world_x - image.width / 2, world_y, z);
+                    let position = Position::new(world_x + 16 - image.width / 2, world_y, z);
                     let color = self.layer_4_color(position, image);
 
                     context.engine.draw_image(
@@ -315,8 +315,8 @@ impl WorldScreen {
                 };
                 if layer == &2 {
                     if let Some(entity_id) = tile.user {
-                        if let Some(Entity::Character(character)) = self.entities.get(&entity_id) {
-                            character.draw(context.engine, context.resources);
+                        if let Some(entity) = self.entities.get_mut(&entity_id) {
+                            entity.draw(context.engine, context.resources);
                         }
                     }
                 }

@@ -5,6 +5,7 @@ use interpolation::lerp;
 use super::entity::Character;
 
 impl Character {
+    /// use position buffer to set current position
     pub fn interpolate(&mut self, delta: Duration) {
         if let Some(target) = self.position_buffer.first().cloned() {
             if self.interpolation_time.as_millis() as f32 - delta.as_millis() as f32 <= 0. {
