@@ -17,7 +17,7 @@ use engine::{
     engine::{FontID, GameEngine, TextureID},
 };
 use interpolation::quad_bez;
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, Rng};
 use shared::{
     character::{self},
     world::{Direction, WorldPosition},
@@ -56,7 +56,7 @@ impl Entity {
 }
 
 pub struct Character {
-    inner: character::Character,
+    pub inner: character::Character,
 
     pub just_finished_moving: bool,
     pub just_started_moving: bool,
@@ -198,7 +198,7 @@ impl Character {
         }
     }
 
-    fn random(resources: &Resources) -> AnimatedCharacter {
+    pub fn random(resources: &Resources) -> AnimatedCharacter {
         let rng = &mut rand::thread_rng();
 
         let (body, skins) = resources.bodies.choose(rng).unwrap().clone();
@@ -206,10 +206,26 @@ impl Character {
         let face = Some(resources.faces.choose(rng).unwrap().clone());
         let eyes = Some(resources.eyes.choose(rng).unwrap().clone());
         let hair = Some(resources.hairs.choose(rng).unwrap().clone());
-        let shield = Some(resources.shields.choose(rng).unwrap().clone());
-        let helmet = Some(resources.helmets.choose(rng).unwrap().clone());
-        let weapon = Some(resources.weapons.choose(rng).unwrap().clone());
-        let clothing = Some(resources.clothing.choose(rng).unwrap().clone());
+        let shield = if rng.gen_bool(0.5) {
+            resources.shields.choose(rng).cloned()
+        } else {
+            None
+        };
+        let helmet = if rng.gen_bool(0.5) {
+            resources.helmets.choose(rng).cloned()
+        } else {
+            None
+        };
+        let weapon = if rng.gen_bool(0.5) {
+            resources.weapons.choose(rng).cloned()
+        } else {
+            None
+        };
+        let clothing = if rng.gen_bool(0.5) {
+            resources.clothing.choose(rng).cloned()
+        } else {
+            None
+        };
 
         AnimatedCharacter {
             body,
@@ -316,7 +332,7 @@ impl Character {
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
-                position: Position::new(x + 17, y, z + 0.01),
+                position: Position::new(x + 17, y, z + 0.001),
                 color: name_color,
             },
             Target::World,
@@ -332,7 +348,7 @@ impl Character {
                 TAHOMA_BOLD_8_SHADOW_ID,
                 DrawText {
                     text: clan_text,
-                    position: Position::new(x + 17, y - 13, z + 0.01),
+                    position: Position::new(x + 17, y - 13, z + 0.001),
                     color: name_color,
                 },
                 Target::World,

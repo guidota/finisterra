@@ -11,7 +11,10 @@ use crate::{
     },
 };
 
-use super::{entity::Entity, WorldScreen};
+use super::{
+    entity::{Character, Entity},
+    WorldScreen,
+};
 
 impl WorldScreen {
     pub fn process_input<E: GameEngine>(&mut self, context: &mut Context<E>) {
@@ -69,6 +72,11 @@ impl WorldScreen {
                         transparent(YELLOW, 128),
                     );
                 }
+            }
+        }
+        if context.engine.key_pressed(KeyCode::KeyR) {
+            if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
+                character.animation = Character::random(context.resources);
             }
         }
     }
