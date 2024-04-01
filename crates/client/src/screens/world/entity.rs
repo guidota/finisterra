@@ -151,7 +151,7 @@ impl Character {
             position_buffer: vec![],
             render_position: (
                 character.position.x as f32 * TILE_SIZE_F,
-                character.position.y as f32 * TILE_SIZE_F,
+                (character.position.y as f32 * TILE_SIZE_F) - TILE_SIZE_F / 2.,
             ),
 
             invisible: None,
@@ -301,33 +301,38 @@ impl Character {
         let body = self.animation.get_body_frame();
         let render_position = self.render_position;
 
-        let x = render_position.0.floor() as u16;
-        let y = render_position.1.floor() as u16;
-        let z = Z[2][(render_position.0 / 32.).round() as usize]
-            [(render_position.1 / 32.).round() as usize];
+        let x = render_position.0 as u16;
+        let y = render_position.1 as u16;
+        let z = Z[2][(render_position.0 / TILE_SIZE_F) as usize]
+            [(render_position.1 / TILE_SIZE_F) as usize];
 
         let name_color = self
             .invisible
             .as_ref()
-            .map(|invisibility| invisibility.name_color)
-            .unwrap_or(RED_0);
+            .map(|_| transparent(RED_0, 120))
+            .unwrap_or(transparent(RED_0, 244));
 
         engine.draw_text(
             TAHOMA_BOLD_8_SHADOW_ID,
             DrawText {
                 text: &self.name_text,
-                position: Position::new(x + 17, y, z),
+                position: Position::new(x + 17, y, z + 0.01),
                 color: name_color,
             },
             Target::World,
         );
 
         if let Some(clan_text) = self.clan_text.as_ref() {
+            let name_color = self
+                .invisible
+                .as_ref()
+                .map(|invisibility| invisibility.name_color)
+                .unwrap_or(transparent(RED_0, 244));
             engine.draw_text(
                 TAHOMA_BOLD_8_SHADOW_ID,
                 DrawText {
                     text: clan_text,
-                    position: Position::new(x + 17, y - 13, z),
+                    position: Position::new(x + 17, y - 13, z + 0.01),
                     color: name_color,
                 },
                 Target::World,
@@ -356,7 +361,7 @@ impl Character {
                     engine.draw_image(
                         DrawImage {
                             position: Position::new(x + 16 - 32, y, z),
-                            color: transparent(GRAY_3, transparency),
+                            color: transparent(GRAY_6, transparency),
                             index: *texture,
                             source: [offset_x as u16, offset_y as u16, 64, 64],
                         },
@@ -382,7 +387,7 @@ impl Character {
             let head_x = body_frame_metadata.head.x as u16;
             let x = x + head_x + 1;
             let y = y + head_y;
-            dialog.draw(engine, Position::new(x, y, z));
+            dialog.draw(engine, Position::new(x, y, 0.99));
         }
     }
 

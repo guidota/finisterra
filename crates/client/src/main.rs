@@ -13,7 +13,7 @@ pub mod ui;
 #[tokio::main]
 async fn main() {
     let settings = engine::settings::Settings {
-        width: 920,
+        width: 800,
         height: 540,
         title: "Finisterra".to_string(),
         vsync: true,

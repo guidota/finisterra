@@ -1,17 +1,55 @@
 (
-  idle: (
-    east: (
+  walk: (
+    west: (
       frames: [
-        (image: 17, priority: 10, offset: (x: 15, y: 16)),
-        (image: 18, priority: 10, offset: (x: 15, y: 16)),
-        (image: 19, priority: 10, offset: (x: 15, y: 16)),
-        (image: 20, priority: 10, offset: (x: 15, y: 16)),
-        (image: 21, priority: 10, offset: (x: 15, y: 16)),
-        (image: 22, priority: 10, offset: (x: 15, y: 16)),
-        (image: 23, priority: 10, offset: (x: 15, y: 16)),
-        (image: 24, priority: 10, offset: (x: 15, y: 16)),
+        (image: 57, priority: 10, offset: (x: 15, y: 16)),
+        (image: 58, priority: 10, offset: (x: 15, y: 16)),
+        (image: 59, priority: 10, offset: (x: 15, y: 16)),
+        (image: 60, priority: 10, offset: (x: 15, y: 16)),
+        (image: 61, priority: 10, offset: (x: 15, y: 16)),
+        (image: 62, priority: 10, offset: (x: 15, y: 16)),
+        (image: 63, priority: 10, offset: (x: 15, y: 16)),
+        (image: 64, priority: 10, offset: (x: 15, y: 16)),
       ],
     ),
+    south: (
+      frames: [
+        (image: 33, priority: 10, offset: (x: 15, y: 16)),
+        (image: 34, priority: 10, offset: (x: 15, y: 16)),
+        (image: 35, priority: 10, offset: (x: 15, y: 16)),
+        (image: 36, priority: 10, offset: (x: 15, y: 16)),
+        (image: 37, priority: 10, offset: (x: 15, y: 16)),
+        (image: 38, priority: 10, offset: (x: 15, y: 16)),
+        (image: 39, priority: 10, offset: (x: 15, y: 16)),
+        (image: 40, priority: 10, offset: (x: 15, y: 16)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 41, priority: 10, offset: (x: 15, y: 16)),
+        (image: 42, priority: 10, offset: (x: 15, y: 16)),
+        (image: 43, priority: 10, offset: (x: 15, y: 16)),
+        (image: 44, priority: 10, offset: (x: 15, y: 16)),
+        (image: 45, priority: 10, offset: (x: 15, y: 16)),
+        (image: 46, priority: 10, offset: (x: 15, y: 16)),
+        (image: 47, priority: 10, offset: (x: 15, y: 16)),
+        (image: 48, priority: 10, offset: (x: 15, y: 16)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 49, priority: 10, offset: (x: 15, y: 16)),
+        (image: 50, priority: 10, offset: (x: 15, y: 16)),
+        (image: 51, priority: 10, offset: (x: 15, y: 16)),
+        (image: 52, priority: 10, offset: (x: 15, y: 16)),
+        (image: 53, priority: 10, offset: (x: 15, y: 16)),
+        (image: 54, priority: 10, offset: (x: 15, y: 16)),
+        (image: 55, priority: 10, offset: (x: 15, y: 16)),
+        (image: 56, priority: 10, offset: (x: 15, y: 16)),
+      ],
+    ),
+  ),
+  idle: (
     west: (
       frames: [
         (image: 25, priority: 10, offset: (x: 15, y: 16)),
@@ -48,54 +86,16 @@
         (image: 16, priority: 10, offset: (x: 15, y: 16)),
       ],
     ),
-  ),
-  walk: (
     east: (
       frames: [
-        (image: 49, priority: 10, offset: (x: 15, y: 16)),
-        (image: 50, priority: 10, offset: (x: 15, y: 16)),
-        (image: 51, priority: 10, offset: (x: 15, y: 16)),
-        (image: 52, priority: 10, offset: (x: 15, y: 16)),
-        (image: 53, priority: 10, offset: (x: 15, y: 16)),
-        (image: 54, priority: 10, offset: (x: 15, y: 16)),
-        (image: 55, priority: 10, offset: (x: 15, y: 16)),
-        (image: 56, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
-    west: (
-      frames: [
-        (image: 57, priority: 10, offset: (x: 15, y: 16)),
-        (image: 58, priority: 10, offset: (x: 15, y: 16)),
-        (image: 59, priority: 10, offset: (x: 15, y: 16)),
-        (image: 60, priority: 10, offset: (x: 15, y: 16)),
-        (image: 61, priority: 10, offset: (x: 15, y: 16)),
-        (image: 62, priority: 10, offset: (x: 15, y: 16)),
-        (image: 63, priority: 10, offset: (x: 15, y: 16)),
-        (image: 64, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
-    south: (
-      frames: [
-        (image: 33, priority: 10, offset: (x: 15, y: 16)),
-        (image: 34, priority: 10, offset: (x: 15, y: 16)),
-        (image: 35, priority: 10, offset: (x: 15, y: 16)),
-        (image: 36, priority: 10, offset: (x: 15, y: 16)),
-        (image: 37, priority: 10, offset: (x: 15, y: 16)),
-        (image: 38, priority: 10, offset: (x: 15, y: 16)),
-        (image: 39, priority: 10, offset: (x: 15, y: 16)),
-        (image: 40, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
-    north: (
-      frames: [
-        (image: 41, priority: 10, offset: (x: 15, y: 16)),
-        (image: 42, priority: 10, offset: (x: 15, y: 16)),
-        (image: 43, priority: 10, offset: (x: 15, y: 16)),
-        (image: 44, priority: 10, offset: (x: 15, y: 16)),
-        (image: 45, priority: 10, offset: (x: 15, y: 16)),
-        (image: 46, priority: 10, offset: (x: 15, y: 16)),
-        (image: 47, priority: 10, offset: (x: 15, y: 16)),
-        (image: 48, priority: 10, offset: (x: 15, y: 16)),
+        (image: 17, priority: 10, offset: (x: 15, y: 16)),
+        (image: 18, priority: 10, offset: (x: 15, y: 16)),
+        (image: 19, priority: 10, offset: (x: 15, y: 16)),
+        (image: 20, priority: 10, offset: (x: 15, y: 16)),
+        (image: 21, priority: 10, offset: (x: 15, y: 16)),
+        (image: 22, priority: 10, offset: (x: 15, y: 16)),
+        (image: 23, priority: 10, offset: (x: 15, y: 16)),
+        (image: 24, priority: 10, offset: (x: 15, y: 16)),
       ],
     ),
   ),

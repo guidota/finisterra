@@ -1,45 +1,45 @@
 (
   walk: (
-    east: (
-      frames: [
-        (image: 7, priority: 12, offset: (x: 12, y: 6)),
-      ],
-    ),
-    north: (
-      frames: [
-        (image: 6, priority: 12, offset: (x: 12, y: 6)),
-      ],
-    ),
     south: (
       frames: [
-        (image: 5, priority: 12, offset: (x: 12, y: 6)),
+        (image: 5, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 7, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
       ],
     ),
     west: (
       frames: [
-        (image: 8, priority: 12, offset: (x: 12, y: 6)),
+        (image: 8, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 6, hair_priority: 13, eyes_priority: 10, face_priority: 10, offset: (x: 12, y: 6)),
       ],
     ),
   ),
   idle: (
-    east: (
-      frames: [
-        (image: 3, priority: 12, offset: (x: 12, y: 6)),
-      ],
-    ),
-    north: (
-      frames: [
-        (image: 2, priority: 12, offset: (x: 12, y: 6)),
-      ],
-    ),
     south: (
       frames: [
-        (image: 1, priority: 12, offset: (x: 12, y: 6)),
+        (image: 1, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
+      ],
+    ),
+    east: (
+      frames: [
+        (image: 3, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
       ],
     ),
     west: (
       frames: [
-        (image: 4, priority: 12, offset: (x: 12, y: 6)),
+        (image: 4, hair_priority: 13, eyes_priority: 12, face_priority: 11, offset: (x: 12, y: 6)),
+      ],
+    ),
+    north: (
+      frames: [
+        (image: 2, hair_priority: 13, eyes_priority: 10, face_priority: 10, offset: (x: 12, y: 6)),
       ],
     ),
   ),

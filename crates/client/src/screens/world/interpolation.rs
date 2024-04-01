@@ -33,7 +33,7 @@ impl Character {
                 &(target.y as f32),
                 &interpolation_progress,
             );
-            self.render_position = (x * 32., y * 32.);
+            self.render_position = ((x * 32.).round(), (y * 32.).round());
 
             if self.just_finished_moving && !self.position_buffer.is_empty() {
                 self.interpolation_time = Duration::from_millis(200);

@@ -1,9 +1,9 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "crates/engine/implementations/*"]
 resolver = "2"
 
 [workspace.dependencies]
-roma = { path = "crates/roma" }
+roma = { path = "crates/engine/implementations/roma" }
 engine = { path = "crates/engine" }
 database = { path = "crates/database" }
 shared = { path = "crates/shared" }

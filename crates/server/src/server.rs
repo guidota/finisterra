@@ -7,7 +7,7 @@ use tokio::sync::{
     Mutex,
 };
 use tracing::{error, info};
-use wtransport::{config::IpBindConfig, Certificate, Endpoint, SendStream, ServerConfig};
+use wtransport::{config::IpBindConfig, Endpoint, Identity, SendStream, ServerConfig};
 
 enum ConnectionEvent {
     Accepted {
@@ -38,10 +38,9 @@ impl Server {
             .map(|port| port.parse::<u16>().unwrap_or(0))
             .unwrap_or(0);
 
-        let certificate = Certificate::self_signed(["localhost"]);
         let config = ServerConfig::builder()
             .with_bind_config(IpBindConfig::InAddrAnyDual, port)
-            .with_certificate(certificate)
+            .with_identity(&Identity::self_signed(["localhost"]))
             .keep_alive_interval(Some(Duration::from_secs(3)))
             .build();
 

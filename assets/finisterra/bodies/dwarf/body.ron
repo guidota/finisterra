@@ -1,5 +1,17 @@
 (
   walk: (
+    south: (
+      frames: [
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 18, y: 28), right_hand: (x: 10, y: 29), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 18, y: 28), right_hand: (x: 10, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 21, y: 25), right_hand: (x: 10, y: 26), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 16, y: 38), left_hand: (x: 21, y: 29), right_hand: (x: 11, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 16, y: 37), left_hand: (x: 21, y: 29), right_hand: (x: 13, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 16, y: 36), left_hand: (x: 21, y: 28), right_hand: (x: 13, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 16, y: 36), left_hand: (x: 21, y: 26), right_hand: (x: 10, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 38), left_hand: (x: 20, y: 28), right_hand: (x: 10, y: 29), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+      ],
+    ),
     east: (
       frames: [
         (base: (x: 15, y: 16), head: (x: 16, y: 39), left_hand: (x: 11, y: 30), right_hand: (x: 23, y: 31), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
@@ -24,18 +36,6 @@
         (base: (x: 15, y: 16), head: (x: 15, y: 39), left_hand: (x: 15, y: 31), right_hand: (x: 22, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
       ],
     ),
-    south: (
-      frames: [
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 18, y: 28), right_hand: (x: 10, y: 29), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 18, y: 28), right_hand: (x: 10, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 21, y: 25), right_hand: (x: 10, y: 26), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 16, y: 38), left_hand: (x: 21, y: 29), right_hand: (x: 11, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 16, y: 37), left_hand: (x: 21, y: 29), right_hand: (x: 13, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 16, y: 36), left_hand: (x: 21, y: 28), right_hand: (x: 13, y: 28), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 16, y: 36), left_hand: (x: 21, y: 26), right_hand: (x: 10, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 38), left_hand: (x: 20, y: 28), right_hand: (x: 10, y: 29), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-      ],
-    ),
     west: (
       frames: [
         (base: (x: 15, y: 16), head: (x: 15, y: 39), left_hand: (x: 8, y: 31), right_hand: (x: 20, y: 30), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
@@ -50,6 +50,18 @@
     ),
   ),
   idle: (
+    south: (
+      frames: [
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
+      ],
+    ),
     east: (
       frames: [
         (base: (x: 15, y: 16), head: (x: 14, y: 38), left_hand: (x: 14, y: 27), right_hand: (x: 16, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
@@ -72,18 +84,6 @@
         (base: (x: 15, y: 16), head: (x: 15, y: 37), left_hand: (x: 10, y: 25), right_hand: (x: 21, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
         (base: (x: 15, y: 16), head: (x: 15, y: 37), left_hand: (x: 10, y: 25), right_hand: (x: 21, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
         (base: (x: 15, y: 16), head: (x: 15, y: 37), left_hand: (x: 10, y: 25), right_hand: (x: 21, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-      ],
-    ),
-    south: (
-      frames: [
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
-        (base: (x: 15, y: 16), head: (x: 15, y: 36), left_hand: (x: 22, y: 25), right_hand: (x: 9, y: 25), left_foot: (x: 0, y: 0), right_foot: (x: 0, y: 0)),
       ],
     ),
     west: (

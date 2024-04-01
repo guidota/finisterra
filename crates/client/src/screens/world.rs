@@ -257,8 +257,8 @@ impl WorldScreen {
         }
         if let Some(Entity::Character(character)) = self.entities.get_mut(&self.entity_id) {
             // camera follows main character
-            let x = character.render_position.0.floor();
-            let y = character.render_position.1.floor();
+            let x = character.render_position.0;
+            let y = character.render_position.1 + TILE_SIZE_F / 2.;
             context
                 .engine
                 .set_world_camera_position(camera::Position { x, y });

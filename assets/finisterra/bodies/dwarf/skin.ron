@@ -1,5 +1,17 @@
 (
   walk: (
+    south: (
+      frames: [
+        (image: 33, priority: 10, offset: (x: 15, y: 16)),
+        (image: 34, priority: 10, offset: (x: 15, y: 16)),
+        (image: 35, priority: 10, offset: (x: 15, y: 16)),
+        (image: 36, priority: 10, offset: (x: 15, y: 16)),
+        (image: 37, priority: 10, offset: (x: 15, y: 16)),
+        (image: 38, priority: 10, offset: (x: 15, y: 16)),
+        (image: 39, priority: 10, offset: (x: 15, y: 16)),
+        (image: 40, priority: 10, offset: (x: 15, y: 16)),
+      ],
+    ),
     east: (
       frames: [
         (image: 49, priority: 10, offset: (x: 15, y: 16)),
@@ -24,18 +36,6 @@
         (image: 48, priority: 10, offset: (x: 15, y: 16)),
       ],
     ),
-    south: (
-      frames: [
-        (image: 33, priority: 10, offset: (x: 15, y: 16)),
-        (image: 34, priority: 10, offset: (x: 15, y: 16)),
-        (image: 35, priority: 10, offset: (x: 15, y: 16)),
-        (image: 36, priority: 10, offset: (x: 15, y: 16)),
-        (image: 37, priority: 10, offset: (x: 15, y: 16)),
-        (image: 38, priority: 10, offset: (x: 15, y: 16)),
-        (image: 39, priority: 10, offset: (x: 15, y: 16)),
-        (image: 40, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
     west: (
       frames: [
         (image: 57, priority: 10, offset: (x: 15, y: 16)),
@@ -50,6 +50,18 @@
     ),
   ),
   idle: (
+    south: (
+      frames: [
+        (image: 1, priority: 10, offset: (x: 15, y: 16)),
+        (image: 2, priority: 10, offset: (x: 15, y: 16)),
+        (image: 3, priority: 10, offset: (x: 15, y: 16)),
+        (image: 4, priority: 10, offset: (x: 15, y: 16)),
+        (image: 5, priority: 10, offset: (x: 15, y: 16)),
+        (image: 6, priority: 10, offset: (x: 15, y: 16)),
+        (image: 7, priority: 10, offset: (x: 15, y: 16)),
+        (image: 8, priority: 10, offset: (x: 15, y: 16)),
+      ],
+    ),
     east: (
       frames: [
         (image: 17, priority: 10, offset: (x: 15, y: 16)),
@@ -72,18 +84,6 @@
         (image: 14, priority: 10, offset: (x: 15, y: 16)),
         (image: 15, priority: 10, offset: (x: 15, y: 16)),
         (image: 16, priority: 10, offset: (x: 15, y: 16)),
-      ],
-    ),
-    south: (
-      frames: [
-        (image: 1, priority: 10, offset: (x: 15, y: 16)),
-        (image: 2, priority: 10, offset: (x: 15, y: 16)),
-        (image: 3, priority: 10, offset: (x: 15, y: 16)),
-        (image: 4, priority: 10, offset: (x: 15, y: 16)),
-        (image: 5, priority: 10, offset: (x: 15, y: 16)),
-        (image: 6, priority: 10, offset: (x: 15, y: 16)),
-        (image: 7, priority: 10, offset: (x: 15, y: 16)),
-        (image: 8, priority: 10, offset: (x: 15, y: 16)),
       ],
     ),
     west: (

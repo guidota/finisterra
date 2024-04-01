@@ -16,12 +16,21 @@ pub type Clothing = CharacterAnimations<ImageFrameMetadata>;
 pub type Helmet = CharacterAnimations<ImageFrameMetadata>;
 pub type Shield = CharacterAnimations<ImageFrameMetadata>;
 pub type Weapon = CharacterAnimations<ImageFrameMetadata>;
-pub type Head = CharacterAnimations<ImageFrameMetadata>;
+pub type Head = CharacterAnimations<HeadFrameMetadata>;
 pub type Hair = CharacterAnimations<ImageFrameMetadata>;
 pub type Eyes = CharacterAnimations<ImageFrameMetadata>;
 pub type Face = CharacterAnimations<ImageFrameMetadata>;
 pub type Skin = CharacterAnimations<ImageFrameMetadata>;
 pub type Body = CharacterAnimations<BodyFrameMetadata>;
+
+#[derive(Debug, Default, Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub struct HeadFrameMetadata {
+    pub image: u32,
+    pub hair_priority: u32,
+    pub eyes_priority: u32,
+    pub face_priority: u32,
+    pub offset: Offset,
+}
 
 #[derive(Default, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 #[serde(default)]

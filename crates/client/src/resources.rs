@@ -10,7 +10,7 @@ use crate::{
     argentum::{
         animations::{Animation, ImageFrameMetadata},
         character::{
-            animation::{CharacterAnimation, CharacterAnimations},
+            animation::{BodyAnimation, CharacterAnimation, CharacterAnimations},
             *,
         },
         Image,
@@ -46,9 +46,9 @@ impl Resources {
         resources.load_body(engine, "assets/finisterra/bodies/dwarf/");
         resources.load_cloth(engine, "assets/finisterra/clothing/");
         resources.load_head(engine, "assets/finisterra/heads/");
-        resources.load_shields(engine, "assets/finisterra/shields/shields/");
-        resources.load_helmets(engine, "assets/finisterra/helmets/helmets/");
-        resources.load_weapons(engine, "assets/finisterra/weapons/dagas/");
+        resources.load_shields(engine, "assets/finisterra/shields/");
+        resources.load_helmets(engine, "assets/finisterra/helmets/");
+        resources.load_weapons(engine, "assets/finisterra/weapons/");
         resources.load_textures(engine);
 
         resources
@@ -90,7 +90,7 @@ impl Resources {
         let mut body_skins = vec![];
 
         // traverse skins folder
-        let skins = fs::read_dir(format!("{folder}skins/")).expect("skins folder not present");
+        let skins = fs::read_dir(format!("{folder}images/")).expect("skins folder not present");
         for skin in skins {
             let skin = skin.expect("should be an entry");
             let skin_path = skin.path();
@@ -99,7 +99,7 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(skin_path.to_str().expect("is a file"));
-            let skin = from_images(
+            let skin = process_and_build_metadata_from_image(
                 &mut self.images,
                 file_num,
                 &base_skin,
@@ -121,7 +121,7 @@ impl Resources {
 
         // traverse clothing folder
         let clothing =
-            fs::read_dir(format!("{folder}clothing/")).expect("clothing folder not present");
+            fs::read_dir(format!("{folder}images/")).expect("clothing folder not present");
         for cloth in clothing {
             let cloth = cloth.expect("should be an entry");
             let cloth_path = cloth.path();
@@ -130,7 +130,7 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(cloth_path.to_str().expect("is a file"));
-            let cloth = from_images(
+            let cloth = process_and_build_metadata_from_image(
                 &mut self.images,
                 file_num,
                 &base_cloth,
@@ -158,13 +158,14 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_head(
                 &mut self.images,
                 file_num,
                 &head,
                 width,
                 height,
                 Layout::Columns,
+                HeadPart::Face,
             );
             self.faces.push(metadata);
         }
@@ -179,13 +180,14 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_head(
                 &mut self.images,
                 file_num,
                 &head,
                 width,
                 height,
                 Layout::Columns,
+                HeadPart::Eyes,
             );
             self.eyes.push(metadata);
         }
@@ -199,13 +201,14 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_head(
                 &mut self.images,
                 file_num,
                 &head,
                 width,
                 height,
                 Layout::Columns,
+                HeadPart::Hair,
             );
             self.hairs.push(metadata);
         }
@@ -216,8 +219,7 @@ impl Resources {
         let file = File::open(file_ron_path).expect("shield.ron not found");
         let shield: Shield = ron::de::from_reader(file).expect("invalid shield.ron");
 
-        let shields =
-            fs::read_dir(format!("{folder}shields/")).expect("shields folder not present");
+        let shields = fs::read_dir(format!("{folder}images/")).expect("shields folder not present");
         for file in shields {
             let file = file.expect("should be an entry");
             let file_path = file.path();
@@ -226,7 +228,7 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_image(
                 &mut self.images,
                 file_num,
                 &shield,
@@ -243,8 +245,7 @@ impl Resources {
         let file = File::open(file_ron_path).expect("weapon.ron not found");
         let weapon: Weapon = ron::de::from_reader(file).expect("invalid weapon.ron");
 
-        let weapons =
-            fs::read_dir(format!("{folder}weapons/")).expect("weapons folder not present");
+        let weapons = fs::read_dir(format!("{folder}images/")).expect("weapons folder not present");
         for file in weapons {
             let file = file.expect("should be an entry");
             let file_path = file.path();
@@ -253,7 +254,7 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_image(
                 &mut self.images,
                 file_num,
                 &weapon,
@@ -270,8 +271,7 @@ impl Resources {
         let file = File::open(file_ron_path).expect("helmet.ron not found");
         let helmet: Weapon = ron::de::from_reader(file).expect("invalid helmet.ron");
 
-        let helmets =
-            fs::read_dir(format!("{folder}helmets/")).expect("helmets folder not present");
+        let helmets = fs::read_dir(format!("{folder}images/")).expect("helmets folder not present");
         for file in helmets {
             let file = file.expect("should be an entry");
             let file_path = file.path();
@@ -280,7 +280,7 @@ impl Resources {
             let height = img.height();
 
             let file_num = engine.add_texture(file_path.to_str().expect("is a file"));
-            let metadata = from_images(
+            let metadata = process_and_build_metadata_from_image(
                 &mut self.images,
                 file_num,
                 &helmet,
@@ -298,7 +298,7 @@ enum Layout {
     Columns,
 }
 
-fn from_images(
+fn process_and_build_metadata_from_image(
     images: &mut Vec<Image>,
     file_num: u32,
     metadata: &CharacterAnimations<ImageFrameMetadata>,
@@ -366,4 +366,118 @@ fn from_images(
     }
 
     metadata
+}
+
+fn process_and_build_metadata_from_head(
+    images: &mut Vec<Image>,
+    file_num: u32,
+    metadata: &CharacterAnimations<HeadFrameMetadata>,
+    width: u32,
+    height: u32,
+    layout: Layout,
+    head_part: HeadPart,
+) -> CharacterAnimations<ImageFrameMetadata> {
+    let animations = [CharacterAnimation::Idle, CharacterAnimation::Walk];
+    let directions = [
+        Direction::South,
+        Direction::North,
+        Direction::East,
+        Direction::West,
+    ];
+
+    // todo: assuming 8 animations (idle, walk in each direction)
+    let max_frames = {
+        let mut max = 1;
+
+        for animation in animations {
+            for direction in directions {
+                let frames = metadata[animation][direction].frames.len();
+                if max < frames {
+                    max = frames;
+                }
+            }
+        }
+
+        max as u32
+    };
+    let (frame_height, frame_width) = match layout {
+        Layout::Rows => (height / 8, width / max_frames),
+        Layout::Columns => (height, width / 8),
+    };
+
+    let mut metadata: CharacterAnimations<ImageFrameMetadata> = (metadata, head_part).into();
+    let mut i = 0;
+    for animation in animations.iter() {
+        for direction in directions.iter() {
+            let animation = &mut metadata[*animation][*direction];
+            for (f, frame) in animation.frames.iter_mut().enumerate() {
+                let (x, y) = match layout {
+                    Layout::Rows => (f, i),
+                    Layout::Columns => (i, 0),
+                };
+
+                // build image
+                let image_id = images.len() as u32;
+                let image = Image {
+                    id: image_id,
+                    file: file_num,
+                    width: frame_width as u16,
+                    height: frame_height as u16,
+                    y: (y * frame_height as usize) as u16,
+                    x: (x as u32 * frame_width) as u16,
+                };
+                // insert image
+                images.push(image);
+
+                // update skin
+                frame.image = image_id;
+            }
+            i += 1;
+        }
+    }
+
+    metadata
+}
+
+enum HeadPart {
+    Face,
+    Eyes,
+    Hair,
+}
+
+impl From<(&CharacterAnimations<HeadFrameMetadata>, HeadPart)>
+    for CharacterAnimations<ImageFrameMetadata>
+{
+    fn from(value: (&CharacterAnimations<HeadFrameMetadata>, HeadPart)) -> Self {
+        let mut metadata = CharacterAnimations::<ImageFrameMetadata>::default();
+        for animation in [CharacterAnimation::Idle, CharacterAnimation::Walk].iter() {
+            for direction in [
+                Direction::South,
+                Direction::North,
+                Direction::East,
+                Direction::West,
+            ]
+            .iter()
+            {
+                let head_animation = &value.0[*animation][*direction];
+                let mut frames = vec![];
+
+                for frame in head_animation.frames.iter() {
+                    let frame = ImageFrameMetadata {
+                        image: frame.image,
+                        offset: frame.offset,
+                        priority: match value.1 {
+                            HeadPart::Face => frame.face_priority,
+                            HeadPart::Eyes => frame.eyes_priority,
+                            HeadPart::Hair => frame.hair_priority,
+                        },
+                    };
+                    frames.push(frame);
+                }
+                metadata[*animation][*direction] = BodyAnimation { frames };
+            }
+        }
+
+        metadata
+    }
 }
