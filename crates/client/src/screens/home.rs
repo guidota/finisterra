@@ -14,7 +14,6 @@ use crate::{
     ui::UI,
     ui::{
         button::{Button, ButtonBuilder},
-        colors::GRAY_6,
         input_field::InputField,
         label::Label,
         Widget,

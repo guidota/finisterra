@@ -2,21 +2,22 @@ use std::{collections::VecDeque, time::Instant};
 
 use engine::{
     camera::{self, Viewport, Zoom},
-    draw::{image::DrawImage, Position, Target},
     engine::GameEngine,
     CursorIcon,
 };
-use itertools::iproduct;
 use nohash_hasher::IntMap;
 use shared::{
     protocol::server::{CharacterUpdate, DialogKind, ServerPacket},
     world::{Direction, WorldPosition},
 };
 
-use crate::{argentum::Image, game::Context, ui::colors::*, ui::fonts::*};
+use crate::{
+    game::Context,
+    screens::world::map::WorldMap,
+    ui::{colors::*, fonts::*},
+};
 
 use self::{
-    depth::Z,
     entity::{Character, Entity},
     fps::Fps,
     hud::HUD,
@@ -30,6 +31,7 @@ pub mod fps;
 pub mod hud;
 pub mod input;
 pub mod interpolation;
+mod map;
 pub mod prediction;
 pub mod reconciliation;
 
@@ -56,7 +58,7 @@ pub struct WorldScreen {
     movement_sequence: u8,
     predictions: Vec<(u8, WorldPosition)>,
     last_move: Instant,
-
+    map: WorldMap,
     fps: Fps,
 }
 
@@ -76,7 +78,7 @@ impl GameScreen for WorldScreen {
 
     fn draw<E: GameEngine>(&mut self, context: &mut Context<E>) {
         self.draw_hud(context);
-        self.draw_world(context);
+        self.draw_world_2(context);
     }
 }
 
@@ -104,6 +106,8 @@ impl WorldScreen {
             input: VecDeque::new(),
             last_move: Instant::now(),
             fps: Fps::default(),
+            map: WorldMap::initialize(context),
+            // map: WorldMap::default(),
         }
     }
 
@@ -281,72 +285,16 @@ impl WorldScreen {
         let ping = context.connection.ping();
         self.hud.ping.set_text(&format!("{ping}ms"), context.engine);
     }
-
-    fn draw_world<E: GameEngine>(&mut self, context: &mut Context<E>) {
-        let Some(Entity::Character(character)) = self.entities.get(&self.entity_id) else {
-            return;
-        };
-        let position = &character.position;
-        let map = context.maps.get(&position.map);
-        let (x_start, x_end, y_start, y_end) = get_range(position);
-
-        for (y, x) in iproduct!(y_start..y_end, x_start..x_end) {
-            let tile = &map.tiles[x][y];
-
-            let world_x = (x as u16 * TILE_SIZE) + TILE_SIZE;
-            let world_y = (y as u16 * TILE_SIZE) + TILE_SIZE;
-
-            for layer in [0, 1, 2, 3].iter() {
-                if tile.graphics[*layer] != 0 {
-                    let z = Z[*layer][x][y];
-                    let image = &context.resources.images[tile.graphics[*layer]];
-                    let position = Position::new(world_x + 16 - image.width / 2, world_y, z);
-                    let color = self.layer_4_color(position, image);
-
-                    context.engine.draw_image(
-                        DrawImage {
-                            position,
-                            color,
-                            source: [image.x, image.y, image.width, image.height],
-                            index: image.file,
-                        },
-                        Target::World,
-                    );
-                };
-                if layer == &2 {
-                    if let Some(entity_id) = tile.user {
-                        if let Some(entity) = self.entities.get_mut(&entity_id) {
-                            entity.draw(context.engine, context.resources);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn layer_4_color(&self, position: Position, image: &Image) -> [u8; 4] {
-        if position.z == 0.99 {
-            if let Some(Entity::Character(character)) = self.entities.get(&self.entity_id) {
-                if character.render_position.0 as u16 + 32 > position.x - image.width / 2
-                    && (character.render_position.0 as u16) - 32 < position.x + image.width / 2
-                    && (character.render_position.1 as u16) + 64 > position.y
-                    && (character.render_position.1 as u16) < position.y + image.height
-                {
-                    return [255, 255, 255, 50];
-                }
-            }
-        }
-        WHITE
-    }
 }
 
-fn get_range(position: &WorldPosition) -> (usize, usize, usize, usize) {
-    const EXTRA_TILES: u16 = 5;
-    const HORIZONTAL_EXTRA_TILES: u16 = ((HORIZONTAL_TILES + 1) / 2) + EXTRA_TILES;
-    const VERTICAL_EXTRA_TILES: u16 = (VERTICAL_TILES / 2) + EXTRA_TILES;
-    let x_start = (position.x - HORIZONTAL_EXTRA_TILES) as usize;
-    let x_end = (position.x + HORIZONTAL_EXTRA_TILES) as usize;
-    let y_start = (position.y - VERTICAL_EXTRA_TILES) as usize;
-    let y_end = (position.y + VERTICAL_EXTRA_TILES) as usize;
+fn get_range(
+    position: &WorldPosition,
+    extra_tiles_h: u16,
+    extra_tiles_v: u16,
+) -> (usize, usize, usize, usize) {
+    let x_start = (position.x - extra_tiles_h) as usize;
+    let x_end = (position.x + extra_tiles_h) as usize;
+    let y_start = (position.y - extra_tiles_v) as usize;
+    let y_end = (position.y + extra_tiles_v) as usize;
     (x_start, x_end, y_start, y_end)
 }

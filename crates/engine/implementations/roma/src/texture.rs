@@ -6,7 +6,7 @@ use image::GenericImageView;
 use crate::files::read_file;
 
 pub struct Texture {
-    pub texture: wgpu::Texture,
+    pub _texture: wgpu::Texture,
     pub view: Rc<wgpu::TextureView>,
     pub sampler: Rc<wgpu::Sampler>,
     pub height: u16,
@@ -43,7 +43,7 @@ impl Texture {
         }));
 
         Self {
-            texture,
+            _texture: texture,
             view,
             sampler,
             width: size.width as u16,
@@ -129,7 +129,7 @@ impl Texture {
         }));
 
         Self {
-            texture,
+            _texture: texture,
             view,
             sampler,
             width: dimensions.0 as u16,

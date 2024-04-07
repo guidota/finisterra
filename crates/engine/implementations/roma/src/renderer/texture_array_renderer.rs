@@ -403,7 +403,7 @@ fn create_pipeline(
         device.create_shader_module(wgpu::include_wgsl!("texture_array_renderer_shader.wgsl"));
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[&bind_group_layout],
+        bind_group_layouts: &[bind_group_layout],
         push_constant_ranges: &[PushConstantRange {
             stages: ShaderStages::VERTEX,
             range: 0..64,

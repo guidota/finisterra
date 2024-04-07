@@ -29,7 +29,7 @@ pub struct SpriteBatchRenderer {
     vertex_buffer: wgpu::Buffer,
 
     draws_counter: usize,
-    draws_to_textures: IntMap<TextureID, Vec<DrawImage>>,
+    draws_to_textures: IntMap<TextureID, IntMap<TextureID, Vec<DrawImage>>>,
     draws_to_zero_world: IntMap<TextureID, Vec<DrawImage>>,
     transparent_draws_to_world: IntMap<TextureID, Vec<DrawImage>>,
     draws_to_world: IntMap<TextureID, Vec<DrawImage>>,
@@ -44,7 +44,7 @@ impl Renderer for SpriteBatchRenderer {
         self.depth_texture_view = create_depth_texture(state, size);
     }
 
-    fn ensure_texture(&mut self, state: &State, id: TextureID, _target: Target) -> bool {
+    fn ensure_texture(&mut self, state: &State, id: TextureID, target: Target) -> bool {
         if self.textures.load_texture(&state.device, &state.queue, id) {
             if let Entry::Vacant(e) = self.bind_groups.entry(id) {
                 if let Some(texture) = self.textures.get(id).flatten() {
@@ -52,6 +52,15 @@ impl Renderer for SpriteBatchRenderer {
                     e.insert(bind_group);
                 }
             }
+            if let Target::Texture { id } = target {
+                if let Entry::Vacant(e) = self.bind_groups.entry(id) {
+                    if let Some(texture) = self.textures.get(id).flatten() {
+                        let bind_group = create_bind_group(state, &self.bind_group_layout, texture);
+                        e.insert(bind_group);
+                    }
+                }
+            }
+
             true
         } else {
             false
@@ -88,6 +97,8 @@ impl Renderer for SpriteBatchRenderer {
                 self.draws_to_textures
                     .entry(target_texture_id)
                     .or_default()
+                    .entry(draw.index)
+                    .or_default()
                     .push(draw);
             }
         }
@@ -119,7 +130,7 @@ impl Renderer for SpriteBatchRenderer {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        for (texture_id, range) in to_textures_ranges {
+        for (texture_id, batches) in to_textures_ranges {
             if let Some(Some(texture)) = self.textures.get(texture_id) {
                 let size = engine::window::Size {
                     width: texture.width,
@@ -152,11 +163,14 @@ impl Renderer for SpriteBatchRenderer {
                 };
                 render_pass.set_pipeline(&self.pipeline);
                 render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-                let target_camera = Camera::initialize(dimensions, true);
+                let target_camera = Camera::initialize(dimensions, false);
                 Self::use_camera(&mut render_pass, &target_camera);
-                if let Some(texture_bind_group) = self.bind_groups.get(&texture_id) {
-                    render_pass.set_bind_group(0, texture_bind_group, &[]);
-                    render_pass.draw(0..4, range.start as u32..range.end as u32);
+
+                for (texture, range) in batches {
+                    if let Some(texture_bind_group) = self.bind_groups.get(&texture) {
+                        render_pass.set_bind_group(0, texture_bind_group, &[]);
+                        render_pass.draw(0..4, range.start as u32..range.end as u32);
+                    }
                 }
             }
         }
@@ -312,11 +326,12 @@ impl SpriteBatchRenderer {
         prepare_draws(&mut self.draws_to_ui, &mut ui_ranges, &mut offset);
 
         let mut to_textures_ranges = vec![];
-        prepare_draws(
-            &mut self.draws_to_textures,
-            &mut to_textures_ranges,
-            &mut offset,
-        );
+        for (texture, batches) in self.draws_to_textures.iter_mut() {
+            let mut current = vec![];
+            prepare_draws(batches, &mut current, &mut offset);
+            to_textures_ranges.push((*texture, current));
+        }
+        self.draws_to_textures.clear();
 
         self.draws_counter = 0;
 
@@ -415,7 +430,7 @@ fn create_pipeline(
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&bind_group_layout],
+                bind_group_layouts: &[bind_group_layout],
                 push_constant_ranges: &[PushConstantRange {
                     stages: ShaderStages::VERTEX,
                     range: 0..64,
@@ -500,9 +515,11 @@ fn create_depth_texture(state: &State, size: engine::window::Size) -> wgpu::Text
     })
 }
 
+type Batches = Vec<(TextureID, Range<usize>)>;
+
 #[derive(Debug)]
 pub struct Instructions {
-    pub world_ranges: Vec<(TextureID, Range<usize>)>,
-    pub ui_ranges: Vec<(TextureID, Range<usize>)>,
-    pub to_textures_ranges: Vec<(TextureID, Range<usize>)>,
+    pub world_ranges: Batches,
+    pub ui_ranges: Batches,
+    pub to_textures_ranges: Vec<(TextureID, Batches)>,
 }
