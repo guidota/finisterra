@@ -7,7 +7,6 @@ edition = "2021"
 # winit
 winit.workspace = true
 
-tracing.workspace = true
 tracing-subscriber.workspace = true
 
 # runtime
