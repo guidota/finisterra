@@ -9,8 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  cargo-clippy:
-    name: Cargo clippy
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy, rustc-codegen-cranelift-preview
-      - name: Clippy Check
+      - name: cargo clippy
         run: cargo clippy --workspace
-      - name: Build
+      - name: cargo build
         run: cargo build
