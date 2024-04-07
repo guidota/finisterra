@@ -40,3 +40,7 @@ wtransport = { version = "0.1", features = ["dangerous-configuration"] }
 codegen-backend = "cranelift"
 debug = false
 opt-level = 1
+
+[profile.ci]
+opt-level = 1
+debug = false
