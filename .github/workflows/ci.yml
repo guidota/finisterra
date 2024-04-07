@@ -20,6 +20,6 @@ jobs:
           components: clippy
           toolchain: stable
       - name: cargo clippy
-        run: cargo clippy --workspace
+        run: cargo clippy --profile ci --workspace
       - name: cargo build
-        run: cargo build
+        run: cargo build --profile ci

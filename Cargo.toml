@@ -1,6 +1,3 @@
-# This line needs to come before anything else in Cargo.toml
-cargo-features = ["codegen-backend"]
-
 [workspace]
 members = ["crates/*", "crates/engine/implementations/*"]
 resolver = "2"
@@ -37,7 +34,6 @@ wtransport = { version = "0.1", features = ["dangerous-configuration"] }
 # debug = true
 
 [profile.dev]
-codegen-backend = "cranelift"
 debug = false
 opt-level = 1
 
