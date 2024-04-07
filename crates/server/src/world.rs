@@ -105,7 +105,9 @@ impl World {
                                 text,
                                 kind,
                             }),
-                            Target::Area { position },
+                            Target::Area {
+                                _position: position,
+                            },
                         );
                     }
                 }
@@ -193,7 +195,7 @@ mod networking {
 
     pub enum Target {
         User { entity_id: u32 },
-        Area { position: WorldPosition },
+        Area { _position: WorldPosition },
         AreaButUser { entity_id: u32 },
         // TODO
     }

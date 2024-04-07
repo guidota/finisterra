@@ -105,7 +105,7 @@ impl World {
                     self.send(
                         ServerPacket::CharacterUpdate(CharacterUpdate::Remove { entity_id }),
                         Target::Area {
-                            position: old_position,
+                            _position: old_position,
                         },
                     );
                 }
