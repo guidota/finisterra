@@ -3,10 +3,13 @@ use std::{
     time::Duration,
 };
 
-use crate::argentum::{
-    animations::ImageFrameMetadata,
-    character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
-    Offset,
+use crate::{
+    argentum::{
+        animations::ImageFrameMetadata,
+        character::{animation::CharacterAnimation, animator::Animator, AnimatedCharacter},
+        Offset,
+    },
+    texture::TextureState,
 };
 use engine::{
     draw::{
@@ -87,13 +90,6 @@ struct Invisibility {
     duration: Duration,
     time: Duration,
     name_color: Color,
-}
-
-#[derive(Debug)]
-enum TextureState {
-    Dirty,
-    JustDraw,
-    Ready,
 }
 
 impl Deref for Character {
@@ -461,7 +457,6 @@ impl Character {
                 return;
             }
         }
-        tracing::info!("drawing to texture");
 
         let texture_id = self.texture.as_ref().unwrap().0;
         let mut animation = self.animation.clone();

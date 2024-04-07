@@ -8,6 +8,7 @@ mod game;
 pub mod maps;
 pub mod resources;
 pub mod screens;
+pub mod texture;
 pub mod ui;
 
 #[tokio::main]

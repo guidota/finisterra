@@ -41,9 +41,7 @@ impl Fonts {
     }
 
     pub fn parse_text(&mut self, id: FontID, text: &str) -> Option<ParsedText> {
-        let Some(font) = self.fonts.get_mut(&id) else {
-            return None;
-        };
+        let font = self.fonts.get_mut(&id)?;
 
         let len = text.len();
         let chars = font.bmfont.parse(text);
