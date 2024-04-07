@@ -38,5 +38,6 @@ debug = false
 opt-level = 1
 
 [profile.ci]
+inherits = "dev"
 opt-level = 1
 debug = false
