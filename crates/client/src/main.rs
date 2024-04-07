@@ -16,7 +16,7 @@ async fn main() {
     let settings = engine::settings::Settings {
         width: 800,
         height: 540,
-        title: "Finisterra".to_string(),
+        title: "finisterra".to_string(),
         vsync: true,
     };
 
